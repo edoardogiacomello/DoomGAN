@@ -1,0 +1,35 @@
+{
+    "element" : {
+        "line" : {
+            "stroke" : {
+                "#333" : ["solid","wall"],
+                "#999" : ["floor","walkable","stairs"],
+                "#d00" : ["door","locked"],
+                "#00d" : ["teleport","source","activatable"],
+                "#666" : ["door","walkable","activatable"],
+                "#0d0" : ["exit","activatable"]
+            }
+        },
+        "rect" : {
+            "stroke" : {
+                "#900" : ["enemy","walkable"],
+                "#090" : ["decorative","walkable"],
+                "#009" : ["teleport","walkable","destination"]
+            }
+        },
+        "circle" : {
+            "stroke" : {
+                "#900" : ["weapon","walkable"],
+                "#090" : ["ammo","walkable"],
+                "#009" : ["health","armor","walkable"]
+            }
+        },
+        "ellipse" : {
+            "stroke" : {
+                "#900" : ["explosive barrel","walkable"],
+                "#090" : ["key","walkable"],
+                "#009" : ["start","walkable"]
+            }
+        }
+    }
+}
