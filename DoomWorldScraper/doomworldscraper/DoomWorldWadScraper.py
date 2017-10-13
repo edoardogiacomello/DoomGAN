@@ -1,11 +1,10 @@
-from bs4 import BeautifulSoup
-from bs4 import Tag
 import requests
-from collections import namedtuple
 import os
 import json
+from collections import namedtuple
 from collections import defaultdict
-
+from bs4 import BeautifulSoup
+from bs4 import Tag
 
 class DoomWorldWadScraper():
     """Collects WAD data present at www.doomworld.com
@@ -15,6 +14,29 @@ class DoomWorldWadScraper():
         self.tuple_category = namedtuple("category",["name","url", "file_pages"])
         self.categories = dict()
         self.file_info = list()
+        # This dict is to convert what is written to the webpage to the indices that are used in the json representation
+        self.header_to_dict_index = defaultdict(lambda: "other", {
+            'Author': 'author',
+            'About This File': 'description',
+            'Credits': 'credits',
+            'Base': 'base',
+            'Editors Used': 'editor_used',
+            'Bugs': 'bugs',
+            'Build Time': 'build_time',
+            # These headers does not appear as is on the website, but they are kept here for keeping track of all the
+            # possible columns
+            'rating_value': 'rating_value',
+            'rating_count': 'rating_count',
+            'page_visits': 'page_visits',
+            'downloads': 'downloads',
+            'creation_date': 'creation_date',
+            'file_url': 'file_url',
+            'game': 'game',
+            'category': 'category',
+            'title': 'title',
+            'name:': 'name',
+            'path': 'path'
+        })
 
     def _open_page(self, url):
         """Set up a BeautifulSoup for the given page"""
@@ -73,26 +95,18 @@ class DoomWorldWadScraper():
         # We focus only on the frame that contains the data
         main_div = soup.find_all("div", {"id" : "ipsLayout_mainArea"})[0].find_all("div",{'itemscope':'', 'itemtype':"http://schema.org/CreativeWork"})[0]
         rating_meta = main_div.div.find_all("meta")
-        # These tags contain the main article with the headers for Title, Author, Description, Credits, Base, Build Time..
+
+        # These tags contain the main article with the headers for Title, Author, Description, Credits, Build Time..
         level_info_tag_heads = [s.text.strip() for s in main_div.article.div.contents[1:-2:4]]  # These are the section heas (Author, About this file..)
         level_info_tag_content = [s.text.strip() for s in main_div.article.div.contents[3:-2:4]] # The corresponding content
 
         # Setting the title
         download_data['title'] = main_div.div.div.contents[1].div.text
 
-        # This dict is to convert what is written to the webpage to the indices that are used in the json representation
-        header_to_dict_index = defaultdict(lambda: "other", {
-            'Author': 'author',
-            'About This File': 'description',
-            'Credits': 'credits',
-            'Base': 'base',
-            'Editors Used': 'editor_used',
-            'Bugs': 'bugs',
-            'Build Time': 'build_time'
-        })
+
 
         for header, content in zip(level_info_tag_heads, level_info_tag_content):
-            download_data[header_to_dict_index[header]] = content
+            download_data[self.header_to_dict_index[header]] = content
 
         # Adding the metadata relative to the file itself (always present)
         file_information_panel = main_div.aside.div
@@ -100,8 +114,8 @@ class DoomWorldWadScraper():
 
         download_data['rating_value'] = rating_meta[0]["content"]
         download_data['rating_count'] = rating_meta[1]["content"]
-        download_data['page_visits'] = file_meta[0]["content"]
-        download_data['downloads'] = file_meta[1]["content"]
+        download_data['page_visits'] = file_meta[0]["content"].split(":")[-1]
+        download_data['downloads'] = file_meta[1]["content"].split(":")[-1]
         download_data['creation_date'] = file_meta[2]["content"]
         download_data['file_url'] = file_information_panel.a['href']
         download_data['game'] = game_name
@@ -131,25 +145,28 @@ class DoomWorldWadScraper():
                 os.makedirs(current_path)
 
             links = self._fetch_file_page_links(self.categories[cat_id].url)
-            current = 0
+            current = 1
             for link in links:
                 print("[{}/{}] - Collecting {}".format(current, len(links), link))
-                current+=1
-                newfile = self._fetch_download_page_data(link, game_name=game_name, category_name=self.categories[cat_id])
+                current += 1
+                newfile = self._fetch_download_page_data(link, game_name=game_name, category_name=self.categories[cat_id].name)
                 # download the level file and store it on the local disk
                 newfile['path'] = self._download_and_save(newfile['file_url'], current_path)
                 newfile['name'] = newfile['path'].split("/")[-1]
                 self.file_info.append(newfile)
             # Save the scraped data for this category
-            with open(root_path+game_name+self.categories[cat_id].name+'.json', 'w') as dbfile:
-                json.dump(self.file_info, dbfile)
+            with open(root_path+game_name+self.categories[cat_id].name+'.json', 'w') as jsonfile:
+                json.dump(self.file_info, jsonfile)
+            print ("Done. You can merge the resulting files and converting to xml or csv using the methods in metaUtils.py")
 
-# Create a scraper for "Home>Downloads>idgames>levels>doom"
-scraper = DoomWorldWadScraper()
-# The link structure of each category page is: https://www.doomworld.com/files/category/##-???/
-# where ## is a numerical id (eg. 64 for "doom") and ??? is the category name, such as "a-c"
 
-# We are going to skip the "Deathmatch" (68), "Megawads" (85) and "Ports" (87) categories since they will be dealt with separately.
-scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87, 65], root_path="./database/doom/")
-# scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
+if __name__ == '__main__':
+    # Create a scraper for "Home>Downloads>idgames>levels>doom"
+    scraper = DoomWorldWadScraper()
+    # The link structure of each category page is: https://www.doomworld.com/files/category/##-???/
+    # where ## is a numerical id (eg. 64 for "doom") and ??? is the category name, such as "a-c"
 
+    # We are going to skip the "Deathmatch" (68), "Megawads" (85) and "Ports" (87) categories since they will be dealt with separately.
+    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom",
+                         exclude_category_list=[68, 85, 87], root_path="./database/doom/")
+    # scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
