@@ -6,6 +6,7 @@ import os
 import json
 from collections import defaultdict
 
+
 class DoomWorldWadScraper():
     """Collects WAD data present at www.doomworld.com
     This class is compatible to the website layout as of 10/10/2017"""
@@ -39,13 +40,13 @@ class DoomWorldWadScraper():
                 self.categories[id] = self.tuple_category(name=name, url=url, file_pages=[])
         return self.categories
 
-    def _fetch_file_page_links(self, category_url, files_list=[]):
+    def _fetch_file_page_links(self, category_url):
         """Fetches, for each category page, the list of the download pages that holds the data for each wad file by crawling
         through each list page, recursively.
         i.e. from an url of the type https://www.doomworld.com/files/category/<CATEGORYNAME>/?page=N
         navigates through all the N pages returning all the file urls like
         https://www.doomworld.com/files/file/<file-id>-<file-name>/"""
-        found_files = files_list
+        found_files = []
         print ("Opening category page: " + category_url)
         soup = self._open_page(category_url)
         # Find the div containing the pagination design pattern and the file links
@@ -59,8 +60,8 @@ class DoomWorldWadScraper():
         if len(next_page_buttons)>0 and "ipsPagination_inactive" not in next_page_buttons[0]['class']:
             new_category_url = next_page_buttons[0].a['href']
             print("The list continues to the page " + new_category_url)
-            next_pages_files = self._fetch_file_page_links(new_category_url, files_list=found_files)
-            found_files.append(next_pages_files)
+            next_pages_files = self._fetch_file_page_links(new_category_url)
+            found_files += next_pages_files
         return found_files
 
     def _fetch_download_page_data(self, download_page_url, game_name=None, category_name=None):
@@ -122,25 +123,26 @@ class DoomWorldWadScraper():
     def collect_wads(self, game_category_url, game_name, exclude_category_list=[], root_path = "./"):
         self.fetch_categories(game_category_url, exclude_list=exclude_category_list)
         # For each category found, collect the list of files and populate the relative tuple entry
-        i = 0
         for cat_id in self.categories.keys():
             # Creates a new local folder if not present
             current_path = root_path + self.categories[cat_id].name + '/'
-            #TODO: Create the directory for each category
+
             if not os.path.exists(current_path):
                 os.makedirs(current_path)
 
             links = self._fetch_file_page_links(self.categories[cat_id].url)
+            current = 0
             for link in links:
-                print("Collecting " + link)
+                print("[{}/{}] - Collecting {}".format(current, len(links), link))
+                current+=1
                 newfile = self._fetch_download_page_data(link, game_name=game_name, category_name=self.categories[cat_id])
                 # download the level file and store it on the local disk
                 newfile['path'] = self._download_and_save(newfile['file_url'], current_path)
                 newfile['name'] = newfile['path'].split("/")[-1]
                 self.file_info.append(newfile)
-        # Save the database
-        with open(root_path+game_name+'database.json', 'w') as dbfile:
-            json.dump(self.file_info, dbfile)
+            # Save the scraped data for this category
+            with open(root_path+game_name+self.categories[cat_id].name+'.json', 'w') as dbfile:
+                json.dump(self.file_info, dbfile)
 
 # Create a scraper for "Home>Downloads>idgames>levels>doom"
 scraper = DoomWorldWadScraper()
@@ -148,6 +150,6 @@ scraper = DoomWorldWadScraper()
 # where ## is a numerical id (eg. 64 for "doom") and ??? is the category name, such as "a-c"
 
 # We are going to skip the "Deathmatch" (68), "Megawads" (85) and "Ports" (87) categories since they will be dealt with separately.
-scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./database/doom/")
-#scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
+scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87, 65], root_path="./database/doom/")
+# scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
 
