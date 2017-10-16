@@ -81,7 +81,7 @@ class Wad(object):
             try:
                 level.load(self.wad_format)
             except Exception:
-                print "Failed to load level " + str(level)
+                print ("Failed to load level " + str(level))
 class Level(object):
     """Represents a level inside a WAD which is a collection of lumps"""
     def __init__(self, name):
@@ -111,9 +111,9 @@ class Level(object):
         self.shift = (0-self.lower_left[0],0-self.lower_left[1])
         self.midpt = ( (self.upper_right[0]+self.lower_left[0])*0.5+self.shift[0], (self.upper_right[1]+self.lower_left[1])*0.5+self.shift[1])
         
-        print self.lower_left
-        print self.upper_right
-        print self.midpt
+        print (self.lower_left)
+        print (self.upper_right)
+        print (self.midpt)
         
         packet_size = 16 if wad_format is 'HEXEN' else 14
         for data in packets_of_size(packet_size, self.lumps['LINEDEFS']):
@@ -135,7 +135,8 @@ class Level(object):
         px_ = px*cosTheta - py*sinTheta
         py_ = px*sinTheta + py*cosTheta
         return (px_+midpt[0],py_+midpt[1])
-    def save_svg(self):
+
+    def save_svg(self, path, prefix):
         """ Scale the drawing to fit inside a 1024x1024 canvas (iPhones don't like really large SVGs even if they have the same detail) """
         import svgwrite
         view_box_size = self.normalize(self.upper_right, 10)
@@ -144,7 +145,7 @@ class Level(object):
         else:
             canvas_size = (int(1024*(float(view_box_size[0])/view_box_size[1])), 1024)
         
-        dwg = svgwrite.Drawing(self.name+'.svg', profile='tiny', size=canvas_size , viewBox=('0 0 %d %d' % view_box_size))
+        dwg = svgwrite.Drawing(path+prefix+"_"+self.name+'.svg', profile='tiny', size=canvas_size , viewBox=('0 0 %d %d' % view_box_size))
         rot = 0
         for line in self.lines:
             a = self.normalize(self.vertices[line.a])
@@ -223,6 +224,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         wad = Wad(sys.argv[1])
         for level in wad.levels:
-            level.save_svg()
+            level.save_svg('./path/',"prefix")
     else:
         print('You need to pass a WAD file as the only argument')
