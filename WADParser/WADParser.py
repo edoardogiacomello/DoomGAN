@@ -18,7 +18,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 import struct
-from linedef import decode
+from WADParser.linedef import decode
 import re
 
 
@@ -81,7 +81,7 @@ class Wad(object):
             try:
                 level.load(self.wad_format)
             except Exception:
-                print ("Failed to load level " + str(level))
+                print ("Failed to load level " + str(level.name))
 class Level(object):
     """Represents a level inside a WAD which is a collection of lumps"""
     def __init__(self, name):
@@ -111,9 +111,9 @@ class Level(object):
         self.shift = (0-self.lower_left[0],0-self.lower_left[1])
         self.midpt = ( (self.upper_right[0]+self.lower_left[0])*0.5+self.shift[0], (self.upper_right[1]+self.lower_left[1])*0.5+self.shift[1])
         
-        print (self.lower_left)
-        print (self.upper_right)
-        print (self.midpt)
+        # print (self.lower_left)
+        # print (self.upper_right)
+        # print (self.midpt)
         
         packet_size = 16 if wad_format is 'HEXEN' else 14
         for data in packets_of_size(packet_size, self.lumps['LINEDEFS']):
@@ -219,12 +219,15 @@ def packets_of_size(n, data):
     return
 
 
-def parse(file_path):
+def parse(file_path, output=None):
     wad = Wad(file_path)
-    path = file_path.split('/')[-2] + '/'
+    path = file_path.split('/')[-2] + '/' if output is None else output
     prefix = file_path.split('/')[-1].split('.')[-2]
+    output_files = []
     for level in wad.levels:
         level.save_svg(path, prefix)
+        output_files.append(path + prefix + "_" + level.name + '.svg')
+    return output_files
 
 if __name__ == "__main__":
     import sys

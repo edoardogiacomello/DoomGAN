@@ -178,5 +178,5 @@ if __name__ == '__main__':
     # where ## is a numerical id (eg. 64 for "doom") and ??? is the category name, such as "a-c"
 
     # We are going to skip the "Deathmatch" (68), "Megawads" (85) and "Ports" (87) categories since they will be dealt with separately.
-    # scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./database/doom/")
-    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
+    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./database/doom/")
+    #scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
