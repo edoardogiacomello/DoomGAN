@@ -150,13 +150,17 @@ class DoomWorldWadScraper():
             links = self._fetch_file_page_links(self.categories[cat_id].url)
             current = 1
             for link in links:
-                print("[{}/{}] - Collecting {}".format(current, len(links), link))
-                current += 1
-                newfile = self._fetch_download_page_data(link, game_name=game_name, category_name=self.categories[cat_id].name)
-                # download the level file and store it on the local disk
-                newfile['path'] = self._download_and_save(newfile['file_url'], current_path)
-                newfile['name'] = newfile['path'].split("/")[-1]
-                self.file_info.append(newfile)
+                try:
+                    print("[{}/{}] - Collecting {}".format(current, len(links), link))
+                    current += 1
+                    newfile = self._fetch_download_page_data(link, game_name=game_name, category_name=self.categories[cat_id].name)
+                    # download the level file and store it on the local disk
+                    newfile['path'] = self._download_and_save(newfile['file_url'], current_path)
+                    newfile['name'] = newfile['path'].split("/")[-1]
+                    self.file_info.append(newfile)
+                except Exception:
+                    print("Couldn't download {}".format(link))
+
             # Save the scraped data for this category
             json_path = root_path+game_name+self.categories[cat_id].name+'.json'
             self.json_files.append(json_path)
@@ -167,7 +171,7 @@ class DoomWorldWadScraper():
         print("Merging all the json<catname> to a single file...")
         MetaUtils.merge_json(self.json_files, root_path+game_name+'.json')
         # TODO: reorganize the scraped data and extract/parse the levels
-
+        # TODO: fix the doomII tags
 
 
 
@@ -178,5 +182,5 @@ if __name__ == '__main__':
     # where ## is a numerical id (eg. 64 for "doom") and ??? is the category name, such as "a-c"
 
     # We are going to skip the "Deathmatch" (68), "Megawads" (85) and "Ports" (87) categories since they will be dealt with separately.
-    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./database/doom/")
-    #scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="Doom", exclude_category_list=[104, 129, 131], root_path="./database/doomII/")
+    #scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./dataset/doom/")
+    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="DoomII", exclude_category_list=[104, 129, 131, 101], root_path="./dataset/doomII/")

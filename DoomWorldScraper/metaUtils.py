@@ -64,28 +64,26 @@ def merge_json(file_list, output_path):
     print("Merged {} records in one file".format(len(final)))
 
 
-def extract_database(root_path, json_filename, output_path):
+def extract_database(json_database, output_path):
     """This function takes the folder of scraped data as input (the folder structure should be
         <root_path>/<catname>/levelname.zip) and generates a representation that is similar to that used by
         https://github.com/TheVGLC/TheVGLC (i.e. <gamename>/<[Original|Processed|Processed - Vectorized]>)
          at a given output_path. In particular it extract each level zip file and parse them in both tile and vector 
          representations. The json file passed as input is used as a reference for finding the files corresponding
         to the levels, and it is updated while the WADs get parsed.
-        
-        root_path: the folder containing the categories subfolders and the json_file
-        json_file: metadata database for the levels that are contained in root_path. 
-                   Should be located at <root_path>/<json_file>
+
+        json_database: metadata database for the levels that are contained in root_path.
+                   Must be located at <root_path>/<json_database> along with the category-named folders
         output_path: the output folder for extraction. Should be an empty folder as this function may overwrite sensitive data
         
         EXAMPLE: extract_database("./dataset/doom/","DoomIncomplete.json", "./dataset/doom/parsed/")
         """
     # TODO: Continue this
-    assert os.path.exists(root_path), "Specified directory does not exist."
-    assert os.path.isfile(root_path+json_filename), "Specified json file does not exist."
+    assert os.path.isfile(json_database), "Specified json file does not exist."
     supported_extensions = ('.wad', '.bws')
 
     path_output_json_bad = output_path+'check_manually.json'
-    path_output_json_good = output_path + json_filename
+    path_output_json_good = output_path + json_database.split('/')[-1]
 
     path_output_original = output_path + 'Original/'
     path_output_processed = output_path + 'Processed/'
@@ -103,7 +101,7 @@ def extract_database(root_path, json_filename, output_path):
 
 
     # Load the json file
-    with open(root_path+json_filename, 'r') as jf_in:
+    with open(json_database, 'r') as jf_in:
         level_records = json.load(jf_in)
 
     check_manually = []
@@ -111,6 +109,8 @@ def extract_database(root_path, json_filename, output_path):
         path = level['path']
         wads = []
         try:
+            if not (path.endswith('.zip') and os.path.isfile(path)):
+                continue
             with zipfile.ZipFile(path) as zipped:
                 wads += filter(lambda x: x.filename.lower().endswith(supported_extensions), zipped.infolist())
                 if len(wads) == 0:
@@ -125,7 +125,7 @@ def extract_database(root_path, json_filename, output_path):
                     try:
                         rasterized_levels = WADRasterizer.rasterize(level['path'], output=path_output_processed)
                         vectorized_levels = WADParser.parse(level['path'], output=path_output_vectorized)
-                    except (UnicodeDecodeError, ValueError, TypeError) as e:
+                    except Exception as e:
                         print("Cannot decode " + level['path'])
                         check_manually.append(level)
                         continue
@@ -150,4 +150,4 @@ def extract_database(root_path, json_filename, output_path):
     print("You have {} levels to check manually. They are found at {}".format(len(check_manually), path_output_json_bad))
 
 
-# extract_database("./database/doom/","DoomIncomplete.json", "./database/doom/parsed/")
+extract_database("./database/doom/Doom.json", "./WADs/Doom/")
