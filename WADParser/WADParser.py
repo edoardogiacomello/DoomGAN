@@ -218,12 +218,18 @@ def packets_of_size(n, data):
         index = index + n
     return
 
+
+def parse(file_path):
+    wad = Wad(file_path)
+    path = file_path.split('/')[-2] + '/'
+    prefix = file_path.split('/')[-1].split('.')[-2]
+    for level in wad.levels:
+        level.save_svg(path, prefix)
+
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1:
-        wad = Wad(sys.argv[1])
-        for level in wad.levels:
-            level.save_svg('./path/',"prefix")
+        parse(sys.argv[1])
     else:
         print('You need to pass a WAD file as the only argument')
