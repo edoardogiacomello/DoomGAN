@@ -6,8 +6,6 @@ from collections import defaultdict
 from bs4 import BeautifulSoup
 from bs4 import Tag
 
-import DoomWorldScraper.metaUtils as MetaUtils
-
 class DoomWorldWadScraper():
     """Collects WAD data present at www.doomworld.com
     This class is compatible to the website layout as of 10/10/2017"""
@@ -39,7 +37,6 @@ class DoomWorldWadScraper():
             'name:': 'name',
             'path': 'path'
         })
-        self.json_files = []
 
     def _open_page(self, url):
         """Set up a BeautifulSoup for the given page"""
@@ -78,7 +75,7 @@ class DoomWorldWadScraper():
         mainDiv = soup.findAll("div", {"id": "ipsLayout_mainArea"})[0]
         file_page_links = [entry.find_all("a")[0] for entry in mainDiv.find_all("div", {"class":"ipsDataItem_main"})]
         found_files = found_files + [fpl['href'] for fpl in file_page_links]
-        print("Current files: " + str(len(found_files)))
+        print("Found {} more files".format(str(len(found_files))))
 
         # Check if there are more pages to crawl
         next_page_buttons = mainDiv.find_all("li", {"class" : "ipsPagination_next"})
@@ -138,6 +135,16 @@ class DoomWorldWadScraper():
         return local_path+filename
 
     def collect_wads(self, game_category_url, game_name, exclude_category_list=[], root_path = "./"):
+        """Execute the pipeline for collecting all the wad files present in a category page."""
+
+        # Check if the json file is present and try to resume downloading if possible
+        json_path = root_path + game_name + '.json'
+        if os.path.isfile(json_path):
+            print("Trying to resume download...")
+            with open(json_path, 'r') as jsonfile:
+                self.file_info = json.load(jsonfile)
+                print("Loaded {} records.".format(len(self.file_info)))
+
         self.fetch_categories(game_category_url, exclude_list=exclude_category_list)
         # For each category found, collect the list of files and populate the relative tuple entry
         for cat_id in self.categories.keys():
@@ -147,31 +154,41 @@ class DoomWorldWadScraper():
             if not os.path.exists(current_path):
                 os.makedirs(current_path)
 
-            links = self._fetch_file_page_links(self.categories[cat_id].url)
             current = 1
+            current_records = []
+            visited_links = ['/'.join(x.split('/')[0:-1])+"/" for x in [d['file_url'] for d in self.file_info]]
+            links = self._fetch_file_page_links(self.categories[cat_id].url)
+
             for link in links:
                 try:
+                    # Check if the list already contains the link we are trying to download
+                    if link in visited_links:
+                        print("[{}/{}] . {} already present in the dataset, skipping...".format(current, len(links), link))
+                        current +=1
+                        continue
                     print("[{}/{}] - Collecting {}".format(current, len(links), link))
                     current += 1
-                    newfile = self._fetch_download_page_data(link, game_name=game_name, category_name=self.categories[cat_id].name)
+                    newfile = self._fetch_download_page_data(link,
+                                                             game_name=game_name,
+                                                             category_name=self.categories[cat_id].name)
                     # download the level file and store it on the local disk
                     newfile['path'] = self._download_and_save(newfile['file_url'], current_path)
                     newfile['name'] = newfile['path'].split("/")[-1]
+                    current_records.append(newfile)
                     self.file_info.append(newfile)
+
+                    # Save the scraped data in case of abnormal interruption
+                    if current % 5 == 0:
+                        with open(json_path, 'w') as jsonfile:
+                            json.dump(self.file_info, jsonfile)
+                        print("Records saved to {}...".format(json_path))
                 except Exception:
                     print("Couldn't download {}".format(link))
 
-            # Save the scraped data for this category
-            json_path = root_path+game_name+self.categories[cat_id].name+'.json'
-            self.json_files.append(json_path)
-            with open(json_path, 'w') as jsonfile:
-                json.dump(self.file_info, jsonfile)
-            print("Records saved to {}".format(json_path))
 
-        print("Merging all the json<catname> to a single file...")
-        MetaUtils.merge_json(self.json_files, root_path+game_name+'.json')
-        # TODO: reorganize the scraped data and extract/parse the levels
-        # TODO: fix the doomII tags
+        with open(json_path, 'w') as jsonfile:
+            json.dump(self.file_info, jsonfile)
+        print("{} records saved to {}. Done.".format(len(self.file_info), json_path))
 
 
 
@@ -182,5 +199,7 @@ if __name__ == '__main__':
     # where ## is a numerical id (eg. 64 for "doom") and ??? is the category name, such as "a-c"
 
     # We are going to skip the "Deathmatch" (68), "Megawads" (85) and "Ports" (87) categories since they will be dealt with separately.
-    #scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./dataset/doom/")
-    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="DoomII", exclude_category_list=[104, 129, 131, 101], root_path="./dataset/doomII/")
+    scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/64-doom/', game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./dataset/doom/")
+    # scraper.collect_wads(game_category_url='https://www.doomworld.com/files/category/100-doom2/', game_name="DoomII", exclude_category_list=[104, 129, 131, 101], root_path="./dataset/doomII/")
+    import metaUtils
+    metaUtils.extract_database('./dataset/doom/Doom.json', './WADs/Doom/')

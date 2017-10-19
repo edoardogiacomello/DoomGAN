@@ -26,7 +26,9 @@ header_to_dict_index = defaultdict(lambda: "other", {
             'category': 'category',
             'title':'title',
             'name:':'name',
-            'path':'path'
+            'path':'path',
+            'svg_path':'svg_path',
+            'tile_path':'tile_path'
         })
 
 
@@ -78,9 +80,22 @@ def extract_database(json_database, output_path):
         
         EXAMPLE: extract_database("./dataset/doom/","DoomIncomplete.json", "./dataset/doom/parsed/")
         """
-    # TODO: Continue this
-    assert os.path.isfile(json_database), "Specified json file does not exist."
     supported_extensions = ('.wad', '.bws')
+
+    def flatten_zip(file):
+        """Extracts wad files from nested zips"""
+        wads = []
+        zips = []
+        with zipfile.ZipFile(file) as zipped:
+            try:
+                 for z in zips:
+                    wads += flatten_zip(z)
+            except Exception as e:
+                print("Couldn't extract the zip file.")
+                print(str(e))
+            return wads
+
+    assert os.path.isfile(json_database), "Specified json file does not exist."
 
     path_output_json_bad = output_path+'check_manually.json'
     path_output_json_good = output_path + json_database.split('/')[-1]
@@ -108,46 +123,96 @@ def extract_database(json_database, output_path):
     for level in level_records:
         path = level['path']
         wads = []
+        zips = []
+        if not (path.endswith('.zip') and os.path.isfile(path)):
+            continue
         try:
-            if not (path.endswith('.zip') and os.path.isfile(path)):
-                continue
             with zipfile.ZipFile(path) as zipped:
                 wads += filter(lambda x: x.filename.lower().endswith(supported_extensions), zipped.infolist())
-                if len(wads) == 0:
-                    print("{} does not contain any supported file.".format(path))
-                    # TODO: Inspect nested zip files.
-                    check_manually.append(level)
+                zips += filter(lambda x: x.filename.lower().endswith('.zip'), zipped.infolist()) #Nested Zips
+                zipname = path.split('/')[-1].split('.')[0]
+                if len(zips)>0:
+                    print("{} has {} nested zip files inside".format(path, len(zips)))
                 for wadinfo in wads:
                     # Extract the wad into the Original folder
                     zipped.extract(wadinfo, path=path_output_original)
-                    level['path'] = path_output_original+wadinfo.filename
+                    extracted_path = path_output_original+wadinfo.filename
+                    # We prepend the zip file name to the parsed level name to avoid overwriting levels with the same wad name
+                    target_path = path_output_original+zipname+'_'+wadinfo.filename
+                    # Sometimes wads come inside folders, so the path must exists
+                    if not os.path.exists('/'.join(target_path.split('/')[0:-1])+'/'):
+                        os.makedirs('/'.join(target_path.split('/')[0:-1])+'/')
+                    os.rename(extracted_path, target_path)
+                    level['path'] = target_path
+
                     # Parse and Raserize the levels contained in this wad
                     try:
                         rasterized_levels = WADRasterizer.rasterize(level['path'], output=path_output_processed)
                         vectorized_levels = WADParser.parse(level['path'], output=path_output_vectorized)
+                        parsed_counter = 0
+                        for tile_rep, svg_rep in zip(rasterized_levels, vectorized_levels):
+                            parsed_level = level
+                            parsed_level['tile_path'] = tile_rep
+                            parsed_level['svg_path'] = svg_rep
+                            parsed_levels.append(parsed_level.copy())
+                            parsed_counter += 1
+                        print("{} levels parsed".format(parsed_counter))
                     except Exception as e:
                         print("Cannot decode " + level['path'])
                         check_manually.append(level)
                         continue
-
-                    for tile_rep, svg_rep in zip(rasterized_levels, vectorized_levels):
-                        parsed_level = level
-                        parsed_level['tile_path'] = tile_rep
-                        parsed_level['svg_path'] = svg_rep
-                        parsed_levels.append(parsed_level)
-
-                print("{}: extracted {} levels from {} wad files".format(zipped.filename, len(rasterized_levels), len(wads)))
         except (zipfile.BadZipFile, NotImplementedError) as e:
             print("Found a malformed file: {}".format(path))
+            print(str(e))
             check_manually.append(level)
 
     with open(path_output_json_good, 'w') as json_out:
         json.dump(parsed_levels, json_out)
-    print("Saved {} levels to".format(path_output_json_good))
+    print("Saved {} levels to {}".format(len(parsed_levels), path_output_json_good))
 
     with open(path_output_json_bad, 'w') as json_out:
         json.dump(check_manually, json_out)
-    print("You have {} levels to check manually. They are found at {}".format(len(check_manually), path_output_json_bad))
+    print("You have {} level files to check manually. They are found at {}".format(len(check_manually), path_output_json_bad))
 
 
-extract_database("./database/doom/Doom.json", "./WADs/Doom/")
+def remove_duplicates(path):
+    with open(path,'r') as inf:
+        j = json.load(inf)
+    valid_paths = list()
+    result = list()
+    dupes = 0
+    for level in j:
+        if not level['tile_path'] in valid_paths:
+            valid_paths.append(level['tile_path'])
+            result.append(level)
+        else:
+            dupes += 1
+    with open(path+'fix', 'w') as ouf:
+        json.dump(result, ouf)
+    print("Removed {} duplicates of {} records".format(dupes, len(result)))
+
+def check_processed_folders(json_path, root):
+    with open(json_path,'r') as inf:
+        j = json.load(inf)
+    tile_paths = [r['tile_path'] for r in j]
+    tile_folder = root+'Processed/'
+    for file in os.listdir(tile_folder):
+        if tile_folder+file not in tile_paths:
+            print("{} has no entries in json file".format(file))
+
+def check_consistency(json_path, root):
+    with open(json_path, 'r') as inf:
+        j = json.load(inf)
+    result = []
+    json_paths = [r['path'] for r in j]
+    for folder in os.listdir(root):
+        if os.path.isdir(root+folder+'/'):
+            for file in os.listdir(root+folder+'/'):
+                fullpath = root + folder + '/' + file
+                if fullpath.endswith(".zip"):
+                    if fullpath in json_paths:
+                        result.append(fullpath)
+    print(str(len(j)))
+    print(str(len(result)))
+
+

@@ -1,0 +1,9 @@
+------XXXXXXX--------
+-----X......X--XXX---
+XXXXX.W.A.W.XXXX..XXX
+X...........+..XX...X
+X.<.H.:.H.H.+...>...X
+X...........+..XX...X
+XXXXX.A.W.A.XXXXXXXXX
+-----X......X--------
+------XXXXXXX--------

@@ -1,0 +1,21 @@
+{
+    "tiles" : {
+        "-" : ["empty","out of bounds"],
+        "X" : ["solid","wall"],
+        "." : ["floor","walkable"],
+        "," : ["floor","walkable","stairs"],
+        "E" : ["enemy","walkable"],
+        "W" : ["weapon","walkable"],
+        "A" : ["ammo","walkable"],
+        "H" : ["health","armor","walkable"],
+        "B" : ["explosive barrel","walkable"],
+        "K" : ["key","walkable"],
+        "<" : ["start","walkable"],
+        "T" : ["teleport","walkable","destination"],
+        ":" : ["decorative","walkable"],
+        "L" : ["door","locked"],
+        "t" : ["teleport","source","activatable"],
+        "+" : ["door","walkable","activatable"],
+        ">" : ["exit","activatable"]
+    }
+}
