@@ -28,7 +28,10 @@ header_to_dict_index = defaultdict(lambda: "other", {
             'name:':'name',
             'path':'path',
             'svg_path':'svg_path',
-            'tile_path':'tile_path'
+            'tile_path':'tile_path',
+            'img_path':'img_path',
+            'height' : 'height',
+            'width' : 'width'
         })
 
 
