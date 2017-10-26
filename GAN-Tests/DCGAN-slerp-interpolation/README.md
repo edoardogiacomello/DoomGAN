@@ -1,0 +1,23 @@
+### DCGAN-slerp-interpolation
+This folder contains a modification of the code present at https://github.com/carpedm20/DCGAN-tensorflow
+and https://github.com/dribnet/plat for generating spherical interpolated samples from the CelebA dataset as seen in https://arxiv.org/abs/1609.04468.
+
+In particular, the net has been trained for 8 epochs then sampled with two random seeds (42 and 314) leading to the following result: 
+![Sample Interpolation](https://drive.google.com/open?id=0B9y_HgFPj7_ra19ONnQ1VmFwN3c)
+
+Another example with seed_one=68384 and seed_two=86554
+
+![Sample Interpolation](https://drive.google.com/open?id=0B9y_HgFPj7_rUlNydC1xRjZCMW8)
+
+
+
+####Usage:
+```
+python main.py --dataset celebA --input_height=108 --crop --seed_one=68384 --seed_two=86554
+```
+You can change freely the two seeds in order to obtain different results.
+
+This experiment has been made merely for testing my understanding of the techniques presented in the papers cited above rather than improving the network.
+The dataset is not included (see the original readme for training the net) but a pre-trained model is.
+
+
