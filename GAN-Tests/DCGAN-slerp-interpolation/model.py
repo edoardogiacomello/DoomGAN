@@ -184,8 +184,6 @@ class DCGAN(object):
         start_samp = np.random.uniform(-1, 1, size=size)
         np.random.seed(end_seed)
         end_samp = np.random.uniform(-1, 1, size=size)
-
-
         return [[slerp(t,st_arr, en_arr) for st_arr, en_arr in zip(start_samp, end_samp)] for t in np.arange(0.,1.+1/n_step, 1/n_step)]
 
       interpolated_z = sample_noise(seed_one, seed_two, size=(self.sample_num, self.z_dim))
@@ -206,9 +204,41 @@ class DCGAN(object):
           #  Unpacking the results (tf outputs a list of outputs instead of a single one)
           samples_interpolated = [s[0] for s in samples_interpolated]
           for percent, image in enumerate(samples_interpolated):
-            save_images(image, image_manifold_size(image.shape[0]),'./{}/sample-{}%.png'.format(config.sample_dir, percent))
+            save_images(image, image_manifold_size(image.shape[0]),'./{}/sample_from{}to{}-{}%.png'.format(config.sample_dir, seed_one, seed_two, percent))
       except Exception as e:
           print("Error in sampling." + str(e))
+
+  def vector_algebra(self, config, seed_one, seed_two):
+    np.random.seed(seed_one)
+    first_samp = np.random.uniform(-1, 1, size=(self.sample_num, self.z_dim))
+    np.random.seed(seed_two)
+    second_samp = np.random.uniform(-1, 1, size=(self.sample_num, self.z_dim))
+    sub_samp = (first_samp - second_samp)/2
+    sum_samp = (first_samp + second_samp)/2
+
+    try:
+        tf.global_variables_initializer().run()
+    except:
+        tf.initialize_all_variables().run()
+
+    could_load, checkpoint_counter = self.load(self.checkpoint_dir)
+    print(" [*] Load SUCCESS") if could_load else  print(" [!] Load failed...")
+
+    result_first, result_second, result_sub, result_sum = self.sess.run([self.sampler], feed_dict={self.z: first_samp}), \
+                                                          self.sess.run([self.sampler], feed_dict={self.z: second_samp}), \
+                                                          self.sess.run([self.sampler], feed_dict={self.z: sub_samp}), \
+                                                          self.sess.run([self.sampler], feed_dict={self.z: sum_samp})
+
+    #  Unpacking the results (tf outputs a list of outputs instead of a single one)
+    result_first = result_first[0]
+    result_second = result_second[0]
+    result_sub = result_sub[0]
+    result_sum = result_sum[0]
+
+    save_images(result_first, image_manifold_size(result_first.shape[0]),'./{}/seed:{}.png'.format(config.sample_dir, seed_one))
+    save_images(result_second, image_manifold_size(result_second.shape[0]),'./{}/seed:{}.png'.format(config.sample_dir, seed_two))
+    save_images(result_sub, image_manifold_size(result_sub.shape[0]),'./{}/seed:{}-seed:{}.png'.format(config.sample_dir, seed_one, seed_two))
+    save_images(result_sum, image_manifold_size(result_sum.shape[0]),'./{}/seed:{}+seed:{}.png'.format(config.sample_dir, seed_one, seed_two))
 
   def train(self, config):
     d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1) \
