@@ -83,6 +83,7 @@ def main(_):
     else:
         if not dcgan.load(FLAGS.checkpoint_dir)[0]:
             raise Exception("[!] Train a model first, then run test mode")
+        dcgan.vector_algebra(FLAGS, seed_one=FLAGS.seed_one, seed_two=FLAGS.seed_two)
         dcgan.interpolate(FLAGS,seed_one=FLAGS.seed_one, seed_two=FLAGS.seed_two)
 
 
