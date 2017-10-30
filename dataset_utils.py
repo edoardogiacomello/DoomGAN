@@ -248,13 +248,3 @@ class DatasetManager(object):
 
 # [scrapeUtils.json_to_csv(j) for j in ['/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/Doom/Doom.json.updt', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/DoomII/DoomII.json.updt']]
 
-
-
-with tf.Session() as sess:
-    dataset = DatasetManager([],[], target_size=(512,512)).load_TFRecords_database('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan512.TFRecords')
-    dataset.batch(10)
-    iterator = dataset.make_initializable_iterator()
-    sess.run([iterator.initializer])
-    next_batch = iterator.get_next()
-    result = sess.run([next_batch])
-    pass
