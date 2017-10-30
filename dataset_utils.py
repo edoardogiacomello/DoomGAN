@@ -3,8 +3,10 @@ from collections import namedtuple
 from collections import defaultdict
 import os
 from PIL import Image
+import numpy as np
 import json
 import tensorflow as tf
+from scipy import misc
 
 # This is the tile dictionary, containing also the pixel colors for image conversion
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
@@ -33,10 +35,11 @@ tiles = {
 
 class DatasetManager(object):
     """Extract metadata from the tile/grid representation of a level"""
-    def __init__(self, path_to_WADs_folder, relative_to_json_files):
+    def __init__(self, path_to_WADs_folder, relative_to_json_files, target_size=(512,512)):
         self.G = nx.DiGraph()
         self.json_files = relative_to_json_files
         self.root = path_to_WADs_folder
+        self.target_size = target_size
 
     def _get_absolute_path(self, relative_path):
         """
@@ -164,18 +167,52 @@ class DatasetManager(object):
 
         return tf.train.Example(features=tf.train.Features(feature=features))
 
-    def _pad_image(self, image, target_size):
+    def _TFRecord_to_sample(self, TFRecord):
+        features = {
+            'author': tf.FixedLenFeature([],tf.string),
+            'description': tf.FixedLenFeature([],tf.string),
+            'credits': tf.FixedLenFeature([],tf.string),
+            'base': tf.FixedLenFeature([],tf.string),
+            'editor_used': tf.FixedLenFeature([],tf.string),
+            'bugs': tf.FixedLenFeature([],tf.string),
+            'build_time': tf.FixedLenFeature([],tf.string),
+            'creation_date': tf.FixedLenFeature([],tf.string),
+            'file_url': tf.FixedLenFeature([],tf.string),
+            'game': tf.FixedLenFeature([],tf.string),
+            'category': tf.FixedLenFeature([],tf.string),
+            'title': tf.FixedLenFeature([],tf.string),
+            'name': tf.FixedLenFeature([],tf.string),
+            'path': tf.FixedLenFeature([],tf.string),
+            'svg_path': tf.FixedLenFeature([],tf.string),
+            'tile_path': tf.FixedLenFeature([],tf.string),
+            'img_path': tf.FixedLenFeature([],tf.string),
+            'page_visits': tf.FixedLenFeature([],tf.int64),
+            'downloads': tf.FixedLenFeature([],tf.int64),
+            'height': tf.FixedLenFeature([],tf.int64),
+            'width': tf.FixedLenFeature([],tf.int64),
+            'rating_count': tf.FixedLenFeature([],tf.int64),
+            'rating_value': tf.FixedLenFeature([],tf.float32),
+            'image': tf.FixedLenFeature([],tf.string)
+        }
+
+        parsed_features = tf.parse_single_example(TFRecord, features)
+        parsed_img = tf.decode_raw(parsed_features['image'], tf.uint8)
+        parsed_img = tf.reshape(parsed_img, shape=(self.target_size[0], self.target_size[1], 3))
+        parsed_features['image'] = parsed_img
+        return parsed_features
+
+
+    def _pad_image(self, image):
         """Center pads an image, adding a black border up to "target size" """
-        assert image.size[0] <= target_size[0], "The image to pad is bigger than the target size"
-        assert image.size[1] <= target_size[1], "The image to pad is bigger than the target size"
-        padded = Image.new('RGB', target_size, "black")
-        offset = (target_size[0] - image.size[0])//2, (target_size[1] - image.size[1])//2,
-        padded.paste(image, offset)
+        assert image.shape[0] <= self.target_size[0], "The image to pad is bigger than the target size"
+        assert image.shape[1] <= self.target_size[1], "The image to pad is bigger than the target size"
+        padded = np.zeros((self.target_size[0],self.target_size[1],3), dtype=np.uint8)
+        offset = (self.target_size[0] - image.shape[0])//2, (self.target_size[1] - image.shape[1])//2  # Top, Left
+        padded[offset[0]:offset[0]+image.shape[0], offset[1]:offset[1]+image.shape[1],:] = image
         return padded
 
 
-
-    def convert_to_TFRecords(self, output_path, target_size):
+    def convert_to_TFRecords(self, output_path):
         """
         Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
         Pads each sample to the target size, DISCARDING the samples that are larger (this behaviour may change in future).
@@ -192,18 +229,32 @@ class DatasetManager(object):
             counter = 0
             for level in levels:
                 counter += 1
-                if int(level['width']) > target_size[0] or int(level['height']) > target_size[1]:
+                if int(level['width']) > self.target_size[1] or int(level['height']) > self.target_size[0]:
                     continue
-                with Image.open(self._get_absolute_path(level['img_path'])) as image:
-                    padded = self._pad_image(image, target_size)
+                image = misc.imread(self._get_absolute_path(level['img_path']))
+                padded = self._pad_image(image)
                 sample = self._sample_to_TFRecord(level, padded)
                 writer.write(sample.SerializeToString())
                 if counter % (len(levels)//100) == 0:
                     print("{}% completed.".format(round(counter/len(levels)*100)))
 
+    def load_TFRecords_database(self, path):
+        """Returns a tensorflow dataset from the .tfrecord file specified in path"""
+        dataset = tf.contrib.data.TFRecordDataset(path)
+        dataset = dataset.map(self._TFRecord_to_sample, num_threads=9)
+        return dataset
 
-
-
-# DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/', ['Doom/Doom.json', 'DoomII/DoomII.json']).convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan512.TFRecords', target_size=(512,512))
+# DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/', ['Doom/Doom.json', 'DoomII/DoomII.json'], target_size=(512,512)).convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan512.TFRecords')
 
 # [scrapeUtils.json_to_csv(j) for j in ['/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/Doom/Doom.json.updt', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/DoomII/DoomII.json.updt']]
+
+
+
+with tf.Session() as sess:
+    dataset = DatasetManager([],[], target_size=(512,512)).load_TFRecords_database('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan512.TFRecords')
+    dataset.batch(10)
+    iterator = dataset.make_initializable_iterator()
+    sess.run([iterator.initializer])
+    next_batch = iterator.get_next()
+    result = sess.run([next_batch])
+    pass
