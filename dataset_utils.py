@@ -1,8 +1,10 @@
 import networkx as nx
 from collections import namedtuple
+from collections import defaultdict
 import os
 from PIL import Image
 import json
+import tensorflow as tf
 
 # This is the tile dictionary, containing also the pixel colors for image conversion
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
@@ -29,12 +31,24 @@ tiles = {
 
 
 
-class MetaGenerator(object):
+class DatasetManager(object):
     """Extract metadata from the tile/grid representation of a level"""
     def __init__(self, path_to_WADs_folder, relative_to_json_files):
         self.G = nx.DiGraph()
         self.json_files = relative_to_json_files
         self.root = path_to_WADs_folder
+
+    def _get_absolute_path(self, relative_path):
+        """
+        Given a relative path of type: "./WADs/....." returns the absolute path considering the root specified in init
+        :param relative_path:
+        :return:
+        """
+        # since tile_path begins with './WADs/'" we prepend our root
+        if relative_path.startswith('./WADs/'):
+            return relative_path.replace('./WADs/', self.root)
+        else:
+            return relative_path.replace('./', self.root)
 
     def extract_size(self):
         """For every level listed into the json files, adds the 'height' and 'width' information"""
@@ -42,10 +56,7 @@ class MetaGenerator(object):
             with open(self.root + j, 'r') as jin:
                 levels = json.load(jin)
             for level in levels:
-                tile_path = level['tile_path']
-                # since tile_path begins with './WADs/'" we prepend our root
-                if tile_path.startswith('./WADs/'):
-                    tile_path = tile_path.replace('./WADs/', self.root)
+                tile_path = self._get_absolute_path(level['tile_path'])
                 # Open the tile file
                 with open(tile_path) as level_file:
                     lines = [line.strip() for line in level_file.readlines()]
@@ -89,16 +100,13 @@ class MetaGenerator(object):
             with open(self.root + j, 'r') as jin:
                 levels = json.load(jin)
             for level in levels:
-                tile_path = level['tile_path']
-                # since tile_path begins with './WADs/'" we prepend our root
-                if tile_path.startswith('./WADs/'):
-                    tile_path = tile_path.replace('./WADs/', self.root)
+                tile_path = self._get_absolute_path(level['tile_path'])
+                # We change to the Image subfolder
                 img_path = tile_path.replace('Processed', 'Processed - Rendered').replace('.txt','.png')
+                img_folder = '/'.join(img_path.split('/')[:-1])+'/'
 
-                # FIXME: this should create a directory but img_path is a file path
-                # if not os.path.exists(img_path):
-                #    os.makedirs(img_path)
-
+                if not os.path.exists(img_folder):
+                    os.makedirs(img_folder)
                 img = self._grid_to_image(tile_path)
                 img.save(img_path, 'PNG')
                 # Update the json file with the new path
@@ -110,8 +118,8 @@ class MetaGenerator(object):
             with open(self.root + j + '.updt', 'w') as jout:
                 json.dump(levels, jout)
 
-
     def load(self, path):
+        # TODO: Remove me or continue
         with open(path) as levelfile:
             for y, line in enumerate(levelfile):
                 for x, tile in enumerate(line.strip()):
@@ -124,10 +132,78 @@ class MetaGenerator(object):
                         self.G.add_edge((x,y-1),(x,y), {'direction':'S'})
 
 
+    def _sample_to_TFRecord(self, json_record, image):
+        # converting the record to a default_dict since it may does not contain some keys for empty values.
+        json_record = defaultdict(lambda: "", json_record)
+        features = {
+            'author': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['author'])])),
+            'description': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['description'])])),
+            'credits': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['credits'])])),
+            'base': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['base'])])),
+            'editor_used': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['editor_used'])])),
+            'bugs': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['bugs'])])),
+            'build_time': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['build_time'])])),
+            'creation_date': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['creation_date'])])),
+            'file_url': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['file_url'])])),
+            'game': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['game'])])),
+            'category': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['category'])])),
+            'title': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['title'])])),
+            'name': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['name'])])),
+            'path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['path'])])),
+            'svg_path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['svg_path'])])),
+            'tile_path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['tile_path'])])),
+            'img_path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['img_path'])])),
+            'page_visits': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['page_visits'])])),
+            'downloads': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['downloads'])])),
+            'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['height'])])),
+            'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['width'])])),
+            'rating_count': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['rating_count'])])),
+            'rating_value': tf.train.Feature(float_list=tf.train.FloatList(value=[float(json_record['rating_value'])])),
+            'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image.tobytes()]))
+        }
+
+        return tf.train.Example(features=tf.train.Features(feature=features))
+
+    def _pad_image(self, image, target_size):
+        """Center pads an image, adding a black border up to "target size" """
+        assert image.size[0] <= target_size[0], "The image to pad is bigger than the target size"
+        assert image.size[1] <= target_size[1], "The image to pad is bigger than the target size"
+        padded = Image.new('RGB', target_size, "black")
+        offset = (target_size[0] - image.size[0])//2, (target_size[1] - image.size[1])//2,
+        padded.paste(image, offset)
+        return padded
 
 
-# DatasetConverter('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/').convert_dataset_to_png()
-MetaGenerator('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
-              ['Doom/Doom.json',
-               'DoomII/DoomII.json',
-               ]).convert_to_images()
+
+    def convert_to_TFRecords(self, output_path, target_size):
+        """
+        Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
+        Pads each sample to the target size, DISCARDING the samples that are larger (this behaviour may change in future).
+        Information about image size has to be stored separately.
+        :return: None.
+        """
+        # Load the json files
+        levels = []
+        for j in self.json_files:
+            with open(self.root + j, 'r') as jin:
+                levels += json.load(jin)
+        print("{} levels loaded.".format(len(levels)))
+        with tf.python_io.TFRecordWriter(output_path) as writer:
+            counter = 0
+            for level in levels:
+                counter += 1
+                if int(level['width']) > target_size[0] or int(level['height']) > target_size[1]:
+                    continue
+                with Image.open(self._get_absolute_path(level['img_path'])) as image:
+                    padded = self._pad_image(image, target_size)
+                sample = self._sample_to_TFRecord(level, padded)
+                writer.write(sample.SerializeToString())
+                if counter % (len(levels)//100) == 0:
+                    print("{}% completed.".format(round(counter/len(levels)*100)))
+
+
+
+
+# DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/', ['Doom/Doom.json', 'DoomII/DoomII.json']).convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan512.TFRecords', target_size=(512,512))
+
+# [scrapeUtils.json_to_csv(j) for j in ['/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/Doom/Doom.json.updt', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/DoomII/DoomII.json.updt']]

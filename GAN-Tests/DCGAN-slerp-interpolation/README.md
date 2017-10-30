@@ -8,12 +8,12 @@ spherically interpolated leading to the [following result](https://drive.google.
 
 Moreover, I also added a simple example of "face algebra":
 Addends (seed68384, seed86554):
-![First Addend: seed68384](https://drive.google.com/open?id=0B9y_HgFPj7_rX2pGZWxLdUlsdXM)
-![Second Addend: seed86554](https://drive.google.com/open?id=0B9y_HgFPj7_rX2pGZWxLdUlsdXM)
+![First Addend: seed68384](https://github.com/edoardogiacomello/DoomPCGML/blob/master/GAN-Tests/DCGAN-slerp-interpolation/samples/seed:68384.png?raw=true)
+![Second Addend: seed86554](https://github.com/edoardogiacomello/DoomPCGML/blob/master/GAN-Tests/DCGAN-slerp-interpolation/samples/seed:86554.png?raw=true)
 Sum (seed68384 + seed86554):
-![Sum](https://drive.google.com/open?id=0B9y_HgFPj7_rWGRwcGF2ZWNwOGc)
+![Sum](https://github.com/edoardogiacomello/DoomPCGML/blob/master/GAN-Tests/DCGAN-slerp-interpolation/samples/seed:68384%2Bseed:86554.png?raw=true)
 Subtraction (seed68384 - seed86554):
-![Sub](https://drive.google.com/open?id=0B9y_HgFPj7_rc05aVzluLWMzMWc)
+![Sub](https://github.com/edoardogiacomello/DoomPCGML/blob/master/GAN-Tests/DCGAN-slerp-interpolation/samples/seed:68384-seed:86554.png?raw=true)
 
 ####Usage:
 This command launches both the interpolation and the sample algebra:
