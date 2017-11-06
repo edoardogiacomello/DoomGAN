@@ -76,14 +76,14 @@ class DoomGAN(object):
         # x: True inputs coming from the dataset
         # z: Noise in input to the generator
 
-        self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [self.output_channels], name="real_inputs")
-        if self.normalize_input:
-            self.x = (self.x-tf.constant(127.5, dtype=tf.float32))/tf.constant(255, dtype=tf.float32)
+        self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [3], name="real_inputs")
+        self.greyscale = tf.image.rgb_to_grayscale(self.x) if self.use_greyscale else self.x
+        self.x_norm = (self.greyscale-tf.constant(127.5, dtype=tf.float32))/tf.constant(127.5, dtype=tf.float32) if self.normalize_input else self.x
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         # Generator network
         self.G = self.generator(self.z)
         # Discriminator networks for each input type (real and generated)
-        self.D_real, self.D_logits_real = self.discriminator(self.x, reuse=False)
+        self.D_real, self.D_logits_real = self.discriminator(self.x_norm, reuse=False)
         self.D_fake, self.D_logits_fake = self.discriminator(self.G, reuse=True)
         # Define the loss function
         self.loss_d, self.loss_g = self.loss_function()
@@ -99,11 +99,10 @@ class DoomGAN(object):
         s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
         s_z_distrib = tf.summary.histogram('z_distribution', self.z)
         s_sample = tf.summary.image('generated_sample', self.G, max_outputs=self.batch_size)
-        s_input = tf.summary.image('input_sample', self.x, max_outputs=self.batch_size)
 
         s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
         s_g = tf.summary.merge([s_loss_g, s_z_distrib])
-        s_samples = tf.summary.merge([s_sample, s_input])
+        s_samples = tf.summary.merge([s_sample])
 
         summary_writer = tf.summary.FileWriter(self.summary_folder)
 
@@ -206,15 +205,9 @@ class DoomGAN(object):
                 # Train Step
                 try:
 
-
-
                     train_batch = self.session.run(next_batch) # Batch of true samples
                     z_batch = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # Batch of noise
 
-                    # TODO: Remove this, debug purposes
-                    x, g = self.session.run([self.x, self.G], feed_dict={self.x: train_batch['image'], self.z: z_batch})
-
-                    pass
                     # D update
                     d, sum_d = self.session.run([d_optim, summary_d], feed_dict={self.x: train_batch['image'], self.z: z_batch})
 
@@ -236,7 +229,7 @@ class DoomGAN(object):
                         # Sample the network
                         np.random.seed(42)
                         z_sample = np.random.uniform(-1, 1, [config.batch_size, self.z_dim]).astype(np.float32)
-                        samples = self.session.run([summary_samples], feed_dict={self.x: train_batch['image'], self.z: z_sample})
+                        samples = self.session.run([summary_samples], feed_dict={self.z: z_sample})
                         writer.add_summary(samples[0])
 
                 except tf.errors.OutOfRangeError:
@@ -244,22 +237,21 @@ class DoomGAN(object):
                     i_epoch += 1
                     break
 
-    def __init__(self, session, dataset_path, output_size, output_channels=3, batch_size=64, dataset_size=None, g_filter_depth=64, d_filter_depth=64, z_dim=100, summary_folder='/tmp/tflow/train', checkpoint_dir='./checkpoint/', save_net_every=50, normalize_input=True):
-        assert len(output_size) == 2, "Data size must have 2 dimensions. Depth is specified in 'output_channels' parameter"
+    def __init__(self, session, config):
         self.session = session
-        self.dataset_path = dataset_path
-        self.output_size = output_size
-        self.output_channels = output_channels
-        self.g_filter_depth = g_filter_depth
-        self.d_filter_depth = d_filter_depth
-        self.z_dim = z_dim
-        self.batch_size=batch_size
-        self.summary_folder=summary_folder
-        self.checkpoint_dir = checkpoint_dir
-        self.save_net_every = save_net_every
-        self.dataset_size = dataset_size
-        self.normalize_input = normalize_input
-
+        self.dataset_path = config.dataset_path
+        self.output_size = [config.height, config.width]
+        self.output_channels = config.output_channels
+        self.g_filter_depth = config.g_filter_depth
+        self.d_filter_depth = config.d_filter_depth
+        self.z_dim = config.z_dim
+        self.batch_size= config.batch_size
+        self.summary_folder= config.summary_folder
+        self.checkpoint_dir = config.checkpoint_dir
+        self.save_net_every = config.save_net_every
+        self.dataset_size = config.dataset_size
+        self.normalize_input = config.normalize_input
+        self.use_greyscale = config.use_greyscale
         self.build()
 
         pass
@@ -274,15 +266,23 @@ if __name__ == '__main__':
     flags.DEFINE_integer("dataset_size", None, "Number of samples contained in the .tfrecords dataset")
     flags.DEFINE_integer("height", 512, "Target sample height")
     flags.DEFINE_integer("width", 512, "Target sample width")
-    flags.DEFINE_integer("channels", 3, "Target sample channels")
+    flags.DEFINE_integer("output_channels", 3, "Target sample channels")
+    flags.DEFINE_integer("g_filter_depth", 64, "number of filters for the first G convolution layer")
+    flags.DEFINE_integer("d_filter_depth", 64, "number of filters for the first G convolution layer")
+    flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 64, "Batch size")
+    flags.DEFINE_integer("save_net_every", 50, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("normalize_input", True, "Whether to normalize input in range [0,1], Set to false if input is already normalized.")
+    flags.DEFINE_boolean("use_greyscale", False, "Whether convert the input to greyscale")
     flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
     flags.DEFINE_string("summary_folder", "/tmp/tflow/train", "Directory name to save the temporary files for visualization [/tmp/tflow/train]")
+
 
     FLAGS=flags.FLAGS
 
     with tf.Session() as s:
-        gan = DoomGAN(session=s, dataset_path=FLAGS.dataset_path, output_size=[FLAGS.height, FLAGS.width], summary_folder=FLAGS.summary_folder, batch_size=FLAGS.batch_size, normalize_input=FLAGS.normalize_input)
+        gan = DoomGAN(session=s,
+                      config=FLAGS
+                      )
         show_all_variables()
         gan.train(FLAGS)
