@@ -1,7 +1,9 @@
 import tensorflow as tf
+import os
+import numpy as np
 import math
 from DoomLevelsGAN.NNHelpers import *
-
+from dataset_utils import DatasetManager
 class DoomGAN(object):
 
     def generator(self, z):
@@ -32,25 +34,25 @@ class DoomGAN(object):
             # Projection of Z
             z_p = linear_layer(z, g_size_z_p, 'g_h0_lin')
 
-            g_h0 = g_activ_batch_nrm(tf.reshape(z_p,  g_size_h1), name='g_a0')
+            g_h0 = g_activ_batch_nrm(tf.reshape(z_p,  g_size_h0))
             g_h1 = g_activ_batch_nrm(conv2d_transposed(g_h0, g_size_h1, name='g_h1'), name='g_a1')
             g_h2 = g_activ_batch_nrm(conv2d_transposed(g_h1, g_size_h2, name='g_h2'), name='g_a2')
             g_h3 = g_activ_batch_nrm(conv2d_transposed(g_h2, g_size_h3, name='g_h3'), name='g_a3')
-            g_h4 = g_activ_batch_nrm(conv2d_transposed(g_h3, g_size_h4, name='g_h4'), name='g_a4')
+            g_h4 = conv2d_transposed(g_h3, g_size_h4, name='g_h4')
         return tf.nn.tanh(g_h4)
 
     def discriminator(self, input, reuse=False):
         def d_activ_batch_norm(x, name="d_a"):
-            batch_norm_layer = batch_norm(name)
+            batch_norm_layer = batch_norm(name=name)
             return leaky_relu(batch_norm_layer(x))
 
         with tf.variable_scope("D") as scope:
             if reuse:
                 scope.reuse_variables()
             h0 = leaky_relu(conv2d(input, self.d_filter_depth, name='d_a0'))
-            h1 = d_activ_batch_norm(conv2d(h0, self.d_filter_depth*2, name='d_a1'))
-            h2 = d_activ_batch_norm(conv2d(h1, self.d_filter_depth*4, name='d_a2'))
-            h3 = d_activ_batch_norm(conv2d(h2, self.d_filter_depth*8, name='d_a3'))
+            h1 = d_activ_batch_norm(conv2d(h0, self.d_filter_depth*2, name='d_h1'), name='d_a1')
+            h2 = d_activ_batch_norm(conv2d(h1, self.d_filter_depth*4, name='d_h2'), name='d_a2')
+            h3 = d_activ_batch_norm(conv2d(h2, self.d_filter_depth*8, name='d_h3'), name='d_a3')
             h4 = linear_layer(tf.reshape(h3, [self.batch_size, -1]), 1, 'd_a4')
             return tf.nn.sigmoid(h4), h4
 
@@ -75,6 +77,8 @@ class DoomGAN(object):
         # z: Noise in input to the generator
 
         self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [self.output_channels], name="real_inputs")
+        if self.normalize_input:
+            self.x = (self.x-tf.constant(127.5, dtype=tf.float32))/tf.constant(255, dtype=tf.float32)
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         # Generator network
         self.G = self.generator(self.z)
@@ -84,26 +88,201 @@ class DoomGAN(object):
         # Define the loss function
         self.loss_d, self.loss_g = self.loss_function()
         # Collect the trainable variables for the optimizer
-        # TODO: Continue here
+        vars = tf.trainable_variables()
+        self.vars_d = [var for var in vars if 'd_' in var.name]
+        self.vars_g = [var for var in vars if 'g_' in var.name]
+
+    def generate_summary(self):
+        s_loss_d_real = tf.summary.scalar('d_loss_real_inputs', self.loss_d_real)
+        s_loss_d_fake = tf.summary.scalar('d_loss_fake_inputs', self.loss_d_fake)
+        s_loss_d = tf.summary.scalar('d_loss', self.loss_d)
+        s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
+        s_z_distrib = tf.summary.histogram('z_distribution', self.z)
+        s_sample = tf.summary.image('generated_sample', self.G, max_outputs=self.batch_size)
+        s_input = tf.summary.image('input_sample', self.x, max_outputs=self.batch_size)
+
+        s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
+        s_g = tf.summary.merge([s_loss_g, s_z_distrib])
+        s_samples = tf.summary.merge([s_sample, s_input])
+
+        summary_writer = tf.summary.FileWriter(self.summary_folder)
+
+        return s_d, s_g, s_samples, summary_writer
+
+    def save(self, checkpoint_dir):
+        # Code from https://github.com/carpedm20/DCGAN-tensorflow
+        model_name = "DOOMGAN.model"
+        checkpoint_dir = os.path.join(checkpoint_dir, self.checkpoint_dir)
+
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+
+        self.saver.save(self.session,
+                        os.path.join(checkpoint_dir, model_name),
+                        global_step=self.checkpoint_counter)
+
+    def load(self, checkpoint_dir):
+        # Code from https://github.com/carpedm20/DCGAN-tensorflow
+        import re
+        print(" [*] Reading checkpoints...")
+        checkpoint_dir = os.path.join(checkpoint_dir, self.checkpoint_dir)
+
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
+            self.saver.restore(self.session, os.path.join(checkpoint_dir, ckpt_name))
+            counter = int(next(re.finditer("(\d+)(?!.*\d)", ckpt_name)).group(0))
+            print(" [*] Success to read {}".format(ckpt_name))
+            return True, counter
+        else:
+            print(" [*] Failed to find a checkpoint")
+            return False, 0
+
+    def load_dataset(self):
+        """
+        Loads a TFRecord dataset and creates batches.
+        :return: An initializable Iterator for the loaded dataset
+        """
+        self.dataset = DatasetManager(target_size=self.output_size).load_TFRecords_database(self.dataset_path)
+        # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
+        # for discarding the last incomplete batch)
+        if self.dataset_size is None:
+            counter_iter = self.dataset.batch(1).make_one_shot_iterator().get_next()
+            n_samples = 0
+            while True:
+                try:
+                    self.session.run([counter_iter])
+                    n_samples+=1
+                except tf.errors.OutOfRangeError:
+                    # We reached the end of the dataset, break the loop and start a new epoch
+                    self.dataset_size = n_samples
+                    break
+        remainder = np.remainder(self.dataset_size,self.batch_size)
+        print("Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, self.dataset_size, self.batch_size))
+        self.dataset = self.dataset.skip(remainder)
+        self.dataset = self.dataset.batch(self.batch_size)
+
+        iterator = self.dataset.make_initializable_iterator()
+
+        return iterator
+
+    def initialize_and_restore(self):
+        # Initialize all the variables
+        try:
+            tf.global_variables_initializer().run()
+        except:
+            tf.initialize_all_variables().run()
+
+        #Trying to load a checkpoint
+        self.saver = tf.train.Saver()
+        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
+        if could_load:
+            self.checkpoint_counter = checkpoint_counter
+            print(" [*] Load SUCCESS")
+        else:
+            self.checkpoint_counter = 0
+            print(" No checkpoints found. Starting a new net")
 
     def train(self, config):
-        def optimizer(config):
-            # TODO: Continue here, need to collect variables for each net
-            d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_d, var_list=self.d_vars)
-            g_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_g, var_list=self.g_vars)
-            return d_optim, g_optim
+        # Define an optimizer
+        d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_d, var_list=self.vars_d)
+        g_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_g, var_list=self.vars_g)
 
-    def __init__(self, output_size, output_channels=3, batch_size=64, g_filter_depth=64, d_filter_depth=64, z_dim=100):
+        # Generate the summaries
+        summary_d, summary_g, summary_samples, writer = self.generate_summary()
+
+        # Load and initialize the network
+        self.initialize_and_restore()
+
+        # Load the dataset
+        dataset_iterator = self.load_dataset()
+
+        i_epoch = 1
+        for i_epoch in range(1, config.epoch+1):
+            self.session.run([dataset_iterator.initializer])
+            next_batch = dataset_iterator.get_next()
+            batch_index = 0
+            while True:
+                # Train Step
+                try:
+
+
+
+                    train_batch = self.session.run(next_batch) # Batch of true samples
+                    z_batch = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # Batch of noise
+
+                    # TODO: Remove this, debug purposes
+                    x, g = self.session.run([self.x, self.G], feed_dict={self.x: train_batch['image'], self.z: z_batch})
+
+                    pass
+                    # D update
+                    d, sum_d = self.session.run([d_optim, summary_d], feed_dict={self.x: train_batch['image'], self.z: z_batch})
+
+                    # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
+                    self.session.run([g_optim], feed_dict={self.z: z_batch})
+                    g, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.z: z_batch})
+
+                    # Write the summaries and increment the counter
+                    writer.add_summary(sum_d)
+                    writer.add_summary(sum_g)
+
+                    batch_index += 1
+                    self.checkpoint_counter += 1
+                    print("Batch {}, Epoch {} of {}".format(batch_index, i_epoch, config.epoch))
+
+                    # Check if the net should be saved
+                    if np.mod(self.checkpoint_counter, self.save_net_every) == 2:
+                        self.save(config.checkpoint_dir)
+                        # Sample the network
+                        np.random.seed(42)
+                        z_sample = np.random.uniform(-1, 1, [config.batch_size, self.z_dim]).astype(np.float32)
+                        samples = self.session.run([summary_samples], feed_dict={self.x: train_batch['image'], self.z: z_sample})
+                        writer.add_summary(samples[0])
+
+                except tf.errors.OutOfRangeError:
+                    # We reached the end of the dataset, break the loop and start a new epoch
+                    i_epoch += 1
+                    break
+
+    def __init__(self, session, dataset_path, output_size, output_channels=3, batch_size=64, dataset_size=None, g_filter_depth=64, d_filter_depth=64, z_dim=100, summary_folder='/tmp/tflow/train', checkpoint_dir='./checkpoint/', save_net_every=50, normalize_input=True):
         assert len(output_size) == 2, "Data size must have 2 dimensions. Depth is specified in 'output_channels' parameter"
+        self.session = session
+        self.dataset_path = dataset_path
         self.output_size = output_size
         self.output_channels = output_channels
         self.g_filter_depth = g_filter_depth
         self.d_filter_depth = d_filter_depth
         self.z_dim = z_dim
         self.batch_size=batch_size
+        self.summary_folder=summary_folder
+        self.checkpoint_dir = checkpoint_dir
+        self.save_net_every = save_net_every
+        self.dataset_size = dataset_size
+        self.normalize_input = normalize_input
+
         self.build()
-        pass
-    def train(self):
+
         pass
 
-DoomGAN(output_size=[512,512])
+
+if __name__ == '__main__':
+    flags = tf.app.flags
+    flags.DEFINE_integer("epoch", 25, "Epoch to train [25]")
+    flags.DEFINE_float("learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
+    flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
+    flags.DEFINE_string("dataset_path", None, "Path to the .TfRecords file containing the dataset")
+    flags.DEFINE_integer("dataset_size", None, "Number of samples contained in the .tfrecords dataset")
+    flags.DEFINE_integer("height", 512, "Target sample height")
+    flags.DEFINE_integer("width", 512, "Target sample width")
+    flags.DEFINE_integer("channels", 3, "Target sample channels")
+    flags.DEFINE_integer("batch_size", 64, "Batch size")
+    flags.DEFINE_boolean("normalize_input", True, "Whether to normalize input in range [0,1], Set to false if input is already normalized.")
+    flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
+    flags.DEFINE_string("summary_folder", "/tmp/tflow/train", "Directory name to save the temporary files for visualization [/tmp/tflow/train]")
+
+    FLAGS=flags.FLAGS
+
+    with tf.Session() as s:
+        gan = DoomGAN(session=s, dataset_path=FLAGS.dataset_path, output_size=[FLAGS.height, FLAGS.width], summary_folder=FLAGS.summary_folder, batch_size=FLAGS.batch_size, normalize_input=FLAGS.normalize_input)
+        show_all_variables()
+        gan.train(FLAGS)

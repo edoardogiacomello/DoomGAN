@@ -35,7 +35,15 @@ tiles = {
 
 class DatasetManager(object):
     """Extract metadata from the tile/grid representation of a level"""
-    def __init__(self, path_to_WADs_folder, relative_to_json_files, target_size=(512,512)):
+    def __init__(self, path_to_WADs_folder='./WADs', relative_to_json_files=[], target_size=(512,512)):
+        """
+        Utility class for extracting metadata from the tile/grid representation, representation conversion (e.g to PNG)
+        and TFRecord conversion an loading.
+
+        :param path_to_WADs_folder: path to the /WADs/ folder when converting a dataset
+        :param relative_to_json_files: list of paths to the json databases from the wad folder. eg: ['doom/Doom.json']
+        :param target_size: Final (for conversion) or expected (for TFRecord loading) sample size in PNG/tile format.
+        """
         self.G = nx.DiGraph()
         self.json_files = relative_to_json_files
         self.root = path_to_WADs_folder
@@ -227,6 +235,7 @@ class DatasetManager(object):
         print("{} levels loaded.".format(len(levels)))
         with tf.python_io.TFRecordWriter(output_path) as writer:
             counter = 0
+            saved_levels = 0
             for level in levels:
                 counter += 1
                 if int(level['width']) > self.target_size[1] or int(level['height']) > self.target_size[0]:
@@ -235,16 +244,16 @@ class DatasetManager(object):
                 padded = self._pad_image(image)
                 sample = self._sample_to_TFRecord(level, padded)
                 writer.write(sample.SerializeToString())
+                saved_levels+=1
                 if counter % (len(levels)//100) == 0:
                     print("{}% completed.".format(round(counter/len(levels)*100)))
-
+            print("Levels saved: {}, levels discarded: {}".format(saved_levels, len(levels)-saved_levels))
     def load_TFRecords_database(self, path):
         """Returns a tensorflow dataset from the .tfrecord file specified in path"""
         dataset = tf.contrib.data.TFRecordDataset(path)
         dataset = dataset.map(self._TFRecord_to_sample, num_threads=9)
         return dataset
 
-# DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/', ['Doom/Doom.json', 'DoomII/DoomII.json'], target_size=(512,512)).convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan512.TFRecords')
+# DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/', ['Doom/Doom.json', 'DoomII/DoomII.json'], target_size=(128,128)).convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan128.TFRecords')
 
 # [scrapeUtils.json_to_csv(j) for j in ['/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/Doom/Doom.json.updt', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/DoomII/DoomII.json.updt']]
-

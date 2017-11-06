@@ -1,6 +1,10 @@
 import tensorflow as tf
 
 
+def show_all_variables():
+  model_vars = tf.trainable_variables()
+  tf.contrib.slim.model_analyzer.analyze_vars(model_vars, print_info=True)
+
 def leaky_relu(x, leak=0.2, name="lrelu"):
   return tf.maximum(x, leak*x)
 
