@@ -10,6 +10,26 @@ from scipy import misc
 
 # This is the tile dictionary, containing also the pixel colors for image conversion
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
+tiles_greyscale = {
+        "-": tile_tuple(( 0), ["empty", "out of bounds"]),  # is black
+        "X": tile_tuple(( 1*(255//16)), ["solid", "wall"]),  # maroon
+        ".": tile_tuple(( 2*(255//16)), ["floor", "walkable"]), # coral
+        ",": tile_tuple(( 3*(255//16)), ["floor", "walkable", "stairs"]), # Beige
+        "E": tile_tuple(( 4*(255//16)), ["enemy", "walkable"]), # red
+        "W": tile_tuple(( 5*(255//16)), ["weapon", "walkable"]), # Blue
+        "A": tile_tuple(( 6*(255//16)), ["ammo", "walkable"]), # Cyan
+        "H": tile_tuple(( 7*(255//16)), ["health", "armor", "walkable"]), # Green
+        "B": tile_tuple(( 8*(255//16)), ["explosive barrel", "walkable"]), # Magenta
+        "K": tile_tuple(( 9*(255//16)), ["key", "walkable"]), # Teal
+        "<": tile_tuple((10*(255//16)), ["start", "walkable"]), # Lavender
+        "T": tile_tuple((11*(255//16)), ["teleport", "walkable", "destination"]), # Olive
+        ":": tile_tuple((12*(255//16)), ["decorative", "walkable"]), # Grey
+        "L": tile_tuple((13*(255//16)), ["door", "locked"]), # Brown
+        "t": tile_tuple((14*(255//16)), ["teleport", "source", "activatable"]), # Mint
+        "+": tile_tuple((15*(255//16)), ["door", "walkable", "activatable"]), # Orange
+        ">": tile_tuple((16*(255//16)), ["exit", "activatable"]) # White
+    }
+
 tiles = {
         "-": tile_tuple((0,   0,   0), ["empty", "out of bounds"]),  # is black
         "X": tile_tuple((128, 0,   0), ["solid", "wall"]),  # maroon
@@ -33,9 +53,10 @@ tiles = {
 
 
 
+
 class DatasetManager(object):
     """Extract metadata from the tile/grid representation of a level"""
-    def __init__(self, path_to_WADs_folder='./WADs', relative_to_json_files=[], target_size=(512,512)):
+    def __init__(self, path_to_WADs_folder='./WADs', relative_to_json_files=[], target_size=(512,512), target_channels=1):
         """
         Utility class for extracting metadata from the tile/grid representation, representation conversion (e.g to PNG)
         and TFRecord conversion an loading.
@@ -48,6 +69,7 @@ class DatasetManager(object):
         self.json_files = relative_to_json_files
         self.root = path_to_WADs_folder
         self.target_size = target_size
+        self.target_channels = target_channels
 
     def _get_absolute_path(self, relative_path):
         """
@@ -76,6 +98,9 @@ class DatasetManager(object):
             with open(self.root+j+'.updt', 'w') as jout:
                 json.dump(levels, jout)
 
+    def _grid_to_matrix(self):
+        pass
+
     def _grid_to_image(self, path):
         """
         Convert (renders) a tile representation of a level to a PNG
@@ -86,14 +111,16 @@ class DatasetManager(object):
             lines = [line.strip() for line in tilefile.readlines()]
         n_lines = len(lines)
         n_cols = len(lines[0])
+        mode = 'L' if self.target_channels == 1 else 'RGB'
+        tile_set = tiles_greyscale if self.target_channels == 1 else tiles
 
-        img = Image.new('RGB', (n_lines, n_cols), "black")  # create a new black image
+        img = Image.new(mode, (n_lines, n_cols), "black")  # create a new black image
 
         ip = 0  # pixel counters
         jp = 0
         for i in lines:  # for every tile:
             for j in i:
-                c = tiles[j].pixel_color
+                c = tile_set[j].pixel_color
                 img.putpixel((ip, jp), c)
                 jp += 1
             jp = 0
@@ -126,21 +153,8 @@ class DatasetManager(object):
                 # Also update the level size
                 level['width'] = img.size[0]
                 level['height'] = img.size[1]
-            with open(self.root + j + '.updt', 'w') as jout:
+            with open(self.root + j, 'w') as jout:
                 json.dump(levels, jout)
-
-    def load(self, path):
-        # TODO: Remove me or continue
-        with open(path) as levelfile:
-            for y, line in enumerate(levelfile):
-                for x, tile in enumerate(line.strip()):
-                    self.G.add_node((x,y), {"tile":tile})
-                    if x > 0:
-                        self.G.add_edge((x,y),(x-1,y), {'direction':'W'})
-                        self.G.add_edge((x-1,y),(x,y), {'direction':'E'})
-                    if y > 0:
-                        self.G.add_edge((x,y),(x,y-1), {'direction':'N'})
-                        self.G.add_edge((x,y-1),(x,y), {'direction':'S'})
 
 
     def _sample_to_TFRecord(self, json_record, image):
@@ -205,7 +219,7 @@ class DatasetManager(object):
 
         parsed_features = tf.parse_single_example(TFRecord, features)
         parsed_img = tf.decode_raw(parsed_features['image'], tf.uint8)
-        parsed_img = tf.reshape(parsed_img, shape=(self.target_size[0], self.target_size[1], 3))
+        parsed_img = tf.reshape(parsed_img, shape=(self.target_size[0], self.target_size[1], self.target_channels) )
         parsed_features['image'] = parsed_img
         return parsed_features
 
@@ -214,7 +228,7 @@ class DatasetManager(object):
         """Center pads an image, adding a black border up to "target size" """
         assert image.shape[0] <= self.target_size[0], "The image to pad is bigger than the target size"
         assert image.shape[1] <= self.target_size[1], "The image to pad is bigger than the target size"
-        padded = np.zeros((self.target_size[0],self.target_size[1],3), dtype=np.uint8)
+        padded = np.zeros((self.target_size[0],self.target_size[1],self.target_channels), dtype=np.uint8)
         offset = (self.target_size[0] - image.shape[0])//2, (self.target_size[1] - image.shape[1])//2  # Top, Left
         padded[offset[0]:offset[0]+image.shape[0], offset[1]:offset[1]+image.shape[1],:] = image
         return padded
@@ -240,7 +254,10 @@ class DatasetManager(object):
                 counter += 1
                 if int(level['width']) > self.target_size[1] or int(level['height']) > self.target_size[0]:
                     continue
-                image = misc.imread(self._get_absolute_path(level['img_path']))
+                mode = 'L' if self.target_channels == 1 else 'RGB'
+                image = misc.imread(self._get_absolute_path(level['img_path']), mode=mode)
+                if self.target_channels == 1:
+                    image = np.expand_dims(image,-1)
                 padded = self._pad_image(image)
                 sample = self._sample_to_TFRecord(level, padded)
                 writer.write(sample.SerializeToString())
@@ -254,6 +271,17 @@ class DatasetManager(object):
         dataset = dataset.map(self._TFRecord_to_sample, num_threads=9)
         return dataset
 
-# DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/', ['Doom/Doom.json', 'DoomII/DoomII.json'], target_size=(128,128)).convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan128.TFRecords')
+def generate_images_and_convert():
+    shapes = [64, 128, 256, 512]
+    # Convert every image to greyscale
+    # dmm_grey = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
+    #                     ['Doom/Doom.json', 'DoomII/DoomII.json'], target_channels=1)
+    # dmm_grey.convert_to_images()
+    # Make a dataset for each dimension
+    for shape in shapes:
+        dmm = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
+                             ['Doom/Doom.json', 'DoomII/DoomII.json'],
+                             target_size=(shape, shape), target_channels=1)
+        dmm.convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan{}_tilespace.TFRecords'.format(shape))
 
 # [scrapeUtils.json_to_csv(j) for j in ['/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/Doom/Doom.json.updt', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/DoomII/DoomII.json.updt']]

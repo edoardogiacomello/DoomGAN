@@ -5,8 +5,70 @@ import math
 from DoomLevelsGAN.NNHelpers import *
 from dataset_utils import DatasetManager
 class DoomGAN(object):
+    def generator_generalized(self, z, hidden_layers):
+        '''
+        Parametrized version of the DCGAN generator, accept a variable number of hidden layers
+        :param z: Noise as input to the net
+        :param hidden_layers: The number of hidden layer to use. E.g. "5" will produce layers from h0 to h5 (output)
+        :param stride: Convolutional stride to use for all the layers (tuple), default: (2,2)
+        :return:
+        '''
+        def calc_filter_size(output_size, stride):
+            return [int(math.ceil(float(z) / float(t))) for z, t in zip(output_size,stride)]
+
+        def g_activ_batch_nrm(x, name='g_a'):
+            '''Activation function used in the generator, also includes a batch normalization layer '''
+            batch_norm_layer = batch_norm(name=name)
+            return tf.nn.relu(batch_norm_layer(x))
+
+
+        with tf.variable_scope("G") as scope:
+            # Calculating filter size
+            g_size_filter = []
+            for reverse_id, layer in enumerate(reversed(hidden_layers)):
+                if reverse_id == 0:  # here the id is reversed, so last layer has index 0
+                    g_size_filter.insert(0, self.output_size)
+                else:
+                    g_size_filter.insert(0, calc_filter_size(output_size=g_size_filter[0], stride=layer['stride']))
+            # Calculating layer size
+            g_size = []
+            for layer_id, layer in enumerate(hidden_layers):
+                number_of_filters = self.g_filter_depth * layer['filter_multiplier']
+                size = [self.batch_size, g_size_filter[layer_id][0], g_size_filter[layer_id][1], number_of_filters]
+                # First and last layer differs from the others
+                if layer_id == 0:
+                    size[0] = -1
+                if layer_id == len(hidden_layers) - 1:
+                    size[-1] = self.output_channels
+                g_size.append(size)
+            # Size for the Z projection
+            g_size_z_p = g_size[0][1] * g_size[0][2] * g_size[0][3]
+            # Projection of Z
+            z_p = linear_layer(z, g_size_z_p, 'g_h0_lin')
+            layers = []
+            for layer_id, layer in enumerate(hidden_layers):
+                if layer_id == 0:
+                    l = g_activ_batch_nrm(tf.reshape(z_p, g_size[0]))
+                else:
+                    if layer_id == len(hidden_layers) - 1:
+                        l = conv2d_transposed(layers[layer_id-1], g_size[layer_id], name='g_h{}'.format(layer_id),
+                                              stride_h=layer['stride'][0], stride_w=layer['stride'][1],
+                                              k_h = layer['kernel_size'][0], k_w = layer['kernel_size'][1]
+                        )
+                    else:
+                        l = g_activ_batch_nrm(conv2d_transposed(layers[layer_id-1], g_size[layer_id], name='g_h{}'.format(layer_id),
+                                                                stride_h=layer['stride'][0], stride_w=layer['stride'][1],
+                                                                k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
+                                                                ), name='g_a{}'.format(layer_id))
+                layers.append(l)
+        return tf.nn.tanh(layers[-1])
 
     def generator(self, z):
+        '''
+        Generator for the DCGAN architecture (unaltered - rewritten for readability)
+        :param z: noise input to the net
+        :return:
+        '''
         def calc_filter_size(output_size, stride):
             return [int(math.ceil(float(z) / float(t))) for z, t in zip(output_size,stride)]
 
@@ -22,6 +84,7 @@ class DoomGAN(object):
             g_size_filter_h2 = calc_filter_size(output_size=g_size_filter_h3, stride=(2,2))
             g_size_filter_h1 = calc_filter_size(output_size=g_size_filter_h2, stride=(2,2))
             g_size_filter_h0 = calc_filter_size(output_size=g_size_filter_h1, stride=(2,2))
+
 
             g_size_h0 = [-1,              g_size_filter_h0[0], g_size_filter_h0[1], self.g_filter_depth*8]
             g_size_h1 = [self.batch_size, g_size_filter_h1[0], g_size_filter_h1[1], self.g_filter_depth*4]
@@ -50,9 +113,9 @@ class DoomGAN(object):
             if reuse:
                 scope.reuse_variables()
             h0 = leaky_relu(conv2d(input, self.d_filter_depth, name='d_a0'))
-            h1 = d_activ_batch_norm(conv2d(h0, self.d_filter_depth*2, name='d_h1'), name='d_a1')
-            h2 = d_activ_batch_norm(conv2d(h1, self.d_filter_depth*4, name='d_h2'), name='d_a2')
-            h3 = d_activ_batch_norm(conv2d(h2, self.d_filter_depth*8, name='d_h3'), name='d_a3')
+            h1 = d_activ_batch_norm(conv2d(h0, self.d_filter_depth*2, name='d_h1', k_w=3, k_h=3), name='d_a1')
+            h2 = d_activ_batch_norm(conv2d(h1, self.d_filter_depth*4, name='d_h2', k_w=3, k_h=3), name='d_a2')
+            h3 = d_activ_batch_norm(conv2d(h2, self.d_filter_depth*8, name='d_h3', k_w=3, k_h=3), name='d_a3')
             h4 = linear_layer(tf.reshape(h3, [self.batch_size, -1]), 1, 'd_a4')
             return tf.nn.sigmoid(h4), h4
 
@@ -75,13 +138,21 @@ class DoomGAN(object):
     def build(self):
         # x: True inputs coming from the dataset
         # z: Noise in input to the generator
-
-        self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [3], name="real_inputs")
-        self.greyscale = tf.image.rgb_to_grayscale(self.x) if self.use_greyscale else self.x
-        self.x_norm = (self.greyscale-tf.constant(127.5, dtype=tf.float32))/tf.constant(127.5, dtype=tf.float32) if self.normalize_input else self.x
+        self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [self.output_channels], name="real_inputs")
+        self.x_norm = (self.x-tf.constant(127.5, dtype=tf.float32))/tf.constant(127.5, dtype=tf.float32) if self.normalize_input else self.x
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         # Generator network
-        self.G = self.generator(self.z)
+        g_layers = [
+            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
+            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
+            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
+            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
+            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
+            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2}
+        ]
+
+        self.G = self.generator_generalized(self.z, hidden_layers=g_layers)
+        #self.G = self.generator(self.z)
         # Discriminator networks for each input type (real and generated)
         self.D_real, self.D_logits_real = self.discriminator(self.x_norm, reuse=False)
         self.D_fake, self.D_logits_fake = self.discriminator(self.G, reuse=True)
@@ -98,11 +169,13 @@ class DoomGAN(object):
         s_loss_d = tf.summary.scalar('d_loss', self.loss_d)
         s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
         s_z_distrib = tf.summary.histogram('z_distribution', self.z)
-        s_sample = tf.summary.image('generated_sample', self.G, max_outputs=self.batch_size)
+        s_sample = visualize_samples('generated_samples', self.G)
+        s_input = visualize_samples('true_samples', self.x_norm)
+
 
         s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
         s_g = tf.summary.merge([s_loss_g, s_z_distrib])
-        s_samples = tf.summary.merge([s_sample])
+        s_samples = tf.summary.merge([s_sample, s_input])
 
         summary_writer = tf.summary.FileWriter(self.summary_folder)
 
@@ -216,8 +289,8 @@ class DoomGAN(object):
                     g, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.z: z_batch})
 
                     # Write the summaries and increment the counter
-                    writer.add_summary(sum_d)
-                    writer.add_summary(sum_g)
+                    writer.add_summary(sum_d, global_step=self.checkpoint_counter)
+                    writer.add_summary(sum_g, global_step=self.checkpoint_counter)
 
                     batch_index += 1
                     self.checkpoint_counter += 1
@@ -229,8 +302,8 @@ class DoomGAN(object):
                         # Sample the network
                         np.random.seed(42)
                         z_sample = np.random.uniform(-1, 1, [config.batch_size, self.z_dim]).astype(np.float32)
-                        samples = self.session.run([summary_samples], feed_dict={self.z: z_sample})
-                        writer.add_summary(samples[0])
+                        samples = self.session.run([summary_samples], feed_dict={self.x: train_batch['image'], self.z: z_sample})
+                        writer.add_summary(samples[0], global_step=self.checkpoint_counter)
 
                 except tf.errors.OutOfRangeError:
                     # We reached the end of the dataset, break the loop and start a new epoch
@@ -251,7 +324,6 @@ class DoomGAN(object):
         self.save_net_every = config.save_net_every
         self.dataset_size = config.dataset_size
         self.normalize_input = config.normalize_input
-        self.use_greyscale = config.use_greyscale
         self.build()
 
         pass
@@ -271,9 +343,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer("d_filter_depth", 64, "number of filters for the first G convolution layer")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 64, "Batch size")
-    flags.DEFINE_integer("save_net_every", 50, "Number of train batches after which the next is saved")
+    flags.DEFINE_integer("save_net_every", 5, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("normalize_input", True, "Whether to normalize input in range [0,1], Set to false if input is already normalized.")
-    flags.DEFINE_boolean("use_greyscale", False, "Whether convert the input to greyscale")
     flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
     flags.DEFINE_string("summary_folder", "/tmp/tflow/train", "Directory name to save the temporary files for visualization [/tmp/tflow/train]")
 
