@@ -60,7 +60,8 @@ class DoomGAN(object):
                                                                 k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
                                                                 ), name='g_a{}'.format(layer_id))
                 self.layers_G.append(l)
-        return tf.nn.tanh(self.layers_G[-1])
+        #return tf.nn.tanh(self.layers_G[-1]) # for the nature of the images it may be more convenient the range [0;1]
+        return tf.nn.sigmoid(self.layers_G[-1])
 
     def discriminator_generalized(self, input, hidden_layers, reuse=False):
         def d_activ_batch_norm(x, name="d_a"):
@@ -163,7 +164,8 @@ class DoomGAN(object):
         # x: True inputs coming from the dataset
         # z: Noise in input to the generator
         self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [self.output_channels], name="real_inputs")
-        self.x_norm = (self.x-tf.constant(127.5, dtype=tf.float32))/tf.constant(127.5, dtype=tf.float32) if self.normalize_input else self.x
+        # self.x_norm = (self.x-tf.constant(127.5, dtype=tf.float32))/tf.constant(127.5, dtype=tf.float32) if self.normalize_input else self.x
+        self.x_norm = self.x/tf.constant(255, dtype=tf.float32) if self.normalize_input else self.x
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         # Generator network
         g_layers = [
@@ -289,13 +291,29 @@ class DoomGAN(object):
             print(" No checkpoints found. Starting a new net")
 
     # TODO: This is a try for enforcing the net to generate only the desired coding.
-    def encoding_error(self):
+    def encoding_error(self, x):
         """
-        Gets a float sample in range [-1;1] and outputs a map of the error between 0 and 1 representing how much each pixel
+        Gets a float sample in range [0;1] and outputs a map of the error between 0 and 1 representing how much each pixel
          is far from the encoding used
         :return:
         """
-        pass
+        # Rescale the input
+        rescaled = x*tf.constant(255.0, dtype=tf.float32)
+        # Here the image has pixel values that does not correspond to anything
+        self.mod = tf.mod(rescaled, (255//16)) # this is the error calculated from the previous right value.
+        # I.e. if the encoding is [0, 15, 30] and the generated value is [14.0, 16.0, 30.0] this is
+        # [14, 1, 0], while the true error should be like abs([-1, 1, 0])
+        self.div = tf.floor_div(rescaled, (255//16))
+        # this is the right value if the error is less then half the sampling interval, right_value - 1 otherwise
+        # E.g. (continuing the example) [0, 1, 2] while the correct encoding should be [1, 1, 2]
+        self.mask = tf.floor(tf.divide(self.mod, tf.constant((255//16)/2, dtype=tf.float32)))
+        #  This mask tells which pixels are already right (0) or have to be incremented (1)
+        # E.g [1, 0, 0]
+        self.x_quantized = self.div + self.mask # Since the mask can be either 0 or 1 for each pixel, the true encoding
+        # will be obtained by summing the two
+        # The true error is, e.g. [14.0, 1, 0] - INTERVAL*[1, 0, 0]
+        self.enc_error = tf.abs( self.mod - tf.multiply(tf.constant(255//16, dtype=tf.float32), self.mask))
+        return self.enc_error, self.x_quantized
 
 
     def train(self, config):
@@ -372,24 +390,31 @@ class DoomGAN(object):
 
         pass
 
-    def generate_sample_summary(self, sample_names):
-        sample_summaries = [visualize_samples(name=name, input=self.G) for name in sample_names]
-        merged_summaries = [tf.summary.merge([s]) for s in sample_summaries]
-        return merged_summaries, tf.summary.FileWriter(self.summary_folder)
+
 
     def sample(self, seeds):
+        def generate_sample_summary(sample_names):
+            with tf.variable_scope(sample_names) as scope:
+                samp_encoding_error, samp_quantized = self.encoding_error(self.G)
+                sample_summaries = [visualize_samples(name=name, input=self.G) for name in sample_names] + \
+                                   [visualize_samples(name=name + '_error', input=samp_encoding_error) for name in
+                                    sample_names] + \
+                                   [visualize_samples(name=name + '_quantized', input=samp_quantized) for name in
+                                    sample_names]
+                merged_summaries = [tf.summary.merge([s]) for s in sample_summaries]
+            return merged_summaries
 
         # Load and initialize the network
         self.initialize_and_restore()
+        writer = tf.summary.FileWriter(self.summary_folder)
 
-        names = ['seed_{}'.format(s) for s in seeds]
-        summaries, writer = self.generate_sample_summary(names)
 
-        for summary, seed in zip(summaries, seeds):
+        for seed in seeds:
+            summaries = generate_sample_summary('seed_{}'.format(seed))
             np.random.seed(seed)
             z_sample = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32)
-            sample = self.session.run([summary], feed_dict={self.z: z_sample})
-            writer.add_summary(sample[0], global_step=0)
+            sample = self.session.run([summaries], feed_dict={self.z: z_sample})
+            [writer.add_summary(summary, global_step=0) for summary in sample[0]]
 
 
 
