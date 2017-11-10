@@ -53,7 +53,7 @@ def conv2d_transposed(input_, output_shape,
 
         try:
             deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
-                                            strides=[1, stride_h, stride_w, 1], data_format='NHWC')
+                                            strides=[1, stride_h, stride_w, 1])
 
         # Support for verisons of TensorFlow before 0.7.0
         except AttributeError:

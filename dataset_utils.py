@@ -234,7 +234,7 @@ class DatasetManager(object):
         return padded
 
 
-    def convert_to_TFRecords(self, output_path):
+    def convert_to_TFRecords(self, output_path, exclude_tiny_levels=True):
         """
         Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
         Pads each sample to the target size, DISCARDING the samples that are larger (this behaviour may change in future).
@@ -252,7 +252,9 @@ class DatasetManager(object):
             saved_levels = 0
             for level in levels:
                 counter += 1
-                if int(level['width']) > self.target_size[1] or int(level['height']) > self.target_size[0]:
+                too_big = int(level['width']) > self.target_size[1] or int(level['height']) > self.target_size[0]
+                is_tiny = int(level['width']) < 16 or int(level['height']) < 16 if exclude_tiny_levels else False
+                if too_big or is_tiny:
                     continue
                 mode = 'L' if self.target_channels == 1 else 'RGB'
                 image = misc.imread(self._get_absolute_path(level['img_path']), mode=mode)
@@ -277,7 +279,7 @@ def generate_images_and_convert():
     # dmm_grey = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
     #                     ['Doom/Doom.json', 'DoomII/DoomII.json'], target_channels=1)
     # dmm_grey.convert_to_images()
-    # Make a dataset for each dimension
+    # Save a dataset for each dimension
     for shape in shapes:
         dmm = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
                              ['Doom/Doom.json', 'DoomII/DoomII.json'],

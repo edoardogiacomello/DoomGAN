@@ -33,8 +33,7 @@ class DoomGAN(object):
             # Calculating layer size
             g_size = []
             for layer_id, layer in enumerate(hidden_layers):
-                number_of_filters = self.g_filter_depth * layer['filter_multiplier']
-                size = [self.batch_size, g_size_filter[layer_id][0], g_size_filter[layer_id][1], number_of_filters]
+                size = [self.batch_size, g_size_filter[layer_id][0], g_size_filter[layer_id][1], layer['n_filters']]
                 # First and last layer differs from the others
                 if layer_id == 0:
                     size[0] = -1
@@ -45,23 +44,48 @@ class DoomGAN(object):
             g_size_z_p = g_size[0][1] * g_size[0][2] * g_size[0][3]
             # Projection of Z
             z_p = linear_layer(z, g_size_z_p, 'g_h0_lin')
-            layers = []
+            self.layers_G = []
             for layer_id, layer in enumerate(hidden_layers):
                 if layer_id == 0:
                     l = g_activ_batch_nrm(tf.reshape(z_p, g_size[0]))
                 else:
                     if layer_id == len(hidden_layers) - 1:
-                        l = conv2d_transposed(layers[layer_id-1], g_size[layer_id], name='g_h{}'.format(layer_id),
+                        l = conv2d_transposed(self.layers_G[layer_id-1], g_size[layer_id], name='g_h{}'.format(layer_id),
                                               stride_h=layer['stride'][0], stride_w=layer['stride'][1],
                                               k_h = layer['kernel_size'][0], k_w = layer['kernel_size'][1]
                         )
                     else:
-                        l = g_activ_batch_nrm(conv2d_transposed(layers[layer_id-1], g_size[layer_id], name='g_h{}'.format(layer_id),
+                        l = g_activ_batch_nrm(conv2d_transposed(self.layers_G[layer_id-1], g_size[layer_id], name='g_h{}'.format(layer_id),
                                                                 stride_h=layer['stride'][0], stride_w=layer['stride'][1],
                                                                 k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
                                                                 ), name='g_a{}'.format(layer_id))
-                layers.append(l)
-        return tf.nn.tanh(layers[-1])
+                self.layers_G.append(l)
+        return tf.nn.tanh(self.layers_G[-1])
+
+    def discriminator_generalized(self, input, hidden_layers, reuse=False):
+        def d_activ_batch_norm(x, name="d_a"):
+            batch_norm_layer = batch_norm(name=name)
+            return leaky_relu(batch_norm_layer(x))
+        with tf.variable_scope("D") as scope:
+            if reuse:
+                scope.reuse_variables()
+            self.layers_D = []
+            for layer_id, layer in enumerate(hidden_layers):
+                if layer_id == 0:  # First layer (input)
+                    l = leaky_relu(conv2d(input, layer['n_filters'], name='d_a{}'.format(layer_id),
+                                          k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
+                                          stride_h=layer['stride'][0], stride_w=layer['stride'][1]))
+                else:
+                    if layer_id == len(hidden_layers)-1:  # Last layer (output)
+                        l = linear_layer(tf.reshape(self.layers_D[-1], [self.batch_size, -1]), 1, 'd_a{}'.format(layer_id))
+                    else:  # Hidden layers
+                        l = d_activ_batch_norm(conv2d(self.layers_D[-1], layer['n_filters'], name="d_h{}".format(layer_id),
+                                                      k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
+                                                      stride_h=layer['stride'][0], stride_w=layer['stride'][1]),
+                                               name="g_a{}".format(layer_id))
+                self.layers_D.append(l)
+        return tf.nn.sigmoid(self.layers_D[-1]), self.layers_D[-1]
+
 
     def generator(self, z):
         '''
@@ -143,19 +167,28 @@ class DoomGAN(object):
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         # Generator network
         g_layers = [
-            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
-            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
-            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
-            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
-            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2},
-            {'stride': (2,2), 'kernel_size': (5,5), 'filter_multiplier': 2}
+            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
+            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
+            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
+            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
+            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
+            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128}
+        ]
+
+        d_layers = [
+            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
+            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
+            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
+            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
+            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
+            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64}
         ]
 
         self.G = self.generator_generalized(self.z, hidden_layers=g_layers)
         #self.G = self.generator(self.z)
         # Discriminator networks for each input type (real and generated)
-        self.D_real, self.D_logits_real = self.discriminator(self.x_norm, reuse=False)
-        self.D_fake, self.D_logits_fake = self.discriminator(self.G, reuse=True)
+        self.D_real, self.D_logits_real = self.discriminator_generalized(self.x_norm, d_layers, reuse=False)
+        self.D_fake, self.D_logits_fake = self.discriminator_generalized(self.G, d_layers, reuse=True)
         # Define the loss function
         self.loss_d, self.loss_g = self.loss_function()
         # Collect the trainable variables for the optimizer
@@ -255,6 +288,16 @@ class DoomGAN(object):
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
 
+    # TODO: This is a try for enforcing the net to generate only the desired coding.
+    def encoding_error(self):
+        """
+        Gets a float sample in range [-1;1] and outputs a map of the error between 0 and 1 representing how much each pixel
+         is far from the encoding used
+        :return:
+        """
+        pass
+
+
     def train(self, config):
         # Define an optimizer
         d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_d, var_list=self.vars_d)
@@ -286,7 +329,7 @@ class DoomGAN(object):
 
                     # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
                     self.session.run([g_optim], feed_dict={self.z: z_batch})
-                    g, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.z: z_batch})
+                    g, sum_g = self.session.run([self.G, summary_g], feed_dict={self.z: z_batch})
 
                     # Write the summaries and increment the counter
                     writer.add_summary(sum_d, global_step=self.checkpoint_counter)
@@ -310,6 +353,7 @@ class DoomGAN(object):
                     i_epoch += 1
                     break
 
+
     def __init__(self, session, config):
         self.session = session
         self.dataset_path = config.dataset_path
@@ -328,6 +372,26 @@ class DoomGAN(object):
 
         pass
 
+    def generate_sample_summary(self, sample_names):
+        sample_summaries = [visualize_samples(name=name, input=self.G) for name in sample_names]
+        merged_summaries = [tf.summary.merge([s]) for s in sample_summaries]
+        return merged_summaries, tf.summary.FileWriter(self.summary_folder)
+
+    def sample(self, seeds):
+
+        # Load and initialize the network
+        self.initialize_and_restore()
+
+        names = ['seed_{}'.format(s) for s in seeds]
+        summaries, writer = self.generate_sample_summary(names)
+
+        for summary, seed in zip(summaries, seeds):
+            np.random.seed(seed)
+            z_sample = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+            sample = self.session.run([summary], feed_dict={self.z: z_sample})
+            writer.add_summary(sample[0], global_step=0)
+
+
 
 if __name__ == '__main__':
     flags = tf.app.flags
@@ -345,6 +409,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer("batch_size", 64, "Batch size")
     flags.DEFINE_integer("save_net_every", 5, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("normalize_input", True, "Whether to normalize input in range [0,1], Set to false if input is already normalized.")
+    flags.DEFINE_boolean("train", True, "enable training if true, sample the net if false")
     flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
     flags.DEFINE_string("summary_folder", "/tmp/tflow/train", "Directory name to save the temporary files for visualization [/tmp/tflow/train]")
 
@@ -356,4 +421,4 @@ if __name__ == '__main__':
                       config=FLAGS
                       )
         show_all_variables()
-        gan.train(FLAGS)
+        gan.train(FLAGS) if FLAGS.train else gan.sample(seeds=[42, 314, 123123, 65847968, 46546868])
