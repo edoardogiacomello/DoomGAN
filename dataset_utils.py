@@ -8,26 +8,29 @@ import json
 import tensorflow as tf
 from scipy import misc
 
+
+# This part contains all the variables concerning the dataset
 # This is the tile dictionary, containing also the pixel colors for image conversion
+encoding_interval = (255 // 16)
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
 tiles_greyscale = {
         "-": tile_tuple(( 0), ["empty", "out of bounds"]),  # is black
-        "X": tile_tuple(( 1*(255//16)), ["solid", "wall"]),  # maroon
-        ".": tile_tuple(( 2*(255//16)), ["floor", "walkable"]), # coral
-        ",": tile_tuple(( 3*(255//16)), ["floor", "walkable", "stairs"]), # Beige
-        "E": tile_tuple(( 4*(255//16)), ["enemy", "walkable"]), # red
-        "W": tile_tuple(( 5*(255//16)), ["weapon", "walkable"]), # Blue
-        "A": tile_tuple(( 6*(255//16)), ["ammo", "walkable"]), # Cyan
-        "H": tile_tuple(( 7*(255//16)), ["health", "armor", "walkable"]), # Green
-        "B": tile_tuple(( 8*(255//16)), ["explosive barrel", "walkable"]), # Magenta
-        "K": tile_tuple(( 9*(255//16)), ["key", "walkable"]), # Teal
-        "<": tile_tuple((10*(255//16)), ["start", "walkable"]), # Lavender
-        "T": tile_tuple((11*(255//16)), ["teleport", "walkable", "destination"]), # Olive
-        ":": tile_tuple((12*(255//16)), ["decorative", "walkable"]), # Grey
-        "L": tile_tuple((13*(255//16)), ["door", "locked"]), # Brown
-        "t": tile_tuple((14*(255//16)), ["teleport", "source", "activatable"]), # Mint
-        "+": tile_tuple((15*(255//16)), ["door", "walkable", "activatable"]), # Orange
-        ">": tile_tuple((16*(255//16)), ["exit", "activatable"]) # White
+        "X": tile_tuple((1 * encoding_interval), ["solid", "wall"]),  # maroon
+        ".": tile_tuple((2 * encoding_interval), ["floor", "walkable"]), # coral
+        ",": tile_tuple((3 * encoding_interval), ["floor", "walkable", "stairs"]), # Beige
+        "E": tile_tuple((4 * encoding_interval), ["enemy", "walkable"]), # red
+        "W": tile_tuple((5 * encoding_interval), ["weapon", "walkable"]), # Blue
+        "A": tile_tuple((6 * encoding_interval), ["ammo", "walkable"]), # Cyan
+        "H": tile_tuple((7 * encoding_interval), ["health", "armor", "walkable"]), # Green
+        "B": tile_tuple((8 * encoding_interval), ["explosive barrel", "walkable"]), # Magenta
+        "K": tile_tuple((9 * encoding_interval), ["key", "walkable"]), # Teal
+        "<": tile_tuple((10 * encoding_interval), ["start", "walkable"]), # Lavender
+        "T": tile_tuple((11 * encoding_interval), ["teleport", "walkable", "destination"]), # Olive
+        ":": tile_tuple((12 * encoding_interval), ["decorative", "walkable"]), # Grey
+        "L": tile_tuple((13 * encoding_interval), ["door", "locked"]), # Brown
+        "t": tile_tuple((14 * encoding_interval), ["teleport", "source", "activatable"]), # Mint
+        "+": tile_tuple((15 * encoding_interval), ["door", "walkable", "activatable"]), # Orange
+        ">": tile_tuple((16 * encoding_interval), ["exit", "activatable"]) # White
     }
 
 tiles = {
@@ -51,8 +54,84 @@ tiles = {
     }
 
 
+grey_to_rgb = [
+[0,   0,   0], 
+[128, 0,   0], 
+[255, 215, 180],
+[255, 250, 200],
+[230, 25,  75],
+[0,   130, 200],
+[70,  240, 240],
+[60,  180, 75],
+[240, 50,  230],
+[0,   128, 128],
+[230, 190, 255],
+[128, 128, 0], 
+[128, 128, 128],
+[170, 110, 40],	
+[170, 255, 195],
+[245, 130, 48],	
+[255, 255, 255]]
 
 
+
+def tf_from_grayscale_to_tilespace(images):
+    """
+    Converts a batch of inputs from the floating point representation [0,1] to the tilespace representation [0,1,..,n_tiles]
+    :param images:
+    :return:
+    """
+    # Rescale the input to [0,255]
+    rescaled = images * tf.constant(255.0, dtype=tf.float32)
+    interval = tf.constant(encoding_interval, dtype=tf.float32)
+    half_interval = tf.constant(encoding_interval / 2, dtype=tf.float32)
+    # Here the image has pixel values that does not correspond to anything in the encoding
+    mod = tf.mod(rescaled, interval)  # this is the error calculated from the previous right value.
+    # I.e. if the encoding is [0, 15, 30] and the generated value is [14.0, 16.0, 30.0] this is [14, 1, 0]
+    div = tf.floor_div(rescaled, interval)
+    # this is the encoded value if the error is less then half the sampling interval, right_value - 1 otherwise
+    # E.g. (continuing the example) [0, 1, 2] while the correct encoding should be [1, 1, 2]
+    mask = tf.floor(tf.divide(mod, half_interval))
+    #  This mask tells which pixels are already right (0) or have to be incremented (1)
+    # E.g [1, 0, 0]
+    encoded = div + mask  # Since the mask can be either 0 or 1 for each pixel, the true encoding
+    # will be obtained by summing the two
+    return encoded
+
+def tf_from_grayscale_to_rgb(tile_indices):
+    """
+    Converts a greyscale sample (encoded by tiles_greyscale) to a rgb image (encoded by tiles dict) for better
+    visualization
+    :param tile_indices: a Tensor with shape [batch, height, width, 1]
+    :return: a Tensor with shape [batch, height, width, 3]
+    """
+    palette = tf.constant(grey_to_rgb, dtype=tf.float32)
+    return tf.squeeze(tf.gather(palette, tf.to_int32(tile_indices)), axis=3)
+
+def tf_from_grayscale_to_multichannel(images):
+    """
+    Converts a batch of images from a greyscale (0,1) representation to a space [batch, height, width, n_tiles] where
+    each channel represent a type of tile, and the data can be either 0 or 1.
+    :param tile_indices:
+    :return:
+    """
+    encoded = tf.to_int32(tf_from_grayscale_to_tilespace(images))
+    return tf.squeeze(tf.one_hot(encoded, depth=len(tiles_greyscale)), axis=3)
+
+def tf_match_encoding(gen_output):
+    """
+    Correct the encoding of a noisy sample generated by the network
+    :param gen_output:
+    :return: An image batch of float in (0,1) which assume only n_tile values
+    """
+    g_encoded = tf_from_grayscale_to_tilespace(gen_output)
+    # g_encoded contains the sample in label space (0 to n_tiles),
+    # it has to be converted to be consistent with the true samples
+    # Scaling to [0,1]
+    return tf.multiply(g_encoded, tf.constant(255 // 16, dtype=tf.float32)) / tf.constant(255, dtype=tf.float32)
+
+
+    
 
 class DatasetManager(object):
     """Extract metadata from the tile/grid representation of a level"""

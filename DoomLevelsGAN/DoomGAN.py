@@ -3,7 +3,7 @@ import os
 import numpy as np
 import math
 from DoomLevelsGAN.NNHelpers import *
-from dataset_utils import DatasetManager
+import dataset_utils as d_utils
 class DoomGAN(object):
     def generator_generalized(self, z, hidden_layers):
         '''
@@ -157,7 +157,9 @@ class DoomGAN(object):
             sigmoid_cross_entropy_with_logits(self.D_logits_fake, tf.zeros_like(self.D_fake)))
         self.loss_g = tf.reduce_mean(
             sigmoid_cross_entropy_with_logits(self.D_logits_fake, tf.ones_like(self.D_fake)))
+        self.loss_enc = tf.reduce_mean(self.enc_error)
         self.loss_d = self.loss_d_real + self.loss_d_fake
+        self.loss_g = self.loss_g + self.loss_enc
         return self.loss_d, self.loss_g
 
     def build(self):
@@ -169,24 +171,28 @@ class DoomGAN(object):
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         # Generator network
         g_layers = [
-            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
-            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
-            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
-            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
-            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128},
-            {'stride': (2,2), 'kernel_size': (3,3), 'n_filters': 128}
+            {'stride': (2,2), 'kernel_size': (4,4), 'n_filters': 256},
+            {'stride': (2,2), 'kernel_size': (4,4), 'n_filters': 256},
+            {'stride': (2,2), 'kernel_size': (4,4), 'n_filters': 256},
+            {'stride': (2,2), 'kernel_size': (4,4), 'n_filters': 256},
+            {'stride': (2,2), 'kernel_size': (4,4), 'n_filters': 256},
+            {'stride': (2,2), 'kernel_size': (4,4), 'n_filters': 256}
         ]
 
         d_layers = [
-            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
-            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
-            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
-            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
-            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64},
-            {'stride': (2, 2), 'kernel_size': (3, 3), 'n_filters': 64}
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 128},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 128},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 128},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 128},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 128},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 128}
         ]
 
         self.G = self.generator_generalized(self.z, hidden_layers=g_layers)
+        # self.G is in (0,1), but we use a discrete space for encoding x
+        # TODO: we try to enforce the encoding
+        self.enc_error, self.G_encoded, self.G_rgb = self.encoding_error(self.G)
+        # FIXME: x_quantized are the generated samples according to the same encoding used for the true sample, the error is still not normalized
         #self.G = self.generator(self.z)
         # Discriminator networks for each input type (real and generated)
         self.D_real, self.D_logits_real = self.discriminator_generalized(self.x_norm, d_layers, reuse=False)
@@ -203,13 +209,14 @@ class DoomGAN(object):
         s_loss_d_fake = tf.summary.scalar('d_loss_fake_inputs', self.loss_d_fake)
         s_loss_d = tf.summary.scalar('d_loss', self.loss_d)
         s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
+        s_loss_enc = tf.summary.scalar('g_loss_enc', self.loss_enc)
         s_z_distrib = tf.summary.histogram('z_distribution', self.z)
         s_sample = visualize_samples('generated_samples', self.G)
         s_input = visualize_samples('true_samples', self.x_norm)
 
 
         s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
-        s_g = tf.summary.merge([s_loss_g, s_z_distrib])
+        s_g = tf.summary.merge([s_loss_g, s_loss_enc, s_z_distrib])
         s_samples = tf.summary.merge([s_sample, s_input])
 
         summary_writer = tf.summary.FileWriter(self.summary_folder)
@@ -250,7 +257,7 @@ class DoomGAN(object):
         Loads a TFRecord dataset and creates batches.
         :return: An initializable Iterator for the loaded dataset
         """
-        self.dataset = DatasetManager(target_size=self.output_size).load_TFRecords_database(self.dataset_path)
+        self.dataset = d_utils.DatasetManager(target_size=self.output_size).load_TFRecords_database(self.dataset_path)
         # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
         # for discarding the last incomplete batch)
         if self.dataset_size is None:
@@ -290,30 +297,19 @@ class DoomGAN(object):
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
 
-    # TODO: This is a try for enforcing the net to generate only the desired coding.
-    def encoding_error(self, x):
+    def encoding_error(self, g):
         """
-        Gets a float sample in range [0;1] and outputs a map of the error between 0 and 1 representing how much each pixel
-         is far from the encoding used
+        Return an error value for each pixel forming a batch of images.
+        The error is 0 if the color matches the encoding of the true set.
         :return:
         """
-        # Rescale the input
-        rescaled = x*tf.constant(255.0, dtype=tf.float32)
-        # Here the image has pixel values that does not correspond to anything
-        self.mod = tf.mod(rescaled, (255//16)) # this is the error calculated from the previous right value.
-        # I.e. if the encoding is [0, 15, 30] and the generated value is [14.0, 16.0, 30.0] this is
-        # [14, 1, 0], while the true error should be like abs([-1, 1, 0])
-        self.div = tf.floor_div(rescaled, (255//16))
-        # this is the right value if the error is less then half the sampling interval, right_value - 1 otherwise
-        # E.g. (continuing the example) [0, 1, 2] while the correct encoding should be [1, 1, 2]
-        self.mask = tf.floor(tf.divide(self.mod, tf.constant((255//16)/2, dtype=tf.float32)))
-        #  This mask tells which pixels are already right (0) or have to be incremented (1)
-        # E.g [1, 0, 0]
-        self.x_quantized = self.div + self.mask # Since the mask can be either 0 or 1 for each pixel, the true encoding
-        # will be obtained by summing the two
-        # The true error is, e.g. [14.0, 1, 0] - INTERVAL*[1, 0, 0]
-        self.enc_error = tf.abs( self.mod - tf.multiply(tf.constant(255//16, dtype=tf.float32), self.mask))
-        return self.enc_error, self.x_quantized
+        rescaled = g * tf.constant(255.0, dtype=tf.float32)
+        half_interval = tf.constant(d_utils.encoding_interval/2, dtype=tf.float32)
+        # Since the error has to be differentiable and neither the floor nor the div operation are, we define directly
+        # an error function that is 0 where the encoding is correct and 1 in-between the encoding values
+        pi = tf.constant(math.pi, dtype=tf.float32)
+        enc_error = 1.0 + tf.sin(pi*(rescaled/half_interval-0.5)), tf.constant(0,tf.float32)
+        return enc_error
 
 
     def train(self, config):
@@ -347,7 +343,7 @@ class DoomGAN(object):
 
                     # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
                     self.session.run([g_optim], feed_dict={self.z: z_batch})
-                    g, sum_g = self.session.run([self.G, summary_g], feed_dict={self.z: z_batch})
+                    _, sum_g, g, g_enc  = self.session.run([g_optim, summary_g, self.G, self.G_encoded], feed_dict={self.z: z_batch})
 
                     # Write the summaries and increment the counter
                     writer.add_summary(sum_d, global_step=self.checkpoint_counter)
@@ -358,12 +354,13 @@ class DoomGAN(object):
                     print("Batch {}, Epoch {} of {}".format(batch_index, i_epoch, config.epoch))
 
                     # Check if the net should be saved
-                    if np.mod(self.checkpoint_counter, self.save_net_every) == 2:
+                    if np.mod(self.checkpoint_counter, self.save_net_every) == 5:
                         self.save(config.checkpoint_dir)
                         # Sample the network
                         np.random.seed(42)
                         z_sample = np.random.uniform(-1, 1, [config.batch_size, self.z_dim]).astype(np.float32)
                         samples = self.session.run([summary_samples], feed_dict={self.x: train_batch['image'], self.z: z_sample})
+
                         writer.add_summary(samples[0], global_step=self.checkpoint_counter)
 
                 except tf.errors.OutOfRangeError:
@@ -393,13 +390,18 @@ class DoomGAN(object):
 
 
     def sample(self, seeds):
+        # FIXME: too many images get generated
         def generate_sample_summary(sample_names):
             with tf.variable_scope(sample_names) as scope:
-                samp_encoding_error, samp_quantized = self.encoding_error(self.G)
+                samp_encoding_error = self.encoding_error(self.G)
+                samp_rgb = d_utils.tf_from_grayscale_to_rgb(self.G)
+
+                from dataset_utils import tf_from_grayscale_to_rgb
+                tf_from_grayscale_to_rgb(self.G_encoded)
                 sample_summaries = [visualize_samples(name=name, input=self.G) for name in sample_names] + \
                                    [visualize_samples(name=name + '_error', input=samp_encoding_error) for name in
                                     sample_names] + \
-                                   [visualize_samples(name=name + '_quantized', input=samp_quantized) for name in
+                                   [visualize_samples(name=name + '_rgb', input=samp_rgb) for name in
                                     sample_names]
                 merged_summaries = [tf.summary.merge([s]) for s in sample_summaries]
             return merged_summaries
@@ -432,7 +434,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer("d_filter_depth", 64, "number of filters for the first G convolution layer")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 64, "Batch size")
-    flags.DEFINE_integer("save_net_every", 5, "Number of train batches after which the next is saved")
+    flags.DEFINE_integer("save_net_every", 20, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("normalize_input", True, "Whether to normalize input in range [0,1], Set to false if input is already normalized.")
     flags.DEFINE_boolean("train", True, "enable training if true, sample the net if false")
     flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
