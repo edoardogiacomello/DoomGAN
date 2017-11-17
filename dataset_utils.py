@@ -8,10 +8,21 @@ import json
 import tensorflow as tf
 from scipy import misc
 
+# In order to add a new feature modify the following parts:
+    # meta description in datasetmanager.__init__
+    # _update_meta  in datasetmanager
+    # TFRecord to Sample in datasetmanager
+    # sample to TFRecord in datasetmanager
 
-# This part contains all the variables concerning the dataset
+
+###### This part contains all the variables concerning the dataset #####
 # This is the tile dictionary, containing also the pixel colors for image conversion
 encoding_interval = (255 // 16)
+channel_s_interval = (255//2)
+channel_g_interval = (255//13)
+# channel s contains: empty, wall, floor, (stairs encoded as floor)
+# channel g contains: enemy, weapon, ammo, health, barrel, key, start, teleport, decorative, teleport, exit
+
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
 tiles_greyscale = {
         "-": tile_tuple(( 0), ["empty", "out of bounds"]),  # is black
@@ -53,7 +64,6 @@ tiles = {
         ">": tile_tuple((255, 255, 255)	, ["exit", "activatable"]) # White
     }
 
-
 grey_to_rgb = [
 [0,   0,   0], 
 [128, 0,   0], 
@@ -73,6 +83,41 @@ grey_to_rgb = [
 [245, 130, 48],	
 [255, 255, 255]]
 
+
+gray_to_sg = [
+[[0*channel_s_interval],[0 *channel_g_interval]], #empty
+[[1*channel_s_interval],[0 *channel_g_interval]], #wall
+[[2*channel_s_interval],[0 *channel_g_interval]], #floor
+[[2*channel_s_interval],[0 *channel_g_interval]], #stairs
+[[2*channel_s_interval],[1 *channel_g_interval]], #enemy
+[[2*channel_s_interval],[2 *channel_g_interval]], #weapon
+[[2*channel_s_interval],[3 *channel_g_interval]], #ammo
+[[2*channel_s_interval],[4 *channel_g_interval]], #health
+[[2*channel_s_interval],[5 *channel_g_interval]], #barrel
+[[2*channel_s_interval],[6 *channel_g_interval]], #key
+[[2*channel_s_interval],[7 *channel_g_interval]], #start
+[[2*channel_s_interval],[8 *channel_g_interval]], #teleport dest
+[[2*channel_s_interval],[9 *channel_g_interval]], #decorative
+[[2*channel_s_interval],[10*channel_g_interval]], #door_locked
+[[2*channel_s_interval],[11*channel_g_interval]], #teleport_src
+[[2*channel_s_interval],[12*channel_g_interval]], #door_unlocked
+[[2*channel_s_interval],[13*channel_g_interval]], #exit
+]
+
+def tf_from_greyscale_to_sg(images):
+    """
+    Converts a batch of grayscale images in range [0,255] to a dual channel representation where:
+    channel s contains: empty, wall, floor, (stairs encoded as floor) [0,255]
+    channel g contains: enemy, weapon, ammo, health, barrel, key, start, teleport, decorative, teleport, exit [0,255]
+    :param images:
+    :return:
+    """
+    images = tf.divide(images, tf.constant(255.0, dtype=tf.float32))
+    images = tf.to_int32(tf_from_grayscale_to_tilespace(images))
+    palette = tf.constant(gray_to_sg, tf.float32)
+    images = tf.squeeze(images, axis=-1)
+    sg_images = tf.gather(palette, images)
+    return tf.squeeze(sg_images, axis=-1)
 
 
 def tf_from_grayscale_to_tilespace(images):
@@ -130,11 +175,32 @@ def tf_match_encoding(gen_output):
     # Scaling to [0,1]
     return tf.multiply(g_encoded, tf.constant(255 // 16, dtype=tf.float32)) / tf.constant(255, dtype=tf.float32)
 
+def tf_encode_feature_vectors(y, feature_names, dataset_path):
+    """
+    Reads metadata from the dataset .meta file and returns the normalized Tensor for the feature vector
+    :param y: The unnomalized feature vector
+    :param feature_names: The list of feature names, in same order as Dimension[-1] of y
+    :param dataset_path: the path to the .TFRecord file (metadata are supposed to be at .TFRecord.meta )
+    :return: The y tensor normalized depthwise
+    """
+    meta_path = dataset_path+'.meta'
+    with open(meta_path, 'r') as meta_in:
+        meta = json.load(meta_in)
+
+    norm_channels = []
+    for f_id, f_name in enumerate(feature_names):
+        y_slice = tf.slice(y, begin=[0,f_id], size=[-1,1])
+        feat_max = tf.constant(meta['features'][f_name]['max'], dtype=tf.float32)
+        feat_min = tf.constant(meta['features'][f_name]['min'], dtype=tf.float32)
+        norm_channels.append( (y_slice-feat_min)/(feat_max-feat_min))
+    return tf.squeeze(tf.stack(norm_channels, axis=1))
+
 
     
 
 class DatasetManager(object):
-    """Extract metadata from the tile/grid representation of a level"""
+
+
     def __init__(self, path_to_WADs_folder='./WADs', relative_to_json_files=[], target_size=(512,512), target_channels=1):
         """
         Utility class for extracting metadata from the tile/grid representation, representation conversion (e.g to PNG)
@@ -149,6 +215,8 @@ class DatasetManager(object):
         self.root = path_to_WADs_folder
         self.target_size = target_size
         self.target_channels = target_channels
+        self.meta = dict()
+        self.feature_sets = dict() # This dict keeps track of every different value for the string features, so it's possible to count unique values
 
     def _get_absolute_path(self, relative_path):
         """
@@ -235,7 +303,6 @@ class DatasetManager(object):
             with open(self.root + j, 'w') as jout:
                 json.dump(levels, jout)
 
-
     def _sample_to_TFRecord(self, json_record, image):
         # converting the record to a default_dict since it may does not contain some keys for empty values.
         json_record = defaultdict(lambda: "", json_record)
@@ -302,6 +369,46 @@ class DatasetManager(object):
         parsed_features['image'] = parsed_img
         return parsed_features
 
+    def _update_meta(self, level):
+        """
+        Updates the metadata for a level.
+        Metadata contain information such the global number of entries, the min and max values for each feature, etc.
+        :param level: The json record for a level
+        :return:
+        """
+        def _compute_feature(level, feature, type):
+            if feature not in self.meta['features']:
+                self.meta['features'][feature] = dict()
+            feat_dict = self.meta['features'][feature]
+            feat_dict['type'] = type
+            if type == 'int64' or type=='float':
+                feat_dict['min'] = float(level[feature]) if 'min' not in feat_dict else min(feat_dict['min'], float(level[feature]))
+                feat_dict['max'] = float(level[feature]) if 'max' not in feat_dict else max(feat_dict['max'], float(level[feature]))
+                feat_dict['avg'] = float(level[feature]) if 'avg' not in feat_dict else feat_dict['avg'] + (float(level[feature]) - feat_dict['avg'])/float(self.meta['count'])
+            if type == 'string':
+                if feature not in self.feature_sets:
+                    self.feature_sets[feature] = dict()
+                entry_count = self.feature_sets[feature]
+                if (feature not in level):
+                    return
+                # Increment the count for the current value of the feature
+                entry_count[level[feature]] = 1 if level[feature] not in entry_count else entry_count[level[feature]] + 1
+                feat_dict['count'] = len(entry_count)
+
+
+
+
+
+        self.meta['features'] = dict() if 'features' not in self.meta else self.meta['features']
+        self.meta['count'] = 1 if 'count' not in self.meta else self.meta['count'] +1
+        _compute_feature(level, 'page_visits', 'int64')
+        _compute_feature(level, 'downloads', 'int64')
+        _compute_feature(level, 'height', 'int64')
+        _compute_feature(level, 'width', 'int64')
+        _compute_feature(level, 'rating_count', 'int64')
+        _compute_feature(level, 'rating_value', 'int64')
+        _compute_feature(level, 'author', 'string')
+
 
     def _pad_image(self, image):
         """Center pads an image, adding a black border up to "target size" """
@@ -317,7 +424,7 @@ class DatasetManager(object):
         """
         Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
         Pads each sample to the target size, DISCARDING the samples that are larger (this behaviour may change in future).
-        Information about image size has to be stored separately.
+        Also saves meta information about the data, in a separated file.
         :return: None.
         """
         # Load the json files
@@ -340,20 +447,32 @@ class DatasetManager(object):
                 if self.target_channels == 1:
                     image = np.expand_dims(image,-1)
                 padded = self._pad_image(image)
+                self._update_meta(level)
                 sample = self._sample_to_TFRecord(level, padded)
                 writer.write(sample.SerializeToString())
                 saved_levels+=1
                 if counter % (len(levels)//100) == 0:
                     print("{}% completed.".format(round(counter/len(levels)*100)))
             print("Levels saved: {}, levels discarded: {}".format(saved_levels, len(levels)-saved_levels))
+        meta_path = output_path + '.meta'
+        with open(meta_path, 'w') as meta_out:
+            # TODO: This can be done when analyzing the levels
+            # Embed author encoding in the metadata
+            self.meta['encoding'] = dict()
+            self.meta['encoding']['authors'] = {name: id for id, name in enumerate(self.feature_sets['author'])}
+            # Saving metadata
+            json.dump(self.meta, meta_out)
+            print("Metadata saved to {}".format(meta_path))
+
     def load_TFRecords_database(self, path):
         """Returns a tensorflow dataset from the .tfrecord file specified in path"""
         dataset = tf.contrib.data.TFRecordDataset(path)
         dataset = dataset.map(self._TFRecord_to_sample, num_threads=9)
         return dataset
 
+
 def generate_images_and_convert():
-    shapes = [64, 128, 256, 512]
+    shapes = [64, 128]
     # Convert every image to greyscale
     # dmm_grey = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
     #                     ['Doom/Doom.json', 'DoomII/DoomII.json'], target_channels=1)
@@ -364,5 +483,3 @@ def generate_images_and_convert():
                              ['Doom/Doom.json', 'DoomII/DoomII.json'],
                              target_size=(shape, shape), target_channels=1)
         dmm.convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan{}_tilespace.TFRecords'.format(shape))
-
-# [scrapeUtils.json_to_csv(j) for j in ['/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/Doom/Doom.json.updt', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/DoomII/DoomII.json.updt']]

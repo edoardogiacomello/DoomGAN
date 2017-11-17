@@ -45,28 +45,44 @@ def conv2d(input_, output_dim,
 
 def conv2d_transposed(input_, output_shape,
                       k_h=5, k_w=5, stride_h=2, stride_w=2, stddev=0.02,
-                      name="deconv2d", with_w=False):
+                      name="deconv2d", with_w=False, remove_artifacts=False):
     with tf.variable_scope(name):
-        # filter : [height, width, output_channels, in_channels]
-        w = tf.get_variable('w', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
-                            initializer=tf.random_normal_initializer(stddev=stddev))
+        if not remove_artifacts:
+            # filter : [height, width, output_channels, in_channels]
+            w = tf.get_variable('w', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
+                                initializer=tf.random_normal_initializer(stddev=stddev))
 
-        try:
-            deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
-                                            strides=[1, stride_h, stride_w, 1])
+            try:
+                deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
+                                                strides=[1, stride_h, stride_w, 1])
 
-        # Support for verisons of TensorFlow before 0.7.0
-        except AttributeError:
-            deconv = tf.nn.deconv2d(input_, w, output_shape=output_shape,
-                                    strides=[1, stride_h, stride_w, 1])
+            # Support for verisons of TensorFlow before 0.7.0
+            except AttributeError:
+                deconv = tf.nn.deconv2d(input_, w, output_shape=output_shape,
+                                        strides=[1, stride_h, stride_w, 1])
 
-        biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
-        deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
+            biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
+            deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
 
-        if with_w:
-            return deconv, w, biases
+            if with_w:
+                return deconv, w, biases
+            else:
+                return deconv
         else:
-            return deconv
+            # We do the transpose convolution by separating the upsampling from the convolution iself.
+            # Since the convolution output size is computed ad out = ceil(in/stride), then for obtaining the desired size
+            # we have to upscale to size = floor(H*stride)
+            upscale_size = [math.floor(output_shape[1]*stride_h), math.floor(output_shape[2]*stride_w)]
+            upscaled = tf.image.resize_images(input_, size=upscale_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+
+            w = tf.get_variable('w', [k_h, k_w, upscaled.get_shape()[-1], output_shape[-1]],
+                                initializer=tf.truncated_normal_initializer(stddev=stddev))
+            conv = tf.nn.conv2d(upscaled, w, strides=[1, stride_h, stride_w, 1], padding='SAME')
+
+            biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
+            conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
+            return conv
+
 
 def linear_layer(x, output_size, scope=None,stddev=0.02, bias_start=0.0, with_w=False, on_cpu_memory=False):
     if on_cpu_memory:
@@ -83,35 +99,36 @@ def linear_layer(x, output_size, scope=None,stddev=0.02, bias_start=0.0, with_w=
     else:
         return tf.matmul(x, W) + b
 
-def visualize_activations(name, input, max_outputs=None, tiled=False):
-    """Helper for visualizing the activations of a convolutional layer in form of an image. If tiled is false then
-    the number of filters can be any and they will be shown in a squared image where each filter is displayed next to the other.
-    If tiled is True the blocks that makes the image are formed from each single activation for the same portion of image
-    """
-    max_outputs = input.get_shape()[0].value if max_outputs is None else max_outputs
-    unstacked_filters = tf.unstack(input, axis=3)
-    number_of_blocks = math.ceil(math.sqrt(len(unstacked_filters)))
-    grid = list()
-    if tiled is False:
-        # We tile every single filter adjacently, we need to find a square to inscribe them
-        for row in [unstacked_filters[i:i + number_of_blocks] for i in range(0, len(unstacked_filters), number_of_blocks)]:
-            for filter in row:
-                shape = filter.get_shape()
-                pass
-            grid.append(tf.concat(row, axis=2))
-        input = tf.expand_dims(tf.concat(grid, axis=1), axis=-1)
-    else:
-        input = tf.depth_to_space(input, number_of_blocks)
-    return tf.summary.image(name, input, max_outputs)
+def concatenate_features(l, y):
+    y_new_shape = [y.get_shape()[0].value, 1, 1, y.get_shape()[-1].value]
+    ones_shape = [l.get_shape()[0].value, l.get_shape()[1].value, l.get_shape()[2].value, y.get_shape()[-1].value]
+    y_ =  tf.reshape(y, y_new_shape) * tf.ones(ones_shape, dtype=tf.float32)
+    return tf.concat([l,y_], axis=-1)
 
-def visualize_samples(name, input):
+
+def visualize_activations(name, layers, input_number):
+    """
+    Shows the activations for a given layer
+    :param name:
+    :param samples: a list of layer outputs, each of them having shape (batch, height, width, depth)
+    :param input_number:
+    :return: a summary for the layer activation and a summary for the chosen input
+    """
+    # Select the given samples from the batch
+    summaries = []
+    for l_id, layer in enumerate(layers):
+        layer = tf.transpose(tf.slice(layer, begin=[input_number, 0, 0, 0], size=[1, -1, -1, -1]), [3, 1, 2, 0])
+        summaries += [visualize_samples(name+'{}'.format(l_id), layer)]
+    return summaries
+
+def visualize_samples(name, samples):
     """
     Helper for visualizing the samples in a grid that is sqrt(batch)*sqrt(batch).
-    If the batch size is not evenly divisible by an integer number, than each sample is visualized separately
     """
-    batch = input.get_shape()[0].value
-    unstacked_samples = tf.unstack(input, axis=0)
-    number_of_blocks = math.ceil(math.sqrt(len(unstacked_samples)))
+    batch = samples.get_shape()[0].value
+    channels = samples.get_shape()[-1].value
+
+    unstacked_samples = tf.unstack(samples, axis=0)
 
     # Finding the size of the image grid (in number of images)
     rows = math.floor(math.sqrt(batch))
@@ -125,11 +142,8 @@ def visualize_samples(name, input):
         grid[-1].append(tf.zeros_like(unstacked_samples[0]))
 
     tensor= tf.expand_dims(tf.concat([tf.concat(r,axis=1) for r in grid], axis=0), axis=0)
+    # If the input sample has 2 or more than 3 channels, display each channel separately
+    if channels==2 or channels > 3:
+        tensor = tf.squeeze(tf.stack([tf.expand_dims(channel, axis=-1) for channel in tf.unstack(tensor, axis=-1)]), axis=1)
+    return tf.summary.image(name, tensor, max_outputs=channels)
 
-    return tf.summary.image(name, tensor, max_outputs=1)
-
-def reverse_enumerate(iterable):
-    """
-    Enumerate over an iterable in reverse order while retaining proper indexes
-    """
-    return itertools.izip(reversed(xrange(len(iterable))), reversed(iterable))
