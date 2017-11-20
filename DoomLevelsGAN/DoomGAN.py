@@ -217,20 +217,17 @@ class DoomGAN(object):
         self.z = tf.placeholder(tf.float32, [self.batch_size, self.z_dim], name='z')
         # Generator network
         g_layers = [
-            {'stride': (4, 4), 'kernel_size': (4, 4), 'n_filters': 1024, 'remove_artifacts': False},
-            {'stride': (4, 4), 'kernel_size': (4, 4), 'n_filters': 1024, 'remove_artifacts': False},
-            {'stride': (4, 4), 'kernel_size': (4, 4), 'n_filters': 1024, 'remove_artifacts': False},
-            {'stride': (4, 4), 'kernel_size': (4, 4), 'n_filters': 1024, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*16, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*8, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*4, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*2, 'remove_artifacts': False},
         ]
 
         d_layers = [
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 256, 'remove_artifacts': False}
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*2, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*4, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*8, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64*16, 'remove_artifacts': False},
         ]
 
         self.G = self.generator_generalized(self.z, hidden_layers=g_layers, y=self.y_norm)
@@ -317,17 +314,20 @@ class DoomGAN(object):
         self.dataset = d_utils.DatasetManager(target_size=self.output_size).load_TFRecords_database(self.dataset_path)
         # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
         # for discarding the last incomplete batch)
-        if self.dataset_size is None:
-            counter_iter = self.dataset.batch(1).make_one_shot_iterator().get_next()
-            n_samples = 0
-            while True:
-                try:
-                    self.session.run([counter_iter])
-                    n_samples+=1
-                except tf.errors.OutOfRangeError:
-                    # We reached the end of the dataset, break the loop and start a new epoch
-                    self.dataset_size = n_samples
-                    break
+        try:
+            self.dataset_size = d_utils.MetaReader(self.dataset_path).count()
+        except:
+            if self.dataset_size is None:
+                counter_iter = self.dataset.batch(1).make_one_shot_iterator().get_next()
+                n_samples = 0
+                while True:
+                    try:
+                        self.session.run([counter_iter])
+                        n_samples+=1
+                    except tf.errors.OutOfRangeError:
+                        # We reached the end of the dataset, break the loop and start a new epoch
+                        self.dataset_size = n_samples
+                        break
         remainder = np.remainder(self.dataset_size,self.batch_size)
         print("Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, self.dataset_size, self.batch_size))
         self.dataset = self.dataset.skip(remainder)

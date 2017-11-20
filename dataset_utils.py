@@ -196,6 +196,14 @@ def tf_encode_feature_vectors(y, feature_names, dataset_path):
     return tf.squeeze(tf.stack(norm_channels, axis=1))
 
 
+class MetaReader(object):
+    def __init__(self, tfrecord_path):
+        self.path = tfrecord_path+'.meta'
+        with open(self.path, 'r') as meta_in:
+            self.meta = json.load(meta_in)
+    def count(self):
+        return int(self.meta['count'])
+
     
 
 class DatasetManager(object):
@@ -472,7 +480,7 @@ class DatasetManager(object):
 
 
 def generate_images_and_convert():
-    shapes = [64, 128]
+    shapes = [256]
     # Convert every image to greyscale
     # dmm_grey = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
     #                     ['Doom/Doom.json', 'DoomII/DoomII.json'], target_channels=1)
@@ -483,3 +491,4 @@ def generate_images_and_convert():
                              ['Doom/Doom.json', 'DoomII/DoomII.json'],
                              target_size=(shape, shape), target_channels=1)
         dmm.convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan{}_tilespace.TFRecords'.format(shape))
+
