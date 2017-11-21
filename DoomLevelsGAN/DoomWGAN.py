@@ -120,29 +120,9 @@ class DoomGAN(object):
         return tf.nn.sigmoid(layers_D[-1]), layers_D[-1]
 
     def loss_function(self):
-        def sigmoid_cross_entropy_with_logits(x, y):
-            try:
-                return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, labels=y)
-            except:
-                return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, targets=y)
-
-        self.loss_d_real = tf.reduce_mean(
-            sigmoid_cross_entropy_with_logits(self.D_logits_real, tf.ones_like(self.D_real)))
-        self.loss_d_fake = tf.reduce_mean(
-            sigmoid_cross_entropy_with_logits(self.D_logits_fake, tf.zeros_like(self.D_fake)))
-        self.loss_g = tf.reduce_mean(
-            sigmoid_cross_entropy_with_logits(self.D_logits_fake, tf.ones_like(self.D_fake)))
-        # TODO: we try to enforce the encoding
-        self.enforce_encoding = False
-        if self.enforce_encoding:
-            self.enc_error = self.encoding_error(self.G)
-            self.loss_enc = tf.reduce_mean(self.enc_error)
-            self.loss_g = self.loss_g + self.loss_enc
-
-        self.loss_d = self.loss_d_real + self.loss_d_fake
-
-        self.balance = tf.abs(self.loss_g-self.loss_d)
-        return self.loss_d, self.loss_g
+        self.loss_c = self.D_logits_fake - self.D_logits_real
+        self.loss_g_wgan = tf.reduce_mean(-self.D_logits_fake)
+        return self.loss_c, self.loss_g_wgan
 
     def build(self):
         # x: True inputs coming from the dataset
@@ -172,17 +152,17 @@ class DoomGAN(object):
         self.z = tf.placeholder(tf.float32, [self.batch_size, self.z_dim], name='z')
         # Generator network
         g_layers = [
-            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64 * 16, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64 * 8, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (6, 6), 'n_filters': 64 * 2, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 16, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 8, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 4, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 2, 'remove_artifacts': False},
         ]
 
         d_layers = [
-            {'stride': (2, 2), 'kernel_size': (6, 6), 'n_filters': 64 * 2, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64 * 8, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (2, 2), 'n_filters': 64 * 16, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 2, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 4, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 8, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4,4), 'n_filters': 64 * 16, 'remove_artifacts': False},
         ]
 
         self.G = self.generator_generalized(self.z, hidden_layers=g_layers, y=self.y_norm)
@@ -193,18 +173,15 @@ class DoomGAN(object):
         self.D_fake, self.D_logits_fake = self.discriminator_generalized(self.G, d_layers, reuse=True, y=self.y_norm)
 
         # Define the loss function
-        self.loss_d, self.loss_g = self.loss_function()
+        self.loss_c, self.loss_g = self.loss_function()
         # Collect the trainable variables for the optimizer
         vars = tf.trainable_variables()
         self.vars_d = [var for var in vars if 'd_' in var.name]
         self.vars_g = [var for var in vars if 'g_' in var.name]
 
     def generate_summary(self):
-        s_loss_d_real = tf.summary.scalar('d_loss_real_inputs', self.loss_d_real)
-        s_loss_d_fake = tf.summary.scalar('d_loss_fake_inputs', self.loss_d_fake)
-        s_loss_d = tf.summary.scalar('d_loss', self.loss_d)
-        s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
-        s_loss_balance = tf.summary.scalar('balance', self.balance)
+        s_loss_d = tf.summary.scalar('c_loss', tf.reduce_mean(self.loss_c))
+        s_loss_g = tf.summary.scalar('g_loss', tf.reduce_mean(self.loss_g_wgan))
         #s_loss_enc = tf.summary.scalar('g_loss_enc', self.loss_enc)
         s_z_distrib = tf.summary.histogram('z_distribution', self.z)
 
@@ -223,7 +200,7 @@ class DoomGAN(object):
         s_d_activations_x = visualize_activations('x_sample_{}_d_layer_'.format(sample_index), d_layers_to_show_x,
                                                   sample_index)
 
-        s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d, s_loss_balance])
+        s_d = tf.summary.merge([s_loss_d])
         s_g = tf.summary.merge([s_loss_g, s_z_distrib])
         s_samples = tf.summary.merge([s_sample, s_g_chosen_input, s_d_activations_g, s_x_chosen_input, s_d_activations_x])
 
@@ -330,9 +307,17 @@ class DoomGAN(object):
 
 
     def train(self, config):
+
+
+        # Clipping the D Weights
+        clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.vars_d]
         # Define an optimizer
-        d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_d, var_list=self.vars_d)
-        g_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_g, var_list=self.vars_g)
+        c_optim = (tf.train.RMSPropOptimizer(learning_rate=5e-5)
+                    .minimize(self.loss_c, var_list=self.vars_d))
+        g_optim = (tf.train.RMSPropOptimizer(learning_rate=5e-5)
+                    .minimize(self.loss_g_wgan, var_list=self.vars_g))
+
+
 
         # Generate the summaries
         summary_d, summary_g, summary_samples, writer = self.generate_summary()
@@ -356,11 +341,11 @@ class DoomGAN(object):
                     z_batch = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32) # Batch of noise
                     x_batch = train_batch['image']
                     y_batch = np.transpose(np.stack([train_batch[f] for f in self.features]), axes=[1, 0]) if (len(self.features)>0) else None
-                    # D update
-                    d, sum_d = self.session.run([d_optim, summary_d], feed_dict={self.x: x_batch, self.y:y_batch, self.z: z_batch})
 
-                    # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
-                   # self.session.run([g_optim], feed_dict={self.z: z_batch})
+                    # TODO: We train D 5 times for each G update, but's not what is done on the paper, check it
+                    for i in range(5):
+                        # D update
+                        d, sum_d = self.session.run([c_optim, summary_d], feed_dict={self.x: x_batch, self.y:y_batch, self.z: z_batch})
                     _, sum_g  = self.session.run([g_optim, summary_g], feed_dict={self.y:y_batch, self.z: z_batch})
 
 
@@ -423,18 +408,20 @@ class DoomGAN(object):
     def sample(self, seeds):
         def generate_sample_summary(name):
             with tf.variable_scope(name) as scope:
-                g_encoding_error = self.encoding_error(self.G)
-                g_denoise = d_utils.tf_from_grayscale_to_tilespace(self.G)
-                g_rgb = d_utils.tf_from_grayscale_to_rgb(g_denoise)
+                #g_encoding_error = self.encoding_error(self.G)
+                #g_denoise = d_utils.tf_from_grayscale_to_tilespace(self.G)
+                #g_rgb = d_utils.tf_from_grayscale_to_rgb(g_denoise)
                 d_layers_to_show = self.layers_D_fake[1:-1]
                 sample_index = 5
 
-                s_g_encoding_error = visualize_samples(name+'_enc_error', g_encoding_error)
-                s_g_denoise = visualize_samples(name+'_denoised',g_denoise)
-                s_g_rgb = visualize_samples(name+'_rgb', g_rgb)
+                #s_g_encoding_error = visualize_samples(name+'_enc_error', g_encoding_error)
+                #s_g_denoise = visualize_samples(name+'_denoised',g_denoise)
+                #s_g_rgb = visualize_samples(name+'_rgb', g_rgb)
+
+                s_g_samples = visualize_samples(name+'_samples', self.G)
                 s_g_chosen_input = visualize_samples(name+'chosen_input', tf.slice(self.G, begin=[sample_index, 0, 0, 0], size=[1, -1, -1, -1]))
                 s_d_activations = visualize_activations(name+'_d_act_layer_', d_layers_to_show, sample_index)
-                merged_summaries = tf.summary.merge([s_g_encoding_error, s_g_denoise, s_g_rgb, s_g_chosen_input, s_d_activations])
+                merged_summaries = tf.summary.merge([s_g_chosen_input, s_d_activations, s_g_samples])
             return merged_summaries
 
         # Load and initialize the network
@@ -445,8 +432,11 @@ class DoomGAN(object):
         for seed in seeds:
             summaries = generate_sample_summary('seed_{}'.format(seed))
             np.random.seed(seed)
-            z_sample = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32)
-            sample = self.session.run([summaries], feed_dict={self.z: z_sample})
+            z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+            # TODO: Write this function in numpy
+            y_sample = self.session.run(d_utils.MetaReader(self.dataset_path).label_average(self.features, np.zeros([self.batch_size, len(self.features)])))
+
+            sample = self.session.run([summaries], feed_dict={self.z: z_sample, self.y: y_sample})
             writer.add_summary(sample[0], global_step=0)
 
 

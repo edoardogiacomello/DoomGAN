@@ -83,7 +83,6 @@ grey_to_rgb = [
 [245, 130, 48],	
 [255, 255, 255]]
 
-
 gray_to_sg = [
 [[0*channel_s_interval],[0 *channel_g_interval]], #empty
 [[1*channel_s_interval],[0 *channel_g_interval]], #wall
@@ -104,6 +103,8 @@ gray_to_sg = [
 [[2*channel_s_interval],[13*channel_g_interval]], #exit
 ]
 
+
+
 def tf_from_greyscale_to_sg(images):
     """
     Converts a batch of grayscale images in range [0,255] to a dual channel representation where:
@@ -120,15 +121,17 @@ def tf_from_greyscale_to_sg(images):
     return tf.squeeze(sg_images, axis=-1)
 
 
-def tf_from_grayscale_to_tilespace(images):
+def tf_from_grayscale_to_tilespace(images, channel='GREY'):
     """
     Converts a batch of inputs from the floating point representation [0,1] to the tilespace representation [0,1,..,n_tiles]
     :param images:
+    channe: 'GREY', 'S' or 'G'.
     :return:
     """
     # Rescale the input to [0,255]
     rescaled = images * tf.constant(255.0, dtype=tf.float32)
-    interval = tf.constant(encoding_interval, dtype=tf.float32)
+    enc_int = channel_s_interval if channel == 'S' else channel_g_interval if channel == 'G' else encoding_interval
+    interval = tf.constant(enc_int, dtype=tf.float32)
     half_interval = tf.constant(encoding_interval / 2, dtype=tf.float32)
     # Here the image has pixel values that does not correspond to anything in the encoding
     mod = tf.mod(rescaled, interval)  # this is the error calculated from the previous right value.
@@ -203,6 +206,16 @@ class MetaReader(object):
             self.meta = json.load(meta_in)
     def count(self):
         return int(self.meta['count'])
+
+    def label_average(self, feature_names, y_like_array):
+        norm_channels = []
+        for f_id, f_name in enumerate(feature_names):
+            y_slice = tf.slice(y_like_array, begin=[0, f_id], size=[-1, 1])
+            feat_max = tf.constant(self.meta['features'][f_name]['max'], dtype=tf.float32, shape=y_slice.get_shape())
+            feat_min = tf.constant(self.meta['features'][f_name]['min'], dtype=tf.float32, shape=y_slice.get_shape())
+            feat_avg = tf.constant(self.meta['features'][f_name]['avg'], dtype=tf.float32, shape=y_slice.get_shape())
+            norm_channels.append((feat_avg - feat_min) / (feat_max - feat_min))
+        return tf.squeeze(tf.stack(norm_channels, axis=1))
 
     
 

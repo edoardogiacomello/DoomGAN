@@ -12,6 +12,37 @@ def leaky_relu(x, leak=0.2, name="lrelu"):
 def elu(x):
     return tf.nn.elu(x)
 
+
+
+def PS(X, r, color=False):
+    """
+    Code from https://github.com/tetrachrome/subpixel
+    :param X:
+    :param r:
+    :param color:
+    :return:
+    """
+    def _phase_shift(I, r):
+        # Helper function with main phase shift operation
+        bsize, a, b, c = I.get_shape().as_list()
+        X = tf.reshape(I, (bsize, a, b, r, r))
+        X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
+        X = tf.split(1, a, X)  # a, [bsize, b, r, r]
+        X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
+        X = tf.split(1, b, X)  # b, [bsize, a*r, r]
+        X = tf.concat(2, [tf.squeeze(x) for x in X])  #
+        bsize, a * r, b * r
+        return tf.reshape(X, (bsize, a * r, b * r, 1))
+
+    # Main OP that you can arbitrarily use in you tensorflow code
+    if color:
+      Xc = tf.split(3, 3, X)
+      X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
+    else:
+      X = _phase_shift(X, r)
+    return X
+
+
 class batch_norm(object):
   def __init__(self, epsilon=1e-5, momentum = 0.9, name="batch_norm"):
     with tf.variable_scope(name):
@@ -31,7 +62,7 @@ class batch_norm(object):
 
 def conv2d(input_, output_dim,
            k_h=5, k_w=5, stride_h=2, stride_w=2, stddev=0.02,
-           name="conv2d"):
+           name="conv2d", with_w=False):
     with tf.variable_scope(name):
         w = tf.get_variable('w', [k_h, k_w, input_.get_shape()[-1], output_dim],
                             initializer=tf.truncated_normal_initializer(stddev=stddev))
@@ -39,8 +70,10 @@ def conv2d(input_, output_dim,
 
         biases = tf.get_variable('biases', [output_dim], initializer=tf.constant_initializer(0.0))
         conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
-
-        return conv
+        if with_w:
+            return conv, w
+        else:
+            return conv
 
 
 def conv2d_transposed(input_, output_shape,
@@ -65,7 +98,7 @@ def conv2d_transposed(input_, output_shape,
             deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
 
             if with_w:
-                return deconv, w, biases
+                return deconv, w
             else:
                 return deconv
         else:
@@ -81,7 +114,10 @@ def conv2d_transposed(input_, output_shape,
 
             biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
             conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
-            return conv
+            if with_w:
+                return conv, w
+            else:
+                return conv
 
 
 def linear_layer(x, output_size, scope=None,stddev=0.02, bias_start=0.0, with_w=False, on_cpu_memory=False):
@@ -95,7 +131,7 @@ def linear_layer(x, output_size, scope=None,stddev=0.02, bias_start=0.0, with_w=
                                  tf.random_normal_initializer(stddev=stddev))
         b = tf.get_variable("b", [output_size], initializer=tf.constant_initializer(bias_start))
     if with_w:
-        return tf.matmul(x, W) + b, W, b
+        return tf.matmul(x, W) + b, W
     else:
         return tf.matmul(x, W) + b
 
