@@ -293,7 +293,7 @@ class DoomGAN(object):
         :return:
         """
         # FIXME: The encoding interval is different for each channel when in sg mode
-        encoding_interval = d_utils.channel_s_interval if self.split_channels else d_utils.encoding_interval
+        encoding_interval = d_utils.channel_s_interval if self.split_channels else d_utils.channel_grey_interval
 
 
         rescaled = g * tf.constant(255.0, dtype=tf.float32)
@@ -476,8 +476,9 @@ if __name__ == '__main__':
 
     with tf.Session() as s:
         clean_tensorboard_cache('/tmp/tflow')
-        # Define here which features to use
 
+
+        # Define here which features to use
         gan = DoomGAN(session=s,
                       config=FLAGS, features=['height', 'width', 'downloads', 'rating_value', 'rating_count', 'page_visits']
                       )

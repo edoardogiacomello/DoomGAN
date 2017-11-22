@@ -17,7 +17,7 @@ from scipy import misc
 
 ###### This part contains all the variables concerning the dataset #####
 # This is the tile dictionary, containing also the pixel colors for image conversion
-encoding_interval = (255 // 16)
+channel_grey_interval = (255 // 16)
 channel_s_interval = (255//2)
 channel_g_interval = (255//13)
 # channel s contains: empty, wall, floor, (stairs encoded as floor)
@@ -26,22 +26,22 @@ channel_g_interval = (255//13)
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
 tiles_greyscale = {
         "-": tile_tuple(( 0), ["empty", "out of bounds"]),  # is black
-        "X": tile_tuple((1 * encoding_interval), ["solid", "wall"]),  # maroon
-        ".": tile_tuple((2 * encoding_interval), ["floor", "walkable"]), # coral
-        ",": tile_tuple((3 * encoding_interval), ["floor", "walkable", "stairs"]), # Beige
-        "E": tile_tuple((4 * encoding_interval), ["enemy", "walkable"]), # red
-        "W": tile_tuple((5 * encoding_interval), ["weapon", "walkable"]), # Blue
-        "A": tile_tuple((6 * encoding_interval), ["ammo", "walkable"]), # Cyan
-        "H": tile_tuple((7 * encoding_interval), ["health", "armor", "walkable"]), # Green
-        "B": tile_tuple((8 * encoding_interval), ["explosive barrel", "walkable"]), # Magenta
-        "K": tile_tuple((9 * encoding_interval), ["key", "walkable"]), # Teal
-        "<": tile_tuple((10 * encoding_interval), ["start", "walkable"]), # Lavender
-        "T": tile_tuple((11 * encoding_interval), ["teleport", "walkable", "destination"]), # Olive
-        ":": tile_tuple((12 * encoding_interval), ["decorative", "walkable"]), # Grey
-        "L": tile_tuple((13 * encoding_interval), ["door", "locked"]), # Brown
-        "t": tile_tuple((14 * encoding_interval), ["teleport", "source", "activatable"]), # Mint
-        "+": tile_tuple((15 * encoding_interval), ["door", "walkable", "activatable"]), # Orange
-        ">": tile_tuple((16 * encoding_interval), ["exit", "activatable"]) # White
+        "X": tile_tuple((1 * channel_grey_interval), ["solid", "wall"]),  # maroon
+        ".": tile_tuple((2 * channel_grey_interval), ["floor", "walkable"]), # coral
+        ",": tile_tuple((3 * channel_grey_interval), ["floor", "walkable", "stairs"]), # Beige
+        "E": tile_tuple((4 * channel_grey_interval), ["enemy", "walkable"]), # red
+        "W": tile_tuple((5 * channel_grey_interval), ["weapon", "walkable"]), # Blue
+        "A": tile_tuple((6 * channel_grey_interval), ["ammo", "walkable"]), # Cyan
+        "H": tile_tuple((7 * channel_grey_interval), ["health", "armor", "walkable"]), # Green
+        "B": tile_tuple((8 * channel_grey_interval), ["explosive barrel", "walkable"]), # Magenta
+        "K": tile_tuple((9 * channel_grey_interval), ["key", "walkable"]), # Teal
+        "<": tile_tuple((10 * channel_grey_interval), ["start", "walkable"]), # Lavender
+        "T": tile_tuple((11 * channel_grey_interval), ["teleport", "walkable", "destination"]), # Olive
+        ":": tile_tuple((12 * channel_grey_interval), ["decorative", "walkable"]), # Grey
+        "L": tile_tuple((13 * channel_grey_interval), ["door", "locked"]), # Brown
+        "t": tile_tuple((14 * channel_grey_interval), ["teleport", "source", "activatable"]), # Mint
+        "+": tile_tuple((15 * channel_grey_interval), ["door", "walkable", "activatable"]), # Orange
+        ">": tile_tuple((16 * channel_grey_interval), ["exit", "activatable"]) # White
     }
 
 tiles = {
@@ -121,30 +121,39 @@ def tf_from_greyscale_to_sg(images):
     return tf.squeeze(sg_images, axis=-1)
 
 
-def tf_from_grayscale_to_tilespace(images, channel='GREY'):
+def tf_from_grayscale_to_tilespace(images):
     """
     Converts a batch of inputs from the floating point representation [0,1] to the tilespace representation [0,1,..,n_tiles]
     :param images:
-    channe: 'GREY', 'S' or 'G'.
     :return:
     """
     # Rescale the input to [0,255]
     rescaled = images * tf.constant(255.0, dtype=tf.float32)
-    enc_int = channel_s_interval if channel == 'S' else channel_g_interval if channel == 'G' else encoding_interval
-    interval = tf.constant(enc_int, dtype=tf.float32)
-    half_interval = tf.constant(encoding_interval / 2, dtype=tf.float32)
-    # Here the image has pixel values that does not correspond to anything in the encoding
-    mod = tf.mod(rescaled, interval)  # this is the error calculated from the previous right value.
-    # I.e. if the encoding is [0, 15, 30] and the generated value is [14.0, 16.0, 30.0] this is [14, 1, 0]
-    div = tf.floor_div(rescaled, interval)
-    # this is the encoded value if the error is less then half the sampling interval, right_value - 1 otherwise
-    # E.g. (continuing the example) [0, 1, 2] while the correct encoding should be [1, 1, 2]
-    mask = tf.floor(tf.divide(mod, half_interval))
-    #  This mask tells which pixels are already right (0) or have to be incremented (1)
-    # E.g [1, 0, 0]
-    encoded = div + mask  # Since the mask can be either 0 or 1 for each pixel, the true encoding
-    # will be obtained by summing the two
-    return encoded
+    channels = rescaled.get_shape()[-1].value
+    mode = 'GREY' if channels == 1 else 'SG' if channels == 2 else 'RGB'
+    assert (mode != 'RGB'), "Conversion to tilespace is possible only with 1 (greyscale) or 2 (SG) channels"
+    channels = []
+    for c in range(channels):
+
+        if mode == 'GREY':
+            chosen_interval = channel_grey_interval
+        if mode == 'SG':
+            chosen_interval = channel_s_interval if c == 0 else channel_g_interval
+        interval = tf.constant(chosen_interval, dtype=tf.float32)
+        half_interval = tf.constant(chosen_interval / 2, dtype=tf.float32)
+        # Here the image contains pixel values that does not correspond to anything in the encoding
+        mod = tf.mod(rescaled, interval)  # this is the error calculated from the previous right value.
+        # I.e. if the encoding is [0, 15, 30] and the generated value is [14.0, 16.0, 30.0] this is [14, 1, 0]
+        div = tf.floor_div(rescaled, interval)
+        # this is the encoded value if the error is less then half the sampling interval, right_value - 1 otherwise
+        # E.g. (continuing the example) [0, 1, 2] while the correct encoding should be [1, 1, 2]
+        mask = tf.floor(tf.divide(mod, half_interval))
+        #  This mask tells which pixels are already right (0) or have to be incremented (1)
+        # E.g [1, 0, 0]
+        encoded = div + mask  # Since the mask can be either 0 or 1 for each pixel, the true encoding
+        # will be obtained by summing the two
+        channels.append(encoded)
+    return tf.stack(channels, axis=-1)
 
 def tf_from_grayscale_to_rgb(tile_indices):
     """
