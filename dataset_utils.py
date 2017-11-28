@@ -114,6 +114,7 @@ def tf_from_greyscale_to_sg(images):
     :return:
     """
     images = tf.divide(images, tf.constant(255.0, dtype=tf.float32))
+    # FIXME: Probably this is not working anymore
     images = tf.to_int32(tf_from_grayscale_to_tilespace(images))
     palette = tf.constant(gray_to_sg, tf.float32)
     images = tf.squeeze(images, axis=-1)
@@ -121,7 +122,7 @@ def tf_from_greyscale_to_sg(images):
     return tf.squeeze(sg_images, axis=-1)
 
 
-def tf_from_grayscale_to_tilespace(images):
+def tf_from_grayscale_to_tilespace(images, channels=1):
     """
     Converts a batch of inputs from the floating point representation [0,1] to the tilespace representation [0,1,..,n_tiles]
     :param images:
@@ -129,15 +130,11 @@ def tf_from_grayscale_to_tilespace(images):
     """
     # Rescale the input to [0,255]
     rescaled = images * tf.constant(255.0, dtype=tf.float32)
-    channels = rescaled.get_shape()[-1].value
-    mode = 'GREY' if channels == 1 else 'SG' if channels == 2 else 'RGB'
-    assert (mode != 'RGB'), "Conversion to tilespace is possible only with 1 (greyscale) or 2 (SG) channels"
-    channels = []
+    channel_slice = []
     for c in range(channels):
-
-        if mode == 'GREY':
+        if channels == 1:
             chosen_interval = channel_grey_interval
-        if mode == 'SG':
+        if channels == 2:
             chosen_interval = channel_s_interval if c == 0 else channel_g_interval
         interval = tf.constant(chosen_interval, dtype=tf.float32)
         half_interval = tf.constant(chosen_interval / 2, dtype=tf.float32)
@@ -152,8 +149,8 @@ def tf_from_grayscale_to_tilespace(images):
         # E.g [1, 0, 0]
         encoded = div + mask  # Since the mask can be either 0 or 1 for each pixel, the true encoding
         # will be obtained by summing the two
-        channels.append(encoded)
-    return tf.stack(channels, axis=-1)
+        channel_slice.append(encoded)
+    return tf.squeeze(tf.stack(channel_slice, axis=-1), axis=-2)
 
 def tf_from_grayscale_to_rgb(tile_indices):
     """

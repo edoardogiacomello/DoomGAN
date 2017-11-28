@@ -459,7 +459,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer("dataset_size", None, "Number of samples contained in the .tfrecords dataset")
     flags.DEFINE_integer("height", 512, "Target sample height")
     flags.DEFINE_integer("width", 512, "Target sample width")
-    flags.DEFINE_integer("output_channels", 3, "Target sample channels")
+    flags.DEFINE_integer("output_channels", 2, "Target sample channels")
     flags.DEFINE_integer("g_filter_depth", 64, "number of filters for the first G convolution layer")
     flags.DEFINE_integer("d_filter_depth", 64, "number of filters for the first G convolution layer")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
@@ -480,7 +480,7 @@ if __name__ == '__main__':
 
         # Define here which features to use
         gan = DoomGAN(session=s,
-                      config=FLAGS, features=['height', 'width', 'downloads', 'rating_value', 'rating_count', 'page_visits']
+                      config=FLAGS, features=['height', 'width']
                       )
         show_all_variables()
         gan.train(FLAGS) if FLAGS.train else gan.sample(seeds=[42, 314, 123123, 65847968, 46546868])
