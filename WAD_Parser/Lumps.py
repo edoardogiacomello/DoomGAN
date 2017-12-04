@@ -4,6 +4,7 @@ class Things(list):
     def __init__(self):
         super()
 
+
     def from_bytes(self, byte_stream):
         # Each thing is 10 bytes long
         things_bytes = [byte_stream[s:s+10] for s in range(0, len(byte_stream), 10)]
@@ -17,12 +18,30 @@ class Things(list):
             self.append(thing)
         return self
 
+
+    def add_thing(self, x, y, angle, type, options):
+        self.append({'x': x, 'y': y, 'angle': angle, 'type': type, 'options': options})
+
+
+    def to_bytes(self):
+        lump_bytes = bytearray()
+        for thing in self:
+            lump_bytes += thing["x"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += thing["y"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += thing["angle"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += thing["type"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += thing["options"].to_bytes(2, byteorder='little', signed=True)
+        return lump_bytes
+
+
 class Linedefs(list):
     def __init__(self):
         super()
     def from_bytes(self, byte_stream):
         # Each linedef is 14 bytes long
         linedef_bytes = [byte_stream[s:s + 14] for s in range(0, len(byte_stream), 14)]
+        if len(linedef_bytes[-1])<14:
+            del linedef_bytes[-1]
         for lb in linedef_bytes:
             linedef={}
             linedef['from'], = unpack('h',lb[0:2]) # From this vertex
@@ -35,6 +54,42 @@ class Linedefs(list):
             self.append(linedef)
         return self
 
+    def add_linedef(self, vertex_from, vertex_to, flags, types, trigger, right_sidedef_index, left_sidedef_index=-1):
+        """
+        Add a new linedef. If the linedef in the opposite direction is already present, then
+        the old linedef is used and the right_sidedef_index is applied to the left_sidedef.
+        If it's present in the same direction then the linedef is added as new.
+        """
+        found_left = [self.index(l) for l in self if l['from']==vertex_to and l['to']==vertex_from]
+        if found_left:
+            self[found_left[0]]['flags']=flags
+            self[found_left[0]]['types']=types
+            self[found_left[0]]['trigger']=trigger
+            self[found_left[0]]['left_sidedef']=right_sidedef_index
+        else:
+            line = {'from': vertex_from, 'to': vertex_to, 'flags': flags, 'types': types, 'trigger': trigger,
+                    'right_sidedef': right_sidedef_index, 'left_sidedef': left_sidedef_index}
+            self.append(line)
+
+
+
+
+
+
+
+    def to_bytes(self):
+        lump_bytes = bytearray()
+        for linedef in self:
+            lump_bytes += linedef["from"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += linedef["to"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += linedef["flags"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += linedef["types"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += linedef["trigger"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += linedef["right_sidedef"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += linedef["left_sidedef"].to_bytes(2, byteorder='little', signed=True)
+        return lump_bytes
+
+
 class Sidedefs(list):
     # What texture to draw along a LINEDEF
     def __init__(self):
@@ -46,13 +101,38 @@ class Sidedefs(list):
             sidedef = dict()
             sidedef['x_offset'], = unpack('h',sb[0:2])
             sidedef['y_offset'], = unpack('h',sb[2:4])
-            sidedef['upper_texture'] = sb[4:12].decode('ascii')  # '-' for simple sidedefs
-            sidedef['lower_texture'] = sb[12:20].decode('ascii')  # '-' for simple sidedefs
-            sidedef['middle_texture'] = sb[20:28].decode('ascii') # normal or full texture, '-' if transparent
+            sidedef['upper_texture'] = decode_doomstring(sb[4:12])  # '-' for simple sidedefs
+            sidedef['lower_texture'] = decode_doomstring(sb[12:20])  # '-' for simple sidedefs
+            sidedef['middle_texture'] = decode_doomstring(sb[20:28]) # normal or full texture, '-' if transparent
             sidedef['sector'], = unpack('h',sb[28:30]) # Sector the sidedef is facing
             self.append(sidedef)
         # Texture names are from TEXTURE1/2 resources. Wall patches into the directory are referenced through the PNAMES lump
         return self
+
+    def add_sidedef(self, x_offset, y_offset, upper_texture, lower_texture, middle_texture, sector):
+        """
+        Adds a new sidedef and return its id
+        :param x_offset:
+        :param y_offset:
+        :param upper_texture:
+        :param lower_texture:
+        :param middle_texture:
+        :param sector:
+        :return:
+        """
+        self.append({ 'x_offset': x_offset, 'y_offset': y_offset, 'upper_texture': upper_texture, 'lower_texture': lower_texture, 'middle_texture': middle_texture, 'sector': sector})
+        return len(self)-1
+
+    def to_bytes(self):
+        lump_bytes = bytearray()
+        for sidedef in self:
+            lump_bytes += sidedef["x_offset"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += sidedef["y_offset"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += encode_doomstring(sidedef["upper_texture"])
+            lump_bytes += encode_doomstring(sidedef["lower_texture"])
+            lump_bytes += encode_doomstring(sidedef["middle_texture"])
+            lump_bytes += sidedef["sector"].to_bytes(2, byteorder='little', signed=True)
+        return lump_bytes
 
 class Vertexes(list):
     # Even though the correct name should be "vertices" the standard lump name is used
@@ -70,6 +150,26 @@ class Vertexes(list):
             vertex['y'], = unpack('h', vb[2:4])
             self.append(vertex)
         return self
+
+    def add_vertex(self, v):
+        """
+        Adds a new vertex to the list and returns its index. If the vertex is already present, then just return its index
+        :param v: Tuple (x, y)
+        :return: int, the vertex index
+        """
+        v = {'x': v[0], 'y': v[1]}
+        if v not in self:
+            self.append(v)
+            return len(self)-1
+        return self.index(v)
+
+    def to_bytes(self):
+        lump_bytes = bytearray()
+        for vertex in self:
+            lump_bytes += vertex["x"].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += vertex["y"].to_bytes(2, byteorder='little', signed=True)
+        return lump_bytes
+
 
 class Segs(list):
     """"
@@ -94,6 +194,9 @@ class Segs(list):
             self.append(seg)
         return self
 
+    #### SINCE SEGS, SSECTORS AND NODES ARE COMPUTED VIA AN EXTERNAL TOOL, NO WRITING FUNCTIONS HAVE BEEN WRITTEN FOR NOW
+
+
 class SSectors(list):
     """
     SSECTOR stands for sub-sector. These divide up all the SECTORS into
@@ -117,6 +220,8 @@ class SSectors(list):
             subsector['start_seg'], = unpack('h', sb[2:4])
             self.append(subsector)
         return self
+
+    #### SINCE SEGS, SSECTORS AND NODES ARE COMPUTED VIA AN EXTERNAL TOOL, NO WRITING FUNCTIONS HAVE BEEN WRITTEN FOR NOW
 
 class Nodes(list):
     """
@@ -158,6 +263,8 @@ class Nodes(list):
             self.append(node)
         return self
 
+        #### SINCE SEGS, SSECTORS AND NODES ARE COMPUTED VIA AN EXTERNAL TOOL, NO WRITING FUNCTIONS HAVE BEEN WRITTEN FOR NOW
+
 class Sectors(list):
     """
     A SECTOR is a horizontal (east-west and north-south) area of the map
@@ -179,14 +286,40 @@ class Sectors(list):
             sector = dict()
             sector['floor_height'], = unpack('h', sb[0: 2])
             sector['ceiling_height'], = unpack('h', sb[2: 4])
-            sector['floor_flat'] = sb[4: 12].decode('ascii')  # flat name, from the directory
-            sector['ceiling_flat'] = sb[12: 20].decode('ascii')  # flat name, from the directory
+            sector['floor_flat'] = decode_doomstring(sb[4: 12])  # flat name, from the directory
+            sector['ceiling_flat'] = decode_doomstring(sb[12: 20])  # flat name, from the directory
             sector['lightlevel'], = unpack('h', sb[20:22])
             sector['special_sector'], = unpack('h', sb[22:24])
             sector['tag'], = unpack('h', sb[24:26]) # tag corresponding to LINEDEF trigger, effect determined by sepcial_sector
             self.append(sector)
-        
         return self
+
+    def add_sector(self, floor_height, ceiling_height, floor_flat, ceiling_flat, lightlevel, special_sector, tag):
+        """
+        Adds a new sector and returns its id
+        :param floor_height:
+        :param ceiling_height:
+        :param floor_flat:
+        :param ceiling_flat:
+        :param lightlevel:
+        :param special_sector:
+        :param tag:
+        :return:
+        """
+        self.append({'floor_height':floor_height, 'ceiling_height':ceiling_height, 'floor_flat':floor_flat, 'ceiling_flat':ceiling_flat, 'lightlevel':lightlevel, 'special_sector':special_sector, 'tag':tag})
+        return len(self)-1
+    def to_bytes(self):
+        lump_bytes = bytearray()
+        for sector in self:
+            lump_bytes += sector['floor_height'].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += sector['ceiling_height'].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += encode_doomstring(sector['floor_flat'])
+            lump_bytes += encode_doomstring(sector['ceiling_flat'])
+            lump_bytes += sector['lightlevel'].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += sector['special_sector'].to_bytes(2, byteorder='little', signed=True)
+            lump_bytes += sector['tag'].to_bytes(2, byteorder='little', signed=True)
+        return lump_bytes
+
 
 class Reject(bytes):
     """ Sector x Sector matrix which tells if an enemy on sector """
@@ -212,7 +345,6 @@ class Blockmap(dict):
         header['n_rows'], = unpack('h', byte_stream[6: 8])
         self['header'] = header
 
-
         n_blocks = header['n_cols']*header['n_rows']
         self['offsets'] = []
         self['blocklists'] = []
@@ -234,11 +366,39 @@ class Blockmap(dict):
             # this row unpacks every integer contained into the blocklist in a list of signed shorts,
             # discarding the first and last int because they are delimiters, respectively 0000 and FFFF
             self['blocklists'].append(list(unpack('h' * (len(bb) // 2), bb)))
-
-
-
-
         return self
+
+        ### Some tools also build BLOCKMAP, so no writing functions are needed for this lump
+
+
+def decode_doomstring(byte_string):
+    """
+    Returns a string from the Doom String format (8 byte - ascii encoded - Null padded strings)
+    This function also clean malformed strings (not null-padded or with invalid bytes)
+    :param byte_string: a bytes() object
+    :return: String
+    """
+    s = list()
+    import sys
+    if len(byte_string) > 0:
+        for b in byte_string:
+            if b == 0:
+                break
+            try:
+                b = (b).to_bytes(1, 'little').decode('ascii')
+            except Exception:
+                # Encountered an invalid character, just ignore it
+                continue
+            s.append(b)
+        return ''.join(s)
+    else:
+        return ''
+
+def encode_doomstring(ascii_string):
+    if len(ascii_string)<8:
+        padding = ['\x00' for i in range(8-len(ascii_string))]
+        ascii_string = ascii_string+''.join(padding)
+    return bytes(ascii_string[0:8], encoding='ascii')
 
 
 known_lumps_classes = {'THINGS': Things, 'LINEDEFS': Linedefs, 'SIDEDEFS': Sidedefs, 'VERTEXES': Vertexes, 'SEGS': Segs,
