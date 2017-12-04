@@ -155,3 +155,23 @@ all_things = []
 for category in things.keys():
     all_things += things[category]
 
+def get_thing_category(index):
+    # Dealing with level start special case
+    if index == 1:
+        return 'start'
+
+    for category in things:
+        indicies =  [t['int'] for t in things[category]]
+        if index in indicies:
+            return category
+    return 'unknown'
+
+def get_category_things_types(category):
+    """
+    Return the list of thing types belonging to the given category
+    :param category: 'start', 'artifacts', 'powerups', 'weapons', 'ammunitions', 'keys', 'monsters', 'obstacles', 'decorations', 'other'
+    :return:
+    """
+    if category == 'start':
+        return [1]
+    return [t['int'] for t in things[category]]

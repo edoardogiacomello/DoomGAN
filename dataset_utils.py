@@ -23,6 +23,10 @@ channel_g_interval = (255//13)
 # channel s contains: empty, wall, floor, (stairs encoded as floor)
 # channel g contains: enemy, weapon, ammo, health, barrel, key, start, teleport, decorative, teleport, exit
 
+from WAD_Parser.WADReader import WADReader
+
+
+
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
 tiles_greyscale = {
         "-": tile_tuple(( 0), ["empty", "out of bounds"]),  # is black
@@ -511,3 +515,27 @@ def generate_images_and_convert():
                              target_size=(shape, shape), target_channels=1)
         dmm.convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan{}_tilespace.TFRecords'.format(shape))
 
+def compute_dataset_features(input_WADs_folder, relative_to_json_dbs, out_dataset_folder, from_id = 0):
+    """ Reads the list of WAD file paths from the .json database and compute the maps and the features for each level
+    without padding or resizing. """
+    dataset = list()
+    for jf in relative_to_json_dbs:
+        json_path = input_WADs_folder+jf
+        with open(json_path, 'r') as file:
+            dataset += json.load(file)
+
+    file_paths = [r['path'] for r in dataset]
+    for i, path in enumerate(file_paths):
+        if i < from_id:
+            # Skip sample
+            continue
+        path = path.replace('./WADs/', input_WADs_folder)
+        try:
+            print("{}/{}".format(i, len(file_paths)))
+            WADReader().extract(path, save_to=out_dataset_folder)
+        except:
+            print('Error parsing {}'.format(path))
+
+compute_dataset_features( input_WADs_folder='/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
+                          relative_to_json_dbs=['Doom/Doom.json', 'DoomII/DoomII.json'],
+                          out_dataset_folder='/run/media/edoardo/BACKUP/Datasets/DoomDataset/FullDataset/')
