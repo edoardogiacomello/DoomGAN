@@ -1,5 +1,3 @@
-from collections import namedtuple
-import binascii
 import itertools
 from struct import *
 from WAD_Parser import Lumps
@@ -8,6 +6,7 @@ import re, os
 from skimage import io
 from skimage.measure import find_contours
 import subprocess
+import json
 
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
@@ -388,28 +387,53 @@ class WADReader(object):
                     record['errors'] += record['wad'].errors
         return record
 
-    def save_sample(self, wad, path):
+    def save_sample(self, wad, path, root_path = '', wad_info=None):
+        """
+        Saves the wad maps (as .png) and features (as .json) to the "path" folder for each level in the wad.
+        Also adds the produced file paths to the level features,
+        if root_path is set then these paths are relative to that folder instead of being absolute paths
+        if wad_info is not None, then adds its fields as features
+        :param wad: the parsed wad file to save as feature maps
+        :param path: the output folder
+        :param root_path: the path to which the paths stored in the features should be relative to
+        :return: None
+        """
         os.makedirs(path, exist_ok=True)
         for level in wad['levels']:
             base_filename=path+wad['wad_name'].split('.')[-2]+'_'+level['name']
-            # Feature maps will be saved as images, all the other will be stored in a json file
-            io.imsave(base_filename+'_floormap.png', level['maps']['floormap'])
-            io.imsave(base_filename+'_heightmap.png', level['maps']['heightmap'])
-            io.imsave(base_filename+'_thingsmap.png', level['maps']['thingsmap'])
-            io.imsave(base_filename+'_wallmap.png', level['maps']['wallmap'])
-            import json
-            with open(base_filename+'.json', 'w') as jout:
+            # Path relative to the dataset root that will be stored in the database
+            relative_path = base_filename.replace(root_path, '')
+            # Adding the features
+            for map in level['maps']:
+                # Adding the corresponding path as feature for further access
+                level['features']['path_{}'.format(map)] = relative_path + '_{}.png'.format(map)
+                io.imsave(base_filename + '_{}.png'.format(map), level['maps'][map])
+            for wadinfo in wad_info:
+                # Adding wad info (author, etc) to the level features.
+                if wadinfo not in level['features']:  # Computed features have priority over passed features
+                    level['features'][wadinfo] = wad_info[wadinfo]
+            # Completing the features with the level slot
+            level['features']['slot'] = level['name']
+            # Doing the same for the other features
+            level['features']['path_json'] = relative_path + '.json'
+            with open(base_filename + '.json', 'w') as jout:
                 json.dump(level['features'], jout)
-        pass
 
 
-    def extract(self, w, save_to=None):
+
+    def extract(self, wad_fp, save_to=None, root_path=None, update_record=None):
         """
         Compute the image representation and the features of each level contained in the wad file.
-        If 'save_to' is set, then saves the features to the given folder
-        :return:
+        If 'save_to' is set, then also do the following:
+            - saves a json file for each level inside the 'save_to' folder
+            - saves the set of maps as png images inside the 'save_to' folder
+            - adds the relative path of the above mentioned files as level features
+        Morover, if 'save_to' is set, then you may want to specify a 'root_path' for avoiding to save the full path in the features.
+        If 'update_record' is set to a json dictionary (perhaps containing info about the wad author, title, etc),
+        then this function stores all the update_record fields into the level features dictionary.
+        :return: Parsed Wad
         """
-        parsed_wad = self.read(w)
+        parsed_wad = self.read(wad_fp)
         for error in parsed_wad['errors']:
             if error['fatal']:
                 return None
@@ -417,9 +441,9 @@ class WADReader(object):
         for level in parsed_wad['wad'].levels:
             extractor = WADFeatureExtractor(level)
             features, maps = extractor.extract_features()
-            # extractor.show_maps()
             parsed_wad['levels'] += [{'name': level['name'], 'features': features, 'maps':maps}]
         if save_to is not None:
-            self.save_sample(parsed_wad, save_to)
+            self.save_sample(parsed_wad, save_to, root_path, update_record)
         return parsed_wad
+
 

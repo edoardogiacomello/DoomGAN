@@ -172,7 +172,9 @@ class DoomWorldWadScraper():
                                                              game_name=game_name,
                                                              category_name=self.categories[cat_id].name)
                     # download the level file and store it on the local disk
-                    newfile['path'] = self._download_and_save(newfile['file_url'], current_path)
+                    file_path = self._download_and_save(newfile['file_url'], current_path)
+                    # Remove the root from the path
+                    newfile['path'] = file_path.replace(root_path, './')
                     newfile['name'] = newfile['path'].split("/")[-1]
                     current_records.append(newfile)
                     self.file_info.append(newfile)

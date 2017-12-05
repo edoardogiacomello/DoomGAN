@@ -4,8 +4,8 @@ import csv
 import os
 from collections import defaultdict
 import zipfile
-from WADParser import WADParser, WADRasterizer
-
+from WAD_Parser.WADEditor import WADReader
+import warnings
 header_to_dict_index = defaultdict(lambda: "other", {
             'Author': 'author',
             'About This File': 'description',
@@ -15,7 +15,7 @@ header_to_dict_index = defaultdict(lambda: "other", {
             'Bugs': 'bugs',
             'Build Time': 'build_time',
             # These headers does not appear as is on the website, but they are kept here for keeping track of all the
-            # possible columns
+            # possible columns of the dataset
             'rating_value': 'rating_value',
             'rating_count': 'rating_count',
             'page_visits': 'page_visits',
@@ -27,9 +27,6 @@ header_to_dict_index = defaultdict(lambda: "other", {
             'title':'title',
             'name:':'name',
             'path':'path',
-            'svg_path':'svg_path',
-            'tile_path':'tile_path',
-            'img_path':'img_path',
             'height' : 'height',
             'width' : 'width'
         })
@@ -69,11 +66,12 @@ def merge_json(file_list, output_path):
     print("Merged {} records in one file".format(len(final)))
 
 
+# TODO: This function is out-of-date. A minimization of the number of steps required to build the dataset is needed
 def extract_database(json_database, output_path):
     """This function takes the folder of scraped data as input (the folder structure should be
         <root_path>/<catname>/levelname.zip) and generates a representation that is similar to that used by
         https://github.com/TheVGLC/TheVGLC (i.e. <gamename>/<[Original|Processed|Processed - Vectorized]>)
-         at a given output_path. In particular it extract each level zip file and parse them in both tile and vector 
+         at a given output_path. In particular it extract each level zip file and parse them in both tile and vector
          representations. The json file passed as input is used as a reference for finding the files corresponding
         to the levels, and it is updated while the WADs get parsed.
 
@@ -81,7 +79,7 @@ def extract_database(json_database, output_path):
                    Must be located at <root_path>/<json_database> along with the category-named folders
         output_path: the output folder for extraction. Should be an empty folder as this function may overwrite sensitive data
         
-        EXAMPLE: extract_database("./dataset/doom/","DoomIncomplete.json", "./dataset/doom/parsed/")
+        EXAMPLE: extract_database("./dataset/doom/","./dataset/doom/parsed/")
         """
     supported_extensions = ('.wad', '.bws')
 
@@ -105,26 +103,32 @@ def extract_database(json_database, output_path):
 
     path_output_original = output_path + 'Original/'
     path_output_processed = output_path + 'Processed/'
-    path_output_vectorized = output_path + 'Processed - Vectorized/'
 
     # Creates the output paths
     if not os.path.exists(path_output_original):
         os.makedirs(path_output_original)
     if not os.path.exists(path_output_processed):
         os.makedirs(path_output_processed)
-    if not os.path.exists(path_output_vectorized):
-        os.makedirs(path_output_vectorized)
 
     parsed_levels = list() # Contain all the successfully parsed levels
 
 
     # Load the json file
     with open(json_database, 'r') as jf_in:
-        level_records = json.load(jf_in)
+        wad_records = json.load(jf_in)
 
     check_manually = []
-    for level in level_records:
-        path = level['path']
+    for wad_record in wad_records:
+        # The only constraint on the database path is that it must be in the parent folder of the category folders.
+        # This piece of code converts the strings
+        # DB: /something/<parent>/DB.json
+        # ZIP_PATH: /whatever/<parent>/categoryname/zipname.zip
+        # in
+        # ZIP_PATH: ./categoryname/zipname.zip
+        # This is needed due to the way the first version of the scraper used to store the folder structure
+        db_root = '/'.join(json_database.split('/')[0:-1])+'/'
+        db_parent_name = '/'.join(json_database.split('/')[-2:-1])+'/'
+        path = db_root+wad_record['path'].split('./')[-1].split(db_parent_name)[-1]
         wads = []
         zips = []
         if not (path.endswith('.zip') and os.path.isfile(path)):
@@ -146,28 +150,29 @@ def extract_database(json_database, output_path):
                     if not os.path.exists('/'.join(target_path.split('/')[0:-1])+'/'):
                         os.makedirs('/'.join(target_path.split('/')[0:-1])+'/')
                     os.rename(extracted_path, target_path)
-                    level['path'] = target_path
 
-                    # Parse and Raserize the levels contained in this wad
+                    # target_path is the full path for the .wad file, level[path] is the relative path from the given root
+                    wad_record['path'] = target_path.replace(output_path, '')
+
+                    # Parsing the level and extracting the features
                     try:
-                        rasterized_levels = WADRasterizer.rasterize(level['path'], output=path_output_processed)
-                        vectorized_levels = WADParser.parse(level['path'], output=path_output_vectorized)
-                        parsed_counter = 0
-                        for tile_rep, svg_rep in zip(rasterized_levels, vectorized_levels):
-                            parsed_level = level
-                            parsed_level['tile_path'] = tile_rep
-                            parsed_level['svg_path'] = svg_rep
-                            parsed_levels.append(parsed_level.copy())
-                            parsed_counter += 1
-                        print("{} levels parsed".format(parsed_counter))
-                    except Exception as e:
-                        print("Cannot decode " + level['path'])
-                        check_manually.append(level)
+                        reader = WADReader()
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            parsed_wad = reader.extract(wad_fp=target_path, save_to=path_output_processed, update_record=wad_record, root_path=output_path)
+
+                        for level in parsed_wad['levels']:
+                            parsed_levels.append(level['features'])
+                            pass
+                        print("{} levels parsed".format(len(parsed_wad['levels'])))
+                    except Exception:
+                        print("Cannot decode " + wad_record['path'])
+                        check_manually.append(wad_record)
                         continue
         except (zipfile.BadZipFile, NotImplementedError) as e:
-            print("Found a malformed file: {}".format(path))
+            print("Found a malformed zip file: {}".format(path))
             print(str(e))
-            check_manually.append(level)
+            check_manually.append(wad_record)
 
     with open(path_output_json_good, 'w') as json_out:
         json.dump(parsed_levels, json_out)
@@ -219,3 +224,4 @@ def check_consistency(json_path, root):
     print(str(len(result)))
 
 
+# extract_database('/run/media/edoardo/BACKUP/Datasets/KillMe/doom/Doom.json', '/run/media/edoardo/BACKUP/Datasets/KillMe/extracted/')

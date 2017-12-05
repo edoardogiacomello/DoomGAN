@@ -7,6 +7,8 @@ import numpy as np
 import json
 import tensorflow as tf
 from scipy import misc
+import warnings
+import skimage.io
 
 # In order to add a new feature modify the following parts:
     # meta description in datasetmanager.__init__
@@ -23,7 +25,7 @@ channel_g_interval = (255//13)
 # channel s contains: empty, wall, floor, (stairs encoded as floor)
 # channel g contains: enemy, weapon, ammo, health, barrel, key, start, teleport, decorative, teleport, exit
 
-from WAD_Parser.WADReader import WADReader
+from WAD_Parser.WADEditor import WADReader
 
 
 
@@ -451,30 +453,23 @@ class DatasetManager(object):
         return padded
 
 
-    def convert_to_TFRecords(self, output_path, exclude_tiny_levels=True):
+    def convert_to_TFRecords(self, record_list, output_path, max_size, min_size=(16, 16)):
         """
         Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
-        Pads each sample to the target size, DISCARDING the samples that are larger (this behaviour may change in future).
-        Also saves meta information about the data, in a separated file.
+        Pads each sample to the target size, DISCARDING the samples that are larger.
+        Also save meta information in a separated file.
         :return: None.
         """
-        # Load the json files
-        levels = []
-        for j in self.json_files:
-            with open(self.root + j, 'r') as jin:
-                levels += json.load(jin)
-        print("{} levels loaded.".format(len(levels)))
+        print("{} levels loaded.".format(len(record_list)))
         with tf.python_io.TFRecordWriter(output_path) as writer:
-            counter = 0
             saved_levels = 0
-            for level in levels:
-                counter += 1
-                too_big = int(level['width']) > self.target_size[1] or int(level['height']) > self.target_size[0]
-                is_tiny = int(level['width']) < 16 or int(level['height']) < 16 if exclude_tiny_levels else False
-                if too_big or is_tiny:
+            for counter, level in enumerate(record_list):
+                too_big = int(level['width']) > max_size[0] or int(level['height']) > max_size[1]
+                too_small = int(level['width']) < min_size[0] or int(level['height']) < min_size[1]
+                if too_big or too_small:
                     continue
-                mode = 'L' if self.target_channels == 1 else 'RGB'
-                image = misc.imread(self._get_absolute_path(level['img_path']), mode=mode)
+                # TODO: Continue
+                image = skimage.io.imread(self._get_absolute_path(level['img_path']), mode='L')
                 if self.target_channels == 1:
                     image = np.expand_dims(image,-1)
                 padded = self._pad_image(image)
@@ -482,9 +477,11 @@ class DatasetManager(object):
                 sample = self._sample_to_TFRecord(level, padded)
                 writer.write(sample.SerializeToString())
                 saved_levels+=1
-                if counter % (len(levels)//100) == 0:
-                    print("{}% completed.".format(round(counter/len(levels)*100)))
-            print("Levels saved: {}, levels discarded: {}".format(saved_levels, len(levels)-saved_levels))
+
+                if counter % (len(record_list)//100) == 0:
+                    print("{}% completed.".format(round(counter/len(record_list)*100)))
+            print("Levels saved: {}, out of range: {}".format(saved_levels, len(record_list)-saved_levels))
+
         meta_path = output_path + '.meta'
         with open(meta_path, 'w') as meta_out:
             # TODO: This can be done when analyzing the levels
@@ -502,40 +499,48 @@ class DatasetManager(object):
         return dataset
 
 
-def generate_images_and_convert():
-    shapes = [256]
-    # Convert every image to greyscale
-    # dmm_grey = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
-    #                     ['Doom/Doom.json', 'DoomII/DoomII.json'], target_channels=1)
-    # dmm_grey.convert_to_images()
-    # Save a dataset for each dimension
-    for shape in shapes:
-        dmm = DatasetManager('/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
-                             ['Doom/Doom.json', 'DoomII/DoomII.json'],
-                             target_size=(shape, shape), target_channels=1)
-        dmm.convert_to_TFRecords('/run/media/edoardo/BACKUP/Datasets/DoomDataset/lessthan{}_tilespace.TFRecords'.format(shape))
 
-def compute_dataset_features(input_WADs_folder, relative_to_json_dbs, out_dataset_folder, from_id = 0):
-    """ Reads the list of WAD file paths from the .json database and compute the maps and the features for each level
-    without padding or resizing. """
+def recompute_dataset_features(db_root, relative_to_json_dbs, out_dataset_folder, from_id = 0):
+    """ Recompute dataset features given an already available level dataset without having to extract each zip file again """
     dataset = list()
+    updated_dataset = list()
     for jf in relative_to_json_dbs:
-        json_path = input_WADs_folder+jf
+        json_path = db_root+jf
         with open(json_path, 'r') as file:
             dataset += json.load(file)
 
-    file_paths = [r['path'] for r in dataset]
-    for i, path in enumerate(file_paths):
+    for i, level in enumerate(dataset):
         if i < from_id:
             # Skip sample
             continue
-        path = path.replace('./WADs/', input_WADs_folder)
-        try:
-            print("{}/{}".format(i, len(file_paths)))
-            WADReader().extract(path, save_to=out_dataset_folder)
-        except:
-            print('Error parsing {}'.format(path))
+        # FIXME: Remove this when the dataset is completed
+        # fixing paths
+        level['path'] = level['path'].replace('./WADs/Doom/', '')
+        level['path'] = level['path'].replace('./WADs/DoomII/', '')
+        wad_full_path = db_root +level['path']
+        # Fix: Remove old unused features
+        del level['width']
+        del level['height']
+        del level['img_path']
+        del level['svg_path']
+        del level['tile_path']
 
-compute_dataset_features( input_WADs_folder='/run/media/edoardo/BACKUP/Datasets/DoomDataset/WADs/',
-                          relative_to_json_dbs=['Doom/Doom.json', 'DoomII/DoomII.json'],
-                          out_dataset_folder='/run/media/edoardo/BACKUP/Datasets/DoomDataset/FullDataset/')
+        try:
+            print("{}/{}".format(i, len(dataset)))
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                wad = WADReader().extract(wad_full_path, save_to=out_dataset_folder, root_path=db_root, update_record=level)
+
+            for level in wad['levels']:
+                # Now we have a complete level record directly in the features dictionary. We can just fetch it for faster indexing
+                updated_dataset.append(level['features'])
+
+
+        except:
+            print('Error parsing {}'.format(wad_full_path))
+
+        if i % 10 == 0:
+            # Saving partial result
+            with open(db_root+'updated_dataset.json', 'w') as jout:
+                json.dump(updated_dataset, jout)
+
