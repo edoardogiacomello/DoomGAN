@@ -26,7 +26,8 @@ A complete list of python packages will come soon, these are the most important 
 * skimage
 
 ## Dataset
-The dataset is currently composed of about 9600 already parsed levels and it's temporarly stored in the /dataset/ folder. 
+The full dataset comes from the Id archive, an archive of levels from ID Software. 
+Data has been scraped from www.doomworld.com in date 16/10/2017, obtaining about 9600 levels.
 Metadata about the levels are stored in corresponding json files but it's also available in google sheets for a more convenient consultation:
 - Levels from DoomI/II taken from @TheVGLC [preview](https://drive.google.com/open?id=1SUbK48BSfG_qSyxokkWr-R0XlT_D40OlCoRljevKbmM)
 - Levels from "Final Doom" and "Master levels for DoomII" taken from a retail steam copy of the game. [preview](https://drive.google.com/open?id=1SUbK48BSfG_qSyxokkWr-R0XlT_D40OlCoRljevKbmM)
@@ -36,52 +37,24 @@ Metadata about the levels are stored in corresponding json files but it's also a
 The latest dataset is stored at: [Google Sheets](https://drive.google.com/open?id=1MB61Gt-xfp_obJy4nlf5NpnRKb0rt-C1G14Os3uVbQI)
 
 
-### Dataset Pipeline
-The dataset comes from the Id archive, an archive of levels from ID Software. Data has been scraped from www.doomworld.com in date 16/10/2017.
-
-Here follow some instructions in case you need to replicate the building process or if you want to further expand the dataset.
-
-Notice that each of this step could take a lot of time (even several hours) depending on your resources.
-#### Main Steps:
-1) ##### Scrape some levels. (Check Python Doc  for more details)
-```
-from DoomWorldScraper.DoomWorldWadScraper import DoomWorldWadScraper
-scraper = DoomWorldWadScraper()
-scraper.collect_wads(game_category_url, game_name="Doom", exclude_category_list=[68, 85, 87], root_path="./scraped/doom/")
-```
-This will create a folder "./scraped/doom/" containing a "Doom.json" file and several folders with the same names as the doomworld categories.
-These folders contain the zip files that have been downloaded from the website, while Doom.json contain data collected from the download page.
-
-2) ##### Extract and parse the dataset
-```
-    from metaUtils import extract_database
-    extract_database('./scraped/doom/', './dataset/')
-```
-This checks for every zip file addressed by the Doom.json database looking for .WAD files and extract them 
-into the *./dataset/Original/* folder. For each WAD, it tries to read each level, doing the following:
-- Parse the [features](https://docs.google.com/spreadsheets/d/1Lv6fVyk_7QaZRpwhSvgRVB9EXe3KcNt1UV5cZx3RS24/edit?usp=sharing)
-- Save all its scalar/string features to  *./dataset/Processed/\<zipname\>\_<LEVELNAME\>_\<level_slot>.json*
-- Save all feature features to *./dataset/Processed/\<zipname\>\_<LEVELNAME\>_\<level_slot>\_\<map_name>.json*
-- The content that is saved to each individual .json is also stored as a row of *./dataset/Processed/Doom.json*
-
-
-3) ##### Cluster and filter the data
-    This is up to you and your needs. You should filter a list of records from the .json database file (Doom.json) in the example and pass to the next step
-
-4) ##### Pack the data to a  .TFRecords file
-    Recently Tensorflow introduced a new standard for storing and reading data from files. It also seems to speedup data ingestion compared to other method such reading from separate files. 
-    ``` 
-    import dataset_utils.convert_to_TFRecords(record_list, output_path, max_size, min_size=(16, 16), normalize_in=(0,1))
-    ```
-    This function normalizes your data based on the range of the features and packs the levels in a <output_path>.TFRecord file.
-     It also stores a <output_path>.meta needed for keeping data about the features that are relative to the selected subset of data, such max/min/avg features and the encoding 
-    obtained after normalization.
-5) ##### Reading the dataset
-    A tensorflow dataset object is available by simply calling 
-    ```
-    dataset_utils.load_TFRecords_database(path)
-    ```
-    Notice that this needs a .meta file in the same folder of the .TFRecords file, since otherwise it wouldn't be possible to decode image data without knowing anything about the size.
+The dataset is structured as follow:
+- a root _<dataset_root>/_
+- a .json database _<dataset_root>/dataset.json_ in which all the level features are stored
+- a _<dataset_root>/Original/_ folder, containing the .WAD files for each level
+- a _<dataset_root>/Processed/_ folder, containing:
+    - <zip_name>_<wad_name>_<slot_name>.json file containing the features for a level (one row dataset.json)
+    - <zip_name>_<wad_name>_<slot_name>_<feature_map>.png image(s) containing the feature map for a level
     
-    Please refer to the Tensorflow documentation to proceed further.
-    
+These files are indexed from the dataset.json starting from _<dataset_root>_.  
+E.g. a path could be _"Processed/myzip_MyLevel_E1M1_floormap.png"_  
+The feature maps dimensions are (width/32, height/32), since 32 is the diameter of the smallest thing that exists on Doom.  
+Each pixel value is an uint8, dicrectly encoding a value (ie. the "thing type index" for thingsmap; 1,2,3,4.. for
+the "floormap" enumeration or the floor_height value for the heightmap.
+
+Dataset can also be stored in a .TFRecord file (and this is the format DoomGAN uses to read the dataset);
+this is useful if you want to previously filter a dataset perhaps selecting only <128x128 levels and padding smaller ones.  
+This way you pack all the dataset in a single .TFRecord file and its relative .meta file, containing aggregated data 
+for each feature, such as min/max/avg value along the samples that have been selected in order to further normalize the data.
+
+
+

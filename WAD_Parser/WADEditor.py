@@ -7,6 +7,7 @@ from skimage import io
 from skimage.measure import find_contours
 import subprocess
 import json
+import numpy as np
 
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
@@ -258,22 +259,89 @@ class WADWriter(object):
         self.current_level = None
         self.lumps = {'THINGS':Lumps.Things(), 'LINEDEFS':Lumps.Linedefs(), 'VERTEXES':Lumps.Vertexes(),'SIDEDEFS': Lumps.Sidedefs(), 'SECTORS':Lumps.Sectors()}  # Temporary lumps for this level
 
+
+    def from_wallmap(self, image):
+        # TODO: The problem is that HoughLines gives poor results and contour wraps around the walls generating unnecessary walls
+        image = io.imread(image)
+
+        import matplotlib.pyplot as plt
+        from matplotlib import cm
+        import skimage.measure
+        import skimage.transform
+        import numpy as np
+
+
+
+
+        #lines = skimage.transform.probabilistic_hough_line(image)
+        import cv2
+        lines = cv2.HoughLinesP(image, 1, np.pi / 180, 100, 3, 1)
+        for x1, y1, x2, y2 in lines[0]:
+            print()
+        fig, axes = plt.subplots(1, 2, figsize=(40, 15), sharex=True, sharey=True)
+        ax = axes.ravel()
+
+        ax[0].imshow(image, cmap=cm.gray)
+        ax[0].set_title('Input image')
+
+        ax[1].imshow(image * 0)
+        for line in lines:
+            p0, p1 = line
+            ax[1].plot((p0[0], p1[0]), (p0[1], p1[1]))
+        ax[1].set_xlim((0, image.shape[1]))
+        ax[1].set_ylim((image.shape[0], 0))
+        ax[1].set_title('Probabilistic Hough')
+
+        plt.tight_layout()
+        plt.show()
+
+        pass
+
+    def from_floormap(self, image):
+        image = io.imread(image)
+        # Pad with a frame for getting boundaries
+        image = np.pad(image, pad_width=(1, 1), mode='constant')
+
+        import matplotlib.pyplot as plt
+        # Find contours at a constant value of 0.8
+        contours = find_contours(image, 0.5, fully_connected='high')
+
+
+
+        self.add_level()
+
+
+        for n, contour in enumerate(contours):
+            # Display the image and plot all contours found
+            fig, ax = plt.subplots()
+            ax.imshow(image)
+            # ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+            #coords = approximate_polygon(contour, tolerance=2.5)
+            self.add_sector((contour*32).astype(np.int).tolist())
+
+
+            ax.plot(contour[:, 1], contour[:, 0], '-r', linewidth=1)
+            ax.axis('image')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            plt.show()
+
     def from_image(self, image):
         """
         Creates a wad file from an image representation
         :param image:
         :return:
         """
+        from skimage.morphology import convex_hull_image
         # TODO: Implement this
         image = io.imread(image)
-
         import matplotlib.pyplot as plt
 
         from skimage import measure
 
 
         # Find contours at a constant value of 0.8
-        contours = find_contours(image, 0.5)
+        contours = find_contours(image, 0.5, fully_connected='high')
 
         # Display the image and plot all contours found
         fig, ax = plt.subplots()
@@ -281,16 +349,14 @@ class WADWriter(object):
         from skimage.measure import approximate_polygon
         for n, contour in enumerate(contours):
             #ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
-            coords = approximate_polygon(contour, tolerance=2.5)
-            ax.plot(coords[:, 1], coords[:, 0], '-r', linewidth=2)
-
-
-
-
+            #coords = approximate_polygon(contour, tolerance=2.5)
+            coords = contour
+            ax.plot(coords[:, 1], coords[:, 0], '-r', linewidth=1)
         ax.axis('image')
         ax.set_xticks([])
         ax.set_yticks([])
         plt.show()
+
 
         pass
 
@@ -360,9 +426,6 @@ class WADWriter(object):
             out.write(wad_bytes)
         print('Calling ZenNode...')
         subprocess.check_call(["bsp", fp, '-o', fp] )
-
-
-
 
 
 

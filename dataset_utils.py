@@ -9,12 +9,11 @@ import tensorflow as tf
 from scipy import misc
 import warnings
 import skimage.io
+import glob
+import WAD_Parser.Dictionaries.Features as Features
+from scipy import stats
 
-# In order to add a new feature modify the following parts:
-    # meta description in datasetmanager.__init__
-    # _update_meta  in datasetmanager
-    # TFRecord to Sample in datasetmanager
-    # sample to TFRecord in datasetmanager
+
 
 
 ###### This part contains all the variables concerning the dataset #####
@@ -27,6 +26,7 @@ channel_g_interval = (255//13)
 
 from WAD_Parser.WADEditor import WADReader
 
+# TODO: This script is a bit messy, refactor it together with meta_utils
 
 
 tile_tuple = namedtuple("tile_tuple", ["pixel_color", "tags"])
@@ -211,195 +211,69 @@ def tf_encode_feature_vectors(y, feature_names, dataset_path):
     return tf.squeeze(tf.stack(norm_channels, axis=1))
 
 
-class MetaReader(object):
-    def __init__(self, tfrecord_path):
-        self.path = tfrecord_path+'.meta'
-        with open(self.path, 'r') as meta_in:
-            self.meta = json.load(meta_in)
-    def count(self):
-        return int(self.meta['count'])
 
-    def label_average(self, feature_names, y_like_array):
-        norm_channels = []
-        for f_id, f_name in enumerate(feature_names):
-            y_slice = tf.slice(y_like_array, begin=[0, f_id], size=[-1, 1])
-            feat_max = tf.constant(self.meta['features'][f_name]['max'], dtype=tf.float32, shape=y_slice.get_shape())
-            feat_min = tf.constant(self.meta['features'][f_name]['min'], dtype=tf.float32, shape=y_slice.get_shape())
-            feat_avg = tf.constant(self.meta['features'][f_name]['avg'], dtype=tf.float32, shape=y_slice.get_shape())
-            norm_channels.append((feat_avg - feat_min) / (feat_max - feat_min))
-        return tf.squeeze(tf.stack(norm_channels, axis=1))
+
+
 
     
 
 class DatasetManager(object):
 
 
-    def __init__(self, path_to_WADs_folder='./WADs', relative_to_json_files=[], target_size=(512,512), target_channels=1):
+    def __init__(self, target_size=(512,512), min_size=(16,16)):
         """
-        Utility class for extracting metadata from the tile/grid representation, representation conversion (e.g to PNG)
-        and TFRecord conversion an loading.
-
-        :param path_to_WADs_folder: path to the /WADs/ folder when converting a dataset
-        :param relative_to_json_files: list of paths to the json databases from the wad folder. eg: ['doom/Doom.json']
+        Class for reading/writing the dataset in .json/png <-> .TFRecords
         :param target_size: Final (for conversion) or expected (for TFRecord loading) sample size in PNG/tile format.
         """
-        self.G = nx.DiGraph()
-        self.json_files = relative_to_json_files
-        self.root = path_to_WADs_folder
         self.target_size = target_size
-        self.target_channels = target_channels
         self.meta = dict()
-        self.feature_sets = dict() # This dict keeps track of every different value for the string features, so it's possible to count unique values
+        self.min_size = min_size
 
-    def _get_absolute_path(self, relative_path):
-        """
-        Given a relative path of type: "./WADs/....." returns the absolute path considering the root specified in init
-        :param relative_path:
-        :return:
-        """
-        # since tile_path begins with './WADs/'" we prepend our root
-        if relative_path.startswith('./WADs/'):
-            return relative_path.replace('./WADs/', self.root)
-        else:
-            return relative_path.replace('./', self.root)
 
-    def extract_size(self):
-        """For every level listed into the json files, adds the 'height' and 'width' information"""
-        for j in self.json_files:
-            with open(self.root + j, 'r') as jin:
-                levels = json.load(jin)
-            for level in levels:
-                tile_path = self._get_absolute_path(level['tile_path'])
-                # Open the tile file
-                with open(tile_path) as level_file:
-                    lines = [line.strip() for line in level_file.readlines()]
-                    level['height'] = len(lines)
-                    level['width'] = len(lines[0])
-            with open(self.root+j+'.updt', 'w') as jout:
-                json.dump(levels, jout)
-
-    def _grid_to_matrix(self):
-        pass
-
-    def _grid_to_image(self, path):
-        """
-        Convert (renders) a tile representation of a level to a PNG
-        :param path: Path of the .txt file
-        :return: Pillow Image object
-        """
-        with open(path, 'r') as tilefile:
-            lines = [line.strip() for line in tilefile.readlines()]
-        n_lines = len(lines)
-        n_cols = len(lines[0])
-        mode = 'L' if self.target_channels == 1 else 'RGB'
-        tile_set = tiles_greyscale if self.target_channels == 1 else tiles
-
-        img = Image.new(mode, (n_lines, n_cols), "black")  # create a new black image
-
-        ip = 0  # pixel counters
-        jp = 0
-        for i in lines:  # for every tile:
-            for j in i:
-                c = tile_set[j].pixel_color
-                img.putpixel((ip, jp), c)
-                jp += 1
-            jp = 0
-            ip += 1
-        return img
-
-    def convert_to_images(self):
-        """
-        For every level listed in the json databases, creates an image render from the grid/tile representation of the level
-        and saves it into the /<gamename>/Processed - Rendered/ folder.
-        It also updates the json database with img_path, width and height columns
-        :return: None
-        """
-        for j in self.json_files:
-            with open(self.root + j, 'r') as jin:
-                levels = json.load(jin)
-            for level in levels:
-                tile_path = self._get_absolute_path(level['tile_path'])
-                # We change to the Image subfolder
-                img_path = tile_path.replace('Processed', 'Processed - Rendered').replace('.txt','.png')
-                img_folder = '/'.join(img_path.split('/')[:-1])+'/'
-
-                if not os.path.exists(img_folder):
-                    os.makedirs(img_folder)
-                img = self._grid_to_image(tile_path)
-                img.save(img_path, 'PNG')
-                # Update the json file with the new path
-                # [img_path contains the new root so it may be not consistent with the other paths already in db]
-                level['img_path'] = level['tile_path'].replace('Processed', 'Processed - Rendered').replace('.txt','.png')
-                # Also update the level size
-                level['width'] = img.size[0]
-                level['height'] = img.size[1]
-            with open(self.root + j, 'w') as jout:
-                json.dump(levels, jout)
-
-    def _sample_to_TFRecord(self, json_record, image):
+    def _sample_to_TFRecord(self, json_record):
         # converting the record to a default_dict since it may does not contain some keys for empty values.
         json_record = defaultdict(lambda: "", json_record)
-        features = {
-            'author': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['author'])])),
-            'description': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['description'])])),
-            'credits': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['credits'])])),
-            'base': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['base'])])),
-            'editor_used': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['editor_used'])])),
-            'bugs': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['bugs'])])),
-            'build_time': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['build_time'])])),
-            'creation_date': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['creation_date'])])),
-            'file_url': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['file_url'])])),
-            'game': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['game'])])),
-            'category': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['category'])])),
-            'title': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['title'])])),
-            'name': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['name'])])),
-            'path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['path'])])),
-            'svg_path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['svg_path'])])),
-            'tile_path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['tile_path'])])),
-            'img_path': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record['img_path'])])),
-            'page_visits': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['page_visits'])])),
-            'downloads': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['downloads'])])),
-            'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['height'])])),
-            'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['width'])])),
-            'rating_count': tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record['rating_count'])])),
-            'rating_value': tf.train.Feature(float_list=tf.train.FloatList(value=[float(json_record['rating_value'])])),
-            'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image.tobytes()]))
-        }
 
-        return tf.train.Example(features=tf.train.Features(feature=features))
+        feature_dict = dict()
+        # Dinamically build a tf.train.Feature dictionary based on dataset Features
+        for f in Features.features:
+            if Features.features[f] == 'int':
+                feat_type = tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record[f])]))
+            if Features.features[f] == 'float':
+                feat_type = tf.train.Feature(float_list=tf.train.FloatList(value=[float(json_record[f])]))
+            if Features.features[f] == 'string':
+                feat_type = tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record[f])]))
+            feature_dict[f] = feat_type
+
+        # Doing the same for the maps
+        for m in Features.map_paths:
+            feature_dict[Features.map_paths[m]] = tf.train.Feature(bytes_list=tf.train.BytesList(value=[json_record[Features.map_paths[m]].tobytes()]))
+
+        return tf.train.Example(features=tf.train.Features(feature=feature_dict))
 
     def _TFRecord_to_sample(self, TFRecord):
-        features = {
-            'author': tf.FixedLenFeature([],tf.string),
-            'description': tf.FixedLenFeature([],tf.string),
-            'credits': tf.FixedLenFeature([],tf.string),
-            'base': tf.FixedLenFeature([],tf.string),
-            'editor_used': tf.FixedLenFeature([],tf.string),
-            'bugs': tf.FixedLenFeature([],tf.string),
-            'build_time': tf.FixedLenFeature([],tf.string),
-            'creation_date': tf.FixedLenFeature([],tf.string),
-            'file_url': tf.FixedLenFeature([],tf.string),
-            'game': tf.FixedLenFeature([],tf.string),
-            'category': tf.FixedLenFeature([],tf.string),
-            'title': tf.FixedLenFeature([],tf.string),
-            'name': tf.FixedLenFeature([],tf.string),
-            'path': tf.FixedLenFeature([],tf.string),
-            'svg_path': tf.FixedLenFeature([],tf.string),
-            'tile_path': tf.FixedLenFeature([],tf.string),
-            'img_path': tf.FixedLenFeature([],tf.string),
-            'page_visits': tf.FixedLenFeature([],tf.int64),
-            'downloads': tf.FixedLenFeature([],tf.int64),
-            'height': tf.FixedLenFeature([],tf.int64),
-            'width': tf.FixedLenFeature([],tf.int64),
-            'rating_count': tf.FixedLenFeature([],tf.int64),
-            'rating_value': tf.FixedLenFeature([],tf.float32),
-            'image': tf.FixedLenFeature([],tf.string)
-        }
+        feature_dict = dict()
+        # Dinamically build a tf.train.Feature dictionary based on dataset Features
+        for f in Features.features:
+            if Features.features[f] == 'int':
+                feat_type = tf.FixedLenFeature([],tf.int64)
+            if Features.features[f] == 'float':
+                feat_type = tf.FixedLenFeature([],tf.float32)
+            if Features.features[f] == 'string':
+                feat_type = tf.FixedLenFeature([],tf.string)
+            feature_dict[f] = feat_type
 
-        parsed_features = tf.parse_single_example(TFRecord, features)
-        parsed_img = tf.decode_raw(parsed_features['image'], tf.uint8)
-        parsed_img = tf.reshape(parsed_img, shape=(self.target_size[0], self.target_size[1], self.target_channels) )
-        parsed_features['image'] = parsed_img
+        # Doing the same for the maps
+        for m in Features.map_paths:
+            feature_dict[Features.map_paths[m]] = tf.FixedLenFeature([],tf.string)
+
+        parsed_features = tf.parse_single_example(TFRecord, feature_dict)
+
+        # Decoding the maps
+        for m in Features.map_paths:
+            parsed_img = tf.decode_raw(parsed_features[Features.map_paths[m]], tf.uint8)
+            parsed_img = tf.reshape(parsed_img, shape=(self.target_size[0], self.target_size[1]))
+            parsed_features[Features.map_paths[m]] = parsed_img
         return parsed_features
 
     def _update_meta(self, level):
@@ -410,87 +284,47 @@ class DatasetManager(object):
         :return:
         """
         def _compute_feature(level, feature, type):
-            if feature not in self.meta['features']:
-                self.meta['features'][feature] = dict()
-            feat_dict = self.meta['features'][feature]
-            feat_dict['type'] = type
-            if type == 'int64' or type=='float':
+            if type == 'int64' or type == 'float' or type == 'int':
+                if feature not in self.meta['features']:
+                    self.meta['features'][feature] = dict()
+                feat_dict = self.meta['features'][feature]
+                feat_dict['type'] = type
                 feat_dict['min'] = float(level[feature]) if 'min' not in feat_dict else min(feat_dict['min'], float(level[feature]))
                 feat_dict['max'] = float(level[feature]) if 'max' not in feat_dict else max(feat_dict['max'], float(level[feature]))
                 feat_dict['avg'] = float(level[feature]) if 'avg' not in feat_dict else feat_dict['avg'] + (float(level[feature]) - feat_dict['avg'])/float(self.meta['count'])
-            if type == 'string':
-                if feature not in self.feature_sets:
-                    self.feature_sets[feature] = dict()
-                entry_count = self.feature_sets[feature]
-                if (feature not in level):
-                    return
-                # Increment the count for the current value of the feature
-                entry_count[level[feature]] = 1 if level[feature] not in entry_count else entry_count[level[feature]] + 1
-                feat_dict['count'] = len(entry_count)
 
+        def _compute_map(level, map):
+                if map not in self.meta['maps']:
+                    self.meta['maps'][map] = dict()
+                feat_dict = self.meta['maps'][map]
+                feat_dict['type'] = str(level[map].dtype)
+                feat_dict['min'] = float(level[map].min()) if 'min' not in feat_dict else min(feat_dict['min'],
+                                                                                            float(level[map].min()))
+                feat_dict['max'] = float(level[map].max()) if 'max' not in feat_dict else max(feat_dict['max'],
+                                                                                              float(level[map].max()))
+                feat_dict['avg'] = float(level[map].mean()) if 'avg' not in feat_dict else feat_dict['avg'] + (float(
+                    level[map].mean()) - feat_dict['avg']) / float(self.meta['count'])
 
 
 
 
         self.meta['features'] = dict() if 'features' not in self.meta else self.meta['features']
+        self.meta['maps'] = dict() if 'maps' not in self.meta else self.meta['maps']
         self.meta['count'] = 1 if 'count' not in self.meta else self.meta['count'] +1
-        _compute_feature(level, 'page_visits', 'int64')
-        _compute_feature(level, 'downloads', 'int64')
-        _compute_feature(level, 'height', 'int64')
-        _compute_feature(level, 'width', 'int64')
-        _compute_feature(level, 'rating_count', 'int64')
-        _compute_feature(level, 'rating_value', 'int64')
-        _compute_feature(level, 'author', 'string')
-
+        import WAD_Parser.Dictionaries.Features as Features
+        for f in Features.features:
+            _compute_feature(level, f, Features.features[f])
+        for m in Features.map_paths:
+            _compute_map(level, Features.map_paths[m])
 
     def _pad_image(self, image):
         """Center pads an image, adding a black border up to "target size" """
         assert image.shape[0] <= self.target_size[0], "The image to pad is bigger than the target size"
         assert image.shape[1] <= self.target_size[1], "The image to pad is bigger than the target size"
-        padded = np.zeros((self.target_size[0],self.target_size[1],self.target_channels), dtype=np.uint8)
+        padded = np.zeros((self.target_size[0],self.target_size[1]), dtype=np.uint8)
         offset = (self.target_size[0] - image.shape[0])//2, (self.target_size[1] - image.shape[1])//2  # Top, Left
-        padded[offset[0]:offset[0]+image.shape[0], offset[1]:offset[1]+image.shape[1],:] = image
+        padded[offset[0]:offset[0]+image.shape[0], offset[1]:offset[1]+image.shape[1]] = image
         return padded
-
-
-    def convert_to_TFRecords(self, record_list, output_path, max_size, min_size=(16, 16)):
-        """
-        Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
-        Pads each sample to the target size, DISCARDING the samples that are larger.
-        Also save meta information in a separated file.
-        :return: None.
-        """
-        print("{} levels loaded.".format(len(record_list)))
-        with tf.python_io.TFRecordWriter(output_path) as writer:
-            saved_levels = 0
-            for counter, level in enumerate(record_list):
-                too_big = int(level['width']) > max_size[0] or int(level['height']) > max_size[1]
-                too_small = int(level['width']) < min_size[0] or int(level['height']) < min_size[1]
-                if too_big or too_small:
-                    continue
-                # TODO: Continue
-                image = skimage.io.imread(self._get_absolute_path(level['img_path']), mode='L')
-                if self.target_channels == 1:
-                    image = np.expand_dims(image,-1)
-                padded = self._pad_image(image)
-                self._update_meta(level)
-                sample = self._sample_to_TFRecord(level, padded)
-                writer.write(sample.SerializeToString())
-                saved_levels+=1
-
-                if counter % (len(record_list)//100) == 0:
-                    print("{}% completed.".format(round(counter/len(record_list)*100)))
-            print("Levels saved: {}, out of range: {}".format(saved_levels, len(record_list)-saved_levels))
-
-        meta_path = output_path + '.meta'
-        with open(meta_path, 'w') as meta_out:
-            # TODO: This can be done when analyzing the levels
-            # Embed author encoding in the metadata
-            self.meta['encoding'] = dict()
-            self.meta['encoding']['authors'] = {name: id for id, name in enumerate(self.feature_sets['author'])}
-            # Saving metadata
-            json.dump(self.meta, meta_out)
-            print("Metadata saved to {}".format(meta_path))
 
     def load_TFRecords_database(self, path):
         """Returns a tensorflow dataset from the .tfrecord file specified in path"""
@@ -499,48 +333,88 @@ class DatasetManager(object):
         return dataset
 
 
-
-def recompute_dataset_features(db_root, relative_to_json_dbs, out_dataset_folder, from_id = 0):
-    """ Recompute dataset features given an already available level dataset without having to extract each zip file again """
-    dataset = list()
-    updated_dataset = list()
-    for jf in relative_to_json_dbs:
-        json_path = db_root+jf
-        with open(json_path, 'r') as file:
-            dataset += json.load(file)
-
-    for i, level in enumerate(dataset):
-        if i < from_id:
-            # Skip sample
-            continue
-        # FIXME: Remove this when the dataset is completed
-        # fixing paths
-        level['path'] = level['path'].replace('./WADs/Doom/', '')
-        level['path'] = level['path'].replace('./WADs/DoomII/', '')
-        wad_full_path = db_root +level['path']
-        # Fix: Remove old unused features
-        del level['width']
-        del level['height']
-        del level['img_path']
-        del level['svg_path']
-        del level['tile_path']
-
-        try:
-            print("{}/{}".format(i, len(dataset)))
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                wad = WADReader().extract(wad_full_path, save_to=out_dataset_folder, root_path=db_root, update_record=level)
-
-            for level in wad['levels']:
-                # Now we have a complete level record directly in the features dictionary. We can just fetch it for faster indexing
-                updated_dataset.append(level['features'])
+    def convert_to_TFRecords(self, record_list, dataset_root, output_path):
+        """
+        Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
+        Pads each sample to the target size, DISCARDING the samples that are larger.
+        Also save meta information in a separated file.
+        :return: None.
+        """
+        print("{} levels loaded.".format(len(record_list)))
 
 
-        except:
-            print('Error parsing {}'.format(wad_full_path))
+        with tf.python_io.TFRecordWriter(output_path) as writer:
+            saved_levels = 0
+            for counter, level in enumerate(record_list):
+                # Reading the maps
+                for path in Features.map_paths:
+                    map_img = skimage.io.imread(dataset_root + level[path], mode='L')
+                    padded = self._pad_image(map_img)
+                    level[Features.map_paths[path]] = padded
+                self._update_meta(level)
+                sample = self._sample_to_TFRecord(level)
+                writer.write(sample.SerializeToString())
+                saved_levels += 1
 
-        if i % 10 == 0:
-            # Saving partial result
-            with open(db_root+'updated_dataset.json', 'w') as jout:
-                json.dump(updated_dataset, jout)
+                if counter % (len(record_list) // 100) == 0:
+                    print("{}% completed.".format(round(counter / len(record_list) * 100)))
+            print("{} levels Saved.".format(saved_levels))
 
+        meta_path = output_path + '.meta'
+        with open(meta_path, 'w') as meta_out:
+            # Saving metadata
+            json.dump(self.meta, meta_out)
+            print("Metadata saved to {}".format(meta_path))
+
+    def remove_outliers(self, samples):
+        """
+        Removes some outliers based on data observation
+        :param points:
+        :return:
+        """
+
+        def outlier(p):
+            sec_area_too_big = p['sector_area_avg'] > 0.5e8
+            sectors_too_stretch = p['sector_aspect_ratio_avg'] > 20
+            too_many_lines_per_sector = p['lines_per_sector_avg'] > 60
+            wrong_walkable_percentage = p['walkable_percentage'] < 0 or p['walkable_percentage'] > 1
+            too_thin_levels = p['aspect_ratio'] > 5
+            too_many_sectors = p['number_of_sectors'] > 550
+            too_many_floors = p['floors'] > 40
+            return sec_area_too_big or sectors_too_stretch or too_many_lines_per_sector or wrong_walkable_percentage \
+                   or too_thin_levels or too_many_sectors or too_many_floors
+
+        clean = [s for s in samples if not outlier(s)]
+        print("Removed {} outliers".format(len(samples) - len(clean)))
+        return clean
+
+    def filter_dataset(self, json_dataset):
+        with open(json_dataset, 'r') as jin:
+            data = json.load(jin)
+        # Removing some outliers
+        clean = self.remove_outliers(data)
+        # filtering based on the size: each pixel is converted in 32 doom map units.
+        data = [d for d in clean if d['width'] <= self.target_size[0] * 32 and d['height'] <= self.target_size[1] * 32
+                and d['width'] >= self.min_size[0] * 32 and d['height'] >= self.min_size[1] * 32]
+        print("Removed {} oversized samples".format(len(clean) - len(data)))
+        return data
+
+
+
+
+def plot_dataset_stats(data, features):
+    points = np.array([[d[f] for f in features] for d in data])
+    import pandas as pd
+    import seaborn as sb
+    pd_dataset = pd.DataFrame(points, columns=features)
+    g = sb.pairplot(pd_dataset)
+    import matplotlib.pyplot as plt
+    plt.show()
+
+def build_dataset():
+    dm = DatasetManager(target_size=(128, 128))
+    dm.filter_dataset('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+    clean_dataset = dm.filter_dataset('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+    # plot_dataset_stats(clean_dataset, features=['number_of_sectors', 'aspect_ratio', 'sector_area_avg', 'lines_per_sector_avg', 'sector_aspect_ratio_avg', 'floors', 'nonempty_percentage', 'walkable_percentage'])
+    dm.convert_to_TFRecords(clean_dataset, '/run/media/edoardo/BACKUP/Datasets/DoomDataset/', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/128newmeta.TFRecords')
+    # rebuild_database('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Processed/','/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')

@@ -179,7 +179,6 @@ def visualize_samples(name, samples):
 
     tensor= tf.expand_dims(tf.concat([tf.concat(r,axis=1) for r in grid], axis=0), axis=0)
     # If the input sample has 2 or more than 3 channels, display each channel separately
-    if channels==2 or channels > 3:
-        tensor = tf.squeeze(tf.stack([tf.expand_dims(channel, axis=-1) for channel in tf.unstack(tensor, axis=-1)]), axis=1)
+    tensor = tf.squeeze(tf.stack([tf.expand_dims(channel, axis=-1) for channel in tf.unstack(tensor, axis=-1)]), axis=1)
     return tf.summary.image(name, tensor, max_outputs=channels)
 
