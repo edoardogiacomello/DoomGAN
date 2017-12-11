@@ -184,8 +184,9 @@ class DoomGAN(object):
         ]
 
         self.G = self.generator_generalized(self.z, hidden_layers=g_layers, y=self.y_norm)
-        # self.G is in (0,1), but we use a discrete space for encoding x
-        # self.G = self.generator(self.z)
+        # G outputs in the same scale of x_norm. For reading output samples we can rescale them back to their original range
+        self.G_rescaled = DataTransform.scaling_maps_inverse(self.G, self.maps, self.dataset_path, self.use_sigmoid)
+
         # Discriminator networks for each input type (real and generated)
         self.D_real, self.D_logits_real = self.discriminator_generalized(self.x_norm, d_layers, reuse=False,
                                                                          y=self.y_norm)
@@ -487,6 +488,14 @@ class DoomGAN(object):
             sample = self.session.run([summaries], feed_dict={self.z: z_sample, self.y: y_sample})
             writer.add_summary(sample[0], global_step=0)
 
+    def generate_levels(self, y, seed):
+        # Load and initialize the network
+        self.initialize_and_restore()
+        if seed is not None:
+            np.random.seed(seed)
+        z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+        samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
+        samples = DataTransform.postprocess_output(samples[0], self.maps)
 
 def clean_tensorboard_cache(tensorBoardPath):
     # Removing previous tensorboard session
@@ -506,7 +515,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 64, "Batch size")
     flags.DEFINE_integer("save_net_every", 20, "Number of train batches after which the next is saved")
-    flags.DEFINE_boolean("train", True, "enable training if true, sample the net if false")
+    flags.DEFINE_boolean("train", True, "enable training if true")
+    flags.DEFINE_boolean("generate", False, "If true, generate some levels with a fixed y value and seed and save them into ./generated_samples")
     flags.DEFINE_boolean("use_sigmoid", True,
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
@@ -528,4 +538,12 @@ if __name__ == '__main__':
                       )
         show_all_variables()
 
-        gan.train(FLAGS) if FLAGS.train else gan.sample(seeds=[42, 314, 123123, 65847968, 46546868])
+        if FLAGS.train:
+            gan.train(FLAGS)
+        else:
+            if FLAGS.generate:
+                y = np.array([[3702.0, 2849.0, 1147.0, 216.0, 1.2994033098220825, 18279.986328125, 7.3287038803100586, 2.0, 0.38256704807281494, 2514.0]])
+                y = y*np.ones((32, 10))  # y needs to be replicated for each sample in the batch size
+                gan.generate_levels(y, 42)
+            else:
+                gan.train(FLAGS) if FLAGS.train else gan.sample(seeds=[42, 314, 123123, 65847968, 46546868])

@@ -41,7 +41,7 @@ from WAD_Parser.WADReader import WADWriter
 writer = WADWriter()
 # Declare a level
 mine.add_level('MAP01')
-# Create a big sector, by specifying its vertices
+# Create a big sector, by specifying its vertices (in clockwise order)
 mine.add_sector([(1000,1000),(1000,-1000), (-1000,-1000), (-1000,1000) ])
 # set the starting position for the player 1
 mine.set_start(0,0)

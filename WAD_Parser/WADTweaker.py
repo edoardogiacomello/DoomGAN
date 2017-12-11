@@ -16,19 +16,30 @@ class WADTweaker():
         levels = dataset.read_from_json(database_json)
         for l in levels:
             # Fetch a feature map
-            img_map = dataset.get_path_of(l['path_floormap'])
+            floormap = dataset.get_path_of(l['path_floormap'])
+            wallmap = dataset.get_path_of(l['path_wallmap'])
+            thingsmap = dataset.get_path_of(l['path_thingsmap'])
             # Create a new WAD
             writer = WADWriter()
-            writer.from_floormap(img_map)
-            writer.set_start(2500,2500)
+            writer.from_images(floormap, wallmap, thingsmap, debug=True)
             writer.save('/home/edoardo/Desktop/doom/test.wad')
             reader = WADReader()
             reconstructed = reader.extract('/home/edoardo/Desktop/doom/test.wad')['levels'][0]
 
 
+    def build_level(self, index):
 
-            break
+        floormap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_floormap.png'.format(index)
+        wallmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_wallmap.png'.format(index)
+        thingsmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_thingsmap.png'.format(index)
+
+        # Create a new WAD
+        writer = WADWriter()
+        writer.from_images(floormap, wallmap, thingsmap, debug=True)
+        writer.save('/home/edoardo/Desktop/doom/test.wad')
+
 
 
 if __name__ == '__main__':
-    tweaker = WADTweaker().test_reconstruction("/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json")
+    #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+    WADTweaker().build_level(1)

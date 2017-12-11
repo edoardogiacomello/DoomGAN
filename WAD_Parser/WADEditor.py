@@ -8,6 +8,8 @@ from skimage.measure import find_contours
 import subprocess
 import json
 import numpy as np
+import matplotlib.pyplot as plt
+from skimage import morphology
 
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
@@ -260,113 +262,101 @@ class WADWriter(object):
         self.lumps = {'THINGS':Lumps.Things(), 'LINEDEFS':Lumps.Linedefs(), 'VERTEXES':Lumps.Vertexes(),'SIDEDEFS': Lumps.Sidedefs(), 'SECTORS':Lumps.Sectors()}  # Temporary lumps for this level
 
 
-    def from_wallmap(self, image):
-        # TODO: The problem is that HoughLines gives poor results and contour wraps around the walls generating unnecessary walls
-        image = io.imread(image)
-
-        import matplotlib.pyplot as plt
-        from matplotlib import cm
-        import skimage.measure
-        import skimage.transform
-        import numpy as np
-
-
-
-
-        #lines = skimage.transform.probabilistic_hough_line(image)
-        import cv2
-        lines = cv2.HoughLinesP(image, 1, np.pi / 180, 100, 3, 1)
-        for x1, y1, x2, y2 in lines[0]:
-            print()
-        fig, axes = plt.subplots(1, 2, figsize=(40, 15), sharex=True, sharey=True)
-        ax = axes.ravel()
-
-        ax[0].imshow(image, cmap=cm.gray)
-        ax[0].set_title('Input image')
-
-        ax[1].imshow(image * 0)
-        for line in lines:
-            p0, p1 = line
-            ax[1].plot((p0[0], p1[0]), (p0[1], p1[1]))
-        ax[1].set_xlim((0, image.shape[1]))
-        ax[1].set_ylim((image.shape[0], 0))
-        ax[1].set_title('Probabilistic Hough')
-
-        plt.tight_layout()
-        plt.show()
-
-        pass
-
-    def from_floormap(self, image):
-        image = io.imread(image)
+    def from_images(self, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False):
+        floormap = io.imread(floormap).astype(dtype=np.bool)
         # Pad with a frame for getting boundaries
-        image = np.pad(image, pad_width=(1, 1), mode='constant')
+        floormap = np.pad(floormap, pad_width=(1, 1), mode='constant')
+        wallmap = io.imread(wallmap).astype(dtype=np.bool)
+        # Pad with a frame for getting boundaries
+        wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant')
+        thingsmap = io.imread(thingsmap).astype(np.uint16)
+        thingsmap = np.pad(thingsmap, pad_width=(1, 1), mode='constant')
 
-        import matplotlib.pyplot as plt
-        # Find contours at a constant value of 0.8
-        contours = find_contours(image, 0.5, fully_connected='high')
-
-
+        floormap = morphology.binary_dilation(floormap)
 
         self.add_level()
 
+        # Apply some morphology transformation to the maps for combining them and removing artifacts
+        denoised = morphology.remove_small_holes(floormap, min_size=16)
+        denoised = morphology.remove_small_objects(denoised, min_size=16)
+        denoised_walls = np.logical_and(denoised, np.logical_not(wallmap))
+        cleaned_walls = morphology.remove_small_holes(denoised_walls, min_size=16)
+        cleaned_walls = morphology.remove_small_objects(cleaned_walls, min_size=16)
 
-        for n, contour in enumerate(contours):
+
+        if debug:
             # Display the image and plot all contours found
-            fig, ax = plt.subplots()
-            ax.imshow(image)
-            # ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
-            #coords = approximate_polygon(contour, tolerance=2.5)
-            self.add_sector((contour*32).astype(np.int).tolist())
+            fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(8, 5), sharex=True,
+                                   sharey=True, subplot_kw={'adjustable': 'box-forced'})
 
+        # Placing sectors, one floor at a time
 
-            ax.plot(contour[:, 1], contour[:, 0], '-r', linewidth=1)
-            ax.axis('image')
-            ax.set_xticks([])
-            ax.set_yticks([])
+        from scipy.ndimage.measurements import label
+        segmented, total_floors = label(cleaned_walls, structure=np.ones((3, 3)))
+        floors = [np.equal(segmented, f) for f in range(1, total_floors)]
+        for floor_id, floor in enumerate(floors):
+            contours_walls = find_contours(floor, 0.5, positive_orientation='low')
+            for i, contour in enumerate(contours_walls):
+                ax[4].plot(contour[:, 1], contour[:, 0], linewidth=1)
+                vertices = (contour * level_coord_scale).astype(np.int).tolist()
+                sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
+
+            # Placing teleporters
+            if total_floors > 1:
+                unreached = list(range(len(floors)))
+                # Teleporters are needed. Place a landing somewhere in the sector
+                possible_coords = np.transpose(np.nonzero(floor))
+                rand_indices = tuple(np.random.choice(range(len(possible_coords)), size=2, replace=False).tolist())
+                dest_coord = possible_coords[rand_indices[0]] * level_coord_scale
+                src_coord = possible_coords[rand_indices[1]] * level_coord_scale
+                dest_sector = floor_id
+                while dest_sector == floor_id:
+                    dest_sector = int(np.random.choice(unreached, replace=False))
+                unreached.remove(dest_sector)
+                # Add a destination in this sector
+                self.add_teleporter_destination(dest_coord[0], dest_coord[1])
+                # Add a source for another sector
+                self.add_teleporter_source(src_coord[0], src_coord[1], dest_sector, inside=sector_id)
+
+        if debug:
+            ax[0].imshow(floormap, cmap=plt.cm.gray)
+            ax[1].imshow(wallmap, cmap=plt.cm.gray)
+            ax[2].imshow(denoised, cmap=plt.cm.gray)
+            ax[3].imshow(denoised_walls, cmap=plt.cm.gray)
+            ax[4].imshow(cleaned_walls, cmap=plt.cm.gray)
+            ax[4].imshow(segmented, cmap=plt.cm.gray)
             plt.show()
 
-    def from_image(self, image):
-        """
-        Creates a wad file from an image representation
-        :param image:
-        :return:
-        """
-        from skimage.morphology import convex_hull_image
-        # TODO: Implement this
-        image = io.imread(image)
-        import matplotlib.pyplot as plt
-
-        from skimage import measure
+        # Finding and placing new player start
+        possible_pos = np.where(np.logical_and(np.equal(thingsmap,1), cleaned_walls))
+        if (len(possible_pos[0]) == 0):
+            possible_pos = np.where(cleaned_walls)
+        rand_i = np.random.choice(range(len(possible_pos[0])))
+        start_pos = (int(possible_pos[0][rand_i])*level_coord_scale, int(possible_pos[1][rand_i])*level_coord_scale)
+        self.set_start(start_pos[0], start_pos[1])
 
 
-        # Find contours at a constant value of 0.8
-        contours = find_contours(image, 0.5, fully_connected='high')
+    def add_teleporter_destination(self, x, y):
+        self.add_thing(x, y, thing_type=14)
 
-        # Display the image and plot all contours found
-        fig, ax = plt.subplots()
-        #ax.imshow(image)
-        from skimage.measure import approximate_polygon
-        for n, contour in enumerate(contours):
-            #ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
-            #coords = approximate_polygon(contour, tolerance=2.5)
-            coords = contour
-            ax.plot(coords[:, 1], coords[:, 0], '-r', linewidth=1)
-        ax.axis('image')
-        ax.set_xticks([])
-        ax.set_yticks([])
-        plt.show()
+    def add_teleporter_source(self, x, y, to_sector, inside, size=32):
+        x=int(x)
+        y=int(y)
+        to_sector=int(to_sector)
+        halfsize=size//2
+        vertices = [(x-halfsize, y+halfsize),(x+halfsize, y+halfsize),(x+halfsize, y-halfsize),(x-halfsize, y-halfsize)]
+
+        self.add_sector(vertices, floor_flat='GATE1', wall_texture='-', linedef_flags=4, linedef_type=97, linedef_trigger=to_sector, inside=inside)
 
 
-        pass
 
     def set_start(self, x, y):
-        self.lumps['THINGS'].add_thing(x, y, angle=0, type=1, options=0)
+        self.lumps['THINGS'].add_thing(int(x), int(y), angle=0, type=1, options=0)
 
-    def add_thing(self, x,y, thing_type, options, angle=0):
-        self.lumps['THINGS'].add_thing(x, y, angle=angle, type=thing_type, options=options)
+    def add_thing(self, x,y, thing_type, options=7, angle=0):
+        self.lumps['THINGS'].add_thing(int(x), int(y), angle=angle, type=thing_type, options=options)
 
-    def add_sector(self, vertices_coords, floor_height=-8, ceiling_height=256, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=128, special=0, tag=0, wall_texture='BRONZE1'):
+    def add_sector(self, vertices_coords, floor_height=-8, ceiling_height=256, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=128, special=0, tag=0, wall_texture='BRONZE1', linedef_type=0, linedef_flags=1, linedef_trigger=0, inside=None):
 
         # In order to add a sector one must add:
         # A vertex for each vertex in the sector, only if not already present
@@ -392,9 +382,14 @@ class WADWriter(object):
             # Create a new sidedef
             sidedef_id = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture='-', lower_texture='-',
                                                middle_texture=wall_texture, sector=sector_id)
+            if inside is not None:
+                left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture='-', lower_texture='-',
+                                               middle_texture=wall_texture, sector=inside)
+            else:
+                left_sidedef=-1
             # Linedef creation/Lookup
-            self.lumps['LINEDEFS'].add_linedef(start, end, flags=1, types=0, trigger=0, right_sidedef_index=sidedef_id)
-
+            self.lumps['LINEDEFS'].add_linedef(start, end, flags=linedef_flags, types=linedef_type, trigger=linedef_trigger, right_sidedef_index=sidedef_id, left_sidedef_index=left_sidedef)
+        return sector_id
 
     def _commit_level(self):
         """
