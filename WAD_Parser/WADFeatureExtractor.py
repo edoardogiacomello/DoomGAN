@@ -61,7 +61,7 @@ class WADFeatureExtractor(object):
         return wallmap
 
     def draw_thingsmap(self):
-        thingsmap = np.zeros(self.mapsize, dtype=np.uint16)
+        thingsmap = np.zeros(self.mapsize, dtype=np.uint8)
         things = self.level['lumps']['THINGS']
         for thing in things:
             is_unknown = ThingTypes.get_thing_category(thing['type']) == 'unknown'
@@ -70,7 +70,7 @@ class WADFeatureExtractor(object):
             if is_unknown or out_of_bounds:
                 continue
             tx, ty = self._rescale_coord(thing['x'], thing['y'])
-            thingsmap[tx,ty] = thing['type']
+            thingsmap[tx,ty] = ThingTypes.get_index(thing['type'])
         return thingsmap
 
     def compute_maps(self):
@@ -82,7 +82,7 @@ class WADFeatureExtractor(object):
         self.level['maps']['wallmap'] = self.draw_wallmap()
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
         self.level['maps']['floormap'], self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
-        pass
+
 
     def extract_features(self):
         # Computing the simplest set of features
@@ -227,4 +227,5 @@ class WADFeatureExtractor(object):
         self.level['features']['monsters_per_walkable_area'] = float(self.level['features']['number_of_monsters'] / self.level['features']['walkable_area'])
         self.level['features']['obstacles_per_walkable_area'] = float(self.level['features']['number_of_obstacles'] / self.level['features']['walkable_area'])
         self.level['features']['decorations_per_walkable_area'] = float(self.level['features']['number_of_decorations'] / self.level['features']['walkable_area'])
+
 

@@ -152,8 +152,10 @@ things['other'] = [
 ]
 
 all_things = []
-for category in things.keys():
+
+for category in ['other', 'keys', 'decorations', 'obstacles',  'monsters', 'ammunitions', 'weapons', 'powerups', 'artifacts']:
     all_things += things[category]
+all_types= [i['int'] for i in all_things]
 
 def get_thing_category(index):
     # Dealing with level start special case
@@ -175,3 +177,17 @@ def get_category_things_types(category):
     if category == 'start':
         return [1]
     return [t['int'] for t in things[category]]
+
+def get_thing(index):
+    """
+    Get a thing type (Doom shortint) from an index (1-122)
+    :param index:
+    :return:
+    """
+    return all_things[index]['int']
+
+def get_index(thing_type):
+    if thing_type not in all_types:
+        return None
+    else:
+        return all_types.index(thing_type)

@@ -10,6 +10,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import morphology
+from WAD_Parser.Dictionaries.ThingTypes import get_thing
 
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
@@ -338,6 +339,21 @@ class WADWriter(object):
                 # Add a source for another sector
                 self.add_teleporter_source(src_coord[0], src_coord[1], dest_sector, inside=sector_id)
 
+            # Placing "Things"
+
+                floor_things = floor * thingsmap
+                for x,y in np.transpose(np.nonzero(floor_things)):
+                    # FIXME: With the new thing encoding this function may be no more valid
+                    # skip a good number of things
+                    if np.random.sample() < 0.7:
+                        continue
+
+                    # Pixels are in range (0,255) but things type are in range (0,122). Moreover, 0 means "no thing"
+                    pixel = int(floor_things[x, y])
+                    feat_scaling = lambda x, min, max, a, b: round(a + ((x-min)*(b-a))/(max-min))
+                    type_index = feat_scaling(pixel, 1, 255, 0,122)
+                    type = get_thing(type_index)
+                    self.add_thing(level_coord_scale*x,level_coord_scale*y, type)
 
         if debug:
             ax[0].imshow(floormap, cmap=plt.cm.gray)
@@ -375,7 +391,7 @@ class WADWriter(object):
         self.lumps['THINGS'].add_thing(int(x), int(y), angle=0, type=1, options=0)
 
     def add_thing(self, x,y, thing_type, options=7, angle=0):
-        self.lumps['THINGS'].add_thing(int(x), int(y), angle=angle, type=thing_type, options=options)
+        self.lumps['THINGS'].add_thing(int(x), int(y), angle=angle, type=int(thing_type), options=options)
 
     def add_sector(self, vertices_coords, floor_height=-8, ceiling_height=256, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=128, special=0, tag=0, wall_texture='BRONZE1', linedef_type=0, linedef_flags=1, linedef_trigger=0, inside=None):
 
@@ -489,7 +505,7 @@ class WADReader(object):
                 io.imsave(base_filename + '_{}.png'.format(map), level['maps'][map])
             for wadinfo in wad_info:
                 # Adding wad info (author, etc) to the level features.
-                if wadinfo not in level['features']:  # Computed features have priority over passed features
+                if wadinfo not in level['features']:  # Computed features have priority over provided features
                     level['features'][wadinfo] = wad_info[wadinfo]
             # Completing the features with the level slot
             level['features']['slot'] = level['name']

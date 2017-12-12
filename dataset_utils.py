@@ -401,7 +401,6 @@ class DatasetManager(object):
 
 
 
-
 def plot_dataset_stats(data, features):
     points = np.array([[d[f] for f in features] for d in data])
     import pandas as pd

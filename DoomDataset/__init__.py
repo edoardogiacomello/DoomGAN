@@ -84,3 +84,46 @@ class DoomDataset():
     def get_dataset_count(self, tfrecord_path):
         return self.read_meta(tfrecord_path)['count']
 
+    def recompute_features(self, root, old_json_db, new_json_db):
+        """
+        This functions gets a json database and re-computes all the features and the maps for each WAD referenced by it,
+        parsing all the WAD files from scratch. Useful when you are adding or editing features.
+        WARNING: This function may overwrite your data, so make sure to keep a backup before executing it.
+        :param root:
+        :param old_json_db:
+        :param new_json_db:
+        :return:
+        """
+        import itertools
+        import WAD_Parser.WADEditor as we
+        import warnings
+        old_records = self.read_from_json(old_json_db)
+        print("Sorting levels..")
+        sorted_input = sorted(old_records, key=lambda x: x['path'])
+        # Grouping the old levels by .WAD path
+
+        wad_records = itertools.groupby(sorted_input, key=lambda x: x['path'])
+        new_records = list()
+        for wad, record in wad_records:
+            # Assuming that wad-level features are the same for each level
+            record = next(record)
+
+            wad_reader = we.WADReader()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+            parsed_wad = wad_reader.extract(wad_fp=root+record['path'], save_to=root+'Processed/', update_record=record,
+                                        root_path=root)
+            for level in parsed_wad['levels']:
+                new_records.append(level['features'])
+        with open(new_json_db, 'w') as json_out:
+            json.dump(new_records, json_out)
+        print("Saved {} levels to {}".format(len(new_records), new_json_db))
+
+
+if __name__ == '__main__':
+    DoomDataset().recompute_features(root='/run/media/edoardo/BACKUP/Datasets/DoomDataset/',
+                                     old_json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
+                                     new_json_db='/run/media/edoardo/BACKUP/Datasets/FinalDataset/dataset.json'
+                                     )
+
+
