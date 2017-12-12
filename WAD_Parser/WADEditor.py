@@ -261,8 +261,22 @@ class WADWriter(object):
         self.current_level = None
         self.lumps = {'THINGS':Lumps.Things(), 'LINEDEFS':Lumps.Linedefs(), 'VERTEXES':Lumps.Vertexes(),'SIDEDEFS': Lumps.Sidedefs(), 'SECTORS':Lumps.Sectors()}  # Temporary lumps for this level
 
+    def from_images(self, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, generate_teleporters=True):
+        def sector_orientation(vertices):
+            """
+            Check if the polygon is oriented clock-wise or counter-clockwise.
+            If the polygon is not closed, then closes it
+            :param vertices: the input vertices
+            :return: (Bool, vertices) True if clockwise, False otherwise.
+            """
+            if not vertices[0] == vertices[-1]:
+                vertices.append(vertices[0])
+            xy = np.transpose(np.array(vertices))
+            x,y = xy[0], xy[1]
+            return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
 
-    def from_images(self, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False):
+
+
         floormap = io.imread(floormap).astype(dtype=np.bool)
         # Pad with a frame for getting boundaries
         floormap = np.pad(floormap, pad_width=(1, 1), mode='constant')
@@ -274,13 +288,13 @@ class WADWriter(object):
 
         floormap = morphology.binary_dilation(floormap)
 
-        self.add_level()
+
 
         # Apply some morphology transformation to the maps for combining them and removing artifacts
         denoised = morphology.remove_small_holes(floormap, min_size=16)
         denoised = morphology.remove_small_objects(denoised, min_size=16)
         denoised_walls = np.logical_and(denoised, np.logical_not(wallmap))
-        cleaned_walls = morphology.remove_small_holes(denoised_walls, min_size=16)
+        cleaned_walls = morphology.remove_small_holes(denoised_walls, min_size=4)
         cleaned_walls = morphology.remove_small_objects(cleaned_walls, min_size=16)
 
 
@@ -294,29 +308,36 @@ class WADWriter(object):
         from scipy.ndimage.measurements import label
         segmented, total_floors = label(cleaned_walls, structure=np.ones((3, 3)))
         floors = [np.equal(segmented, f) for f in range(1, total_floors)]
+        teleport_graph = np.roll(range(5), -1).tolist()
         for floor_id, floor in enumerate(floors):
             contours_walls = find_contours(floor, 0.5, positive_orientation='low')
             for i, contour in enumerate(contours_walls):
-                ax[4].plot(contour[:, 1], contour[:, 0], linewidth=1)
+                if debug:
+                    ax[4].plot(contour[:, 1], contour[:, 0], linewidth=1)
                 vertices = (contour * level_coord_scale).astype(np.int).tolist()
-                sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
+                clockwise, vertices = sector_orientation(vertices)
+                if clockwise:
+                    # The contour defines the floor boundaries
+                    sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
+                else:
+                    # The contour defines a hole in the level: Surrounding sector must be defined explicitly
+                    self.add_sector(vertices, ceiling_height=128, tag=floor_id, inside=sector_id)
+                    # sector_id is not changed because we don't want to place anything inside a hole, hopefully.
 
             # Placing teleporters
-            if total_floors > 1:
-                unreached = list(range(len(floors)))
+            if total_floors > 1 and generate_teleporters:
                 # Teleporters are needed. Place a landing somewhere in the sector
                 possible_coords = np.transpose(np.nonzero(floor))
                 rand_indices = tuple(np.random.choice(range(len(possible_coords)), size=2, replace=False).tolist())
                 dest_coord = possible_coords[rand_indices[0]] * level_coord_scale
                 src_coord = possible_coords[rand_indices[1]] * level_coord_scale
-                dest_sector = floor_id
-                while dest_sector == floor_id:
-                    dest_sector = int(np.random.choice(unreached, replace=False))
-                unreached.remove(dest_sector)
+                # Creating a single loop visiting each floor exactly once (Eulerian cycle) in a random order
+                dest_sector = teleport_graph[floor_id]
                 # Add a destination in this sector
                 self.add_teleporter_destination(dest_coord[0], dest_coord[1])
                 # Add a source for another sector
                 self.add_teleporter_source(src_coord[0], src_coord[1], dest_sector, inside=sector_id)
+
 
         if debug:
             ax[0].imshow(floormap, cmap=plt.cm.gray)
