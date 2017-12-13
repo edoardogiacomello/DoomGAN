@@ -46,4 +46,5 @@ class WADTweaker():
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
-        WADTweaker().build_levels()
+        #WADTweaker().build_levels()
+    WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')

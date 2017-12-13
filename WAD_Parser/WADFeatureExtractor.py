@@ -2,6 +2,8 @@ import numpy as np
 import skimage.draw as draw
 from skimage import io
 from scipy.ndimage.measurements import label
+import scipy as sp
+from skimage.measure import regionprops
 import WAD_Parser.Dictionaries.ThingTypes as ThingTypes
 
 class WADFeatureExtractor(object):
@@ -64,13 +66,18 @@ class WADFeatureExtractor(object):
         thingsmap = np.zeros(self.mapsize, dtype=np.uint8)
         things = self.level['lumps']['THINGS']
         for thing in things:
-            is_unknown = ThingTypes.get_category_from_type_id(thing['type']) == 'unknown'
+            category = ThingTypes.get_category_from_type_id(thing['type'])
+            is_unknown = category == 'unknown'
             out_of_bounds = thing['x'] > self.level['features']['x_max'] or thing['x'] < self.level['features']['x_min'] or \
-                            thing['y'] > self.level['features']['y_max'] or thing['x'] > self.level['features']['y_max']
+                            thing['y'] > self.level['features']['y_max'] or thing['y'] < self.level['features']['y_min']
             if is_unknown or out_of_bounds:
                 continue
             tx, ty = self._rescale_coord(thing['x'], thing['y'])
+            if thingsmap[tx, ty] in ThingTypes.get_index_by_category('start'):
+                # Avoid overwriting of player start location if something else is placed there (like a teleporter)
+                continue
             thingsmap[tx,ty] = ThingTypes.get_index_from_type_id(thing['type'])
+
         return thingsmap
 
     def compute_maps(self):
@@ -83,6 +90,12 @@ class WADFeatureExtractor(object):
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
         self.level['maps']['floormap'], self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
 
+    def _features_to_scalar(self):
+        for feature in self.level['features']:
+            try:
+                self.level['features'][feature] = np.asscalar(self.level['features'][feature])
+            except AttributeError:
+                pass
 
     def extract_features(self):
         # Computing the simplest set of features
@@ -90,8 +103,8 @@ class WADFeatureExtractor(object):
         self.compute_maps()
         # topological features rely on computed maps
         self.topological_features()
-
-
+        # Convert every feature to scalar
+        self._features_to_scalar()
         return self.level['features'], self.level['maps']
 
     def _find_thing_category(self, category):
@@ -195,38 +208,80 @@ class WADFeatureExtractor(object):
 
 
     def topological_features(self):
+        # Creating auxiliary feature maps
+        nonempty_map = self.level['maps']['floormap'].astype(np.bool).astype(np.uint8)
+        floormap = self.level['maps']['floormap']
+        walkablemap = np.logical_and(nonempty_map, np.logical_not(self.level['maps']['wallmap'])).astype(np.uint8)
+        # Computing a bunch of features from
+        features = regionprops(nonempty_map)
+        features_floors = regionprops(floormap)
+        feature_walkablemap = regionprops(walkablemap)
+        region_props = ['area', 'bbox_area', 'convex_area', 'eccentricity', 'equivalent_diameter', 'euler_number',
+                        'extent', 'filled_area', 'major_axis_length', 'minor_axis_length', 'orientation',
+                        'perimeter', 'solidity']
+        for prop in region_props:
+            # Adding global features
+            self.level['features']["level_{}".format(prop)] = features[0][prop]
+
+            # Adding also statistics for features computed at each floor
+            if prop not in ['bbox_area']:  # (bbox_area is always the global one)
+                prop_floors_vector = [features_floors[f][prop] for f in range(len(features_floors))]
+                self.level['features']["floors_{}_mean".format(prop)] = sp.mean(prop_floors_vector)
+                self.level['features']["floors_{}_min".format(prop)] = sp.amin(prop_floors_vector)
+                self.level['features']["floors_{}_max".format(prop)] = sp.amax(prop_floors_vector)
+                self.level['features']["floors_{}_std".format(prop)] = sp.std(prop_floors_vector)
+
+        # Adding hu moments and centroid
+        for i in range(7):
+            self.level['features']["level_hu_moment_{}".format(i)] = features[0]['moments_hu'][i]
+        self.level['features']["level_centroid_x"] = features[0]['centroid'][0]
+        self.level['features']["level_centroid_y"] = features[0]['centroid'][1]
+
+
         self.level['features']['number_of_artifacts'] = int(np.size(self._find_thing_category('artifacts'), axis=-1))
         self.level['features']['number_of_powerups'] = int(np.size(self._find_thing_category('powerups'), axis=-1))
         self.level['features']['number_of_weapons'] = int(np.size(self._find_thing_category('weapons'), axis=-1))
-        self.level['features']['number_of_ammunitions'] = int(np.size(self._find_thing_category('ammunitions'), axis=-1))
+        self.level['features']['number_of_ammunitions'] = int(
+            np.size(self._find_thing_category('ammunitions'), axis=-1))
         self.level['features']['number_of_keys'] = int(np.size(self._find_thing_category('keys'), axis=-1))
         self.level['features']['number_of_monsters'] = int(np.size(self._find_thing_category('monsters'), axis=-1))
         self.level['features']['number_of_obstacles'] = int(np.size(self._find_thing_category('obstacles'), axis=-1))
-        self.level['features']['number_of_decorations'] = int(np.size(self._find_thing_category('decorations'), axis=-1))
+        self.level['features']['number_of_decorations'] = int(
+            np.size(self._find_thing_category('decorations'), axis=-1))
 
-
-        self.level['features']['bounding_box_size'] = int(self.mapsize[0]*self.mapsize[1])
-        self.level['features']['nonempty_size'] = int(np.count_nonzero(self.level['maps']['heightmap']))
-        self.level['features']['walkable_area'] = int(self.level['features']['nonempty_size'] - np.count_nonzero(self.level['maps']['wallmap']) - self.level['features']['number_of_obstacles'])
-        self.level['features']['nonempty_percentage'] = float(self.level['features']['nonempty_size'] / self.level['features']['bounding_box_size'])
-        self.level['features']['walkable_percentage'] = float(self.level['features']['walkable_area'] / self.level['features']['nonempty_size'])
+        self.level['features']['bounding_box_size'] = int(self.mapsize[0] * self.mapsize[1])
+        self.level['features']['walkable_area'] = feature_walkablemap[0]['area']
+        self.level['features']['nonempty_percentage'] = float(
+            self.level['features']['level_area'] / self.level['features']['level_bbox_area'])
+        self.level['features']['walkable_percentage'] = float(
+            feature_walkablemap[0]['area'] / self.level['features']['level_area'])
 
         start_location = self._find_thing_category('start')
         if not len(start_location[0]) or not len(start_location[1]):
-            start_x, start_y = -1,-1
+            start_x, start_y = -1, -1
             print("This level has no explicit start location")
         else:
             start_x, start_y = start_location[0][0], start_location[1][0]
         self.level['features']['start_location_x_px'] = int(start_x)
         self.level['features']['start_location_y_px'] = int(start_y)
 
-        self.level['features']['artifacts_per_walkable_area'] = float(self.level['features']['number_of_artifacts'] / self.level['features']['walkable_area'])
-        self.level['features']['powerups_per_walkable_area'] = float(self.level['features']['number_of_powerups'] / self.level['features']['walkable_area'])
-        self.level['features']['weapons_per_walkable_area'] = float(self.level['features']['number_of_weapons'] / self.level['features']['walkable_area'])
-        self.level['features']['ammunitions_per_walkable_area'] = float(self.level['features']['number_of_ammunitions'] / self.level['features']['walkable_area'])
-        self.level['features']['keys_per_walkable_area'] = float(self.level['features']['number_of_keys'] / self.level['features']['walkable_area'])
-        self.level['features']['monsters_per_walkable_area'] = float(self.level['features']['number_of_monsters'] / self.level['features']['walkable_area'])
-        self.level['features']['obstacles_per_walkable_area'] = float(self.level['features']['number_of_obstacles'] / self.level['features']['walkable_area'])
-        self.level['features']['decorations_per_walkable_area'] = float(self.level['features']['number_of_decorations'] / self.level['features']['walkable_area'])
+        self.level['features']['artifacts_per_walkable_area'] = float(
+            self.level['features']['number_of_artifacts'] / self.level['features']['walkable_area'])
+        self.level['features']['powerups_per_walkable_area'] = float(
+            self.level['features']['number_of_powerups'] / self.level['features']['walkable_area'])
+        self.level['features']['weapons_per_walkable_area'] = float(
+            self.level['features']['number_of_weapons'] / self.level['features']['walkable_area'])
+        self.level['features']['ammunitions_per_walkable_area'] = float(
+            self.level['features']['number_of_ammunitions'] / self.level['features']['walkable_area'])
+        self.level['features']['keys_per_walkable_area'] = float(
+            self.level['features']['number_of_keys'] / self.level['features']['walkable_area'])
+        self.level['features']['monsters_per_walkable_area'] = float(
+            self.level['features']['number_of_monsters'] / self.level['features']['walkable_area'])
+        self.level['features']['obstacles_per_walkable_area'] = float(
+            self.level['features']['number_of_obstacles'] / self.level['features']['walkable_area'])
+        self.level['features']['decorations_per_walkable_area'] = float(
+            self.level['features']['number_of_decorations'] / self.level['features']['walkable_area'])
 
 
+
+        pass

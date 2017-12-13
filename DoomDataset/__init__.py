@@ -104,17 +104,22 @@ class DoomDataset():
 
         wad_records = itertools.groupby(sorted_input, key=lambda x: x['path'])
         new_records = list()
-        for wad, record in wad_records:
+        for i, (wad, record) in enumerate(wad_records):
             # Assuming that wad-level features are the same for each level
             record = next(record)
-
+            del record['bounding_box_size']
+            del record['nonempty_size']
+            del record['nonempty_percentage']
             wad_reader = we.WADReader()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-            parsed_wad = wad_reader.extract(wad_fp=root+record['path'], save_to=root+'Processed/', update_record=record,
-                                        root_path=root)
+                parsed_wad = wad_reader.extract(wad_fp=root+record['path'], save_to=root+'Processed/', update_record=record,
+                                            root_path=root)
             for level in parsed_wad['levels']:
                 new_records.append(level['features'])
+            if len(new_records) % (len(sorted_input)//100) == 0:
+                print("{}% completed...".format(len(new_records)//(len(sorted_input)//100)))
+
         with open(new_json_db, 'w') as json_out:
             json.dump(new_records, json_out)
         print("Saved {} levels to {}".format(len(new_records), new_json_db))
@@ -123,7 +128,7 @@ class DoomDataset():
 if __name__ == '__main__':
     DoomDataset().recompute_features(root='/run/media/edoardo/BACKUP/Datasets/DoomDataset/',
                                      old_json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
-                                     new_json_db='/run/media/edoardo/BACKUP/Datasets/FinalDataset/dataset.json'
+                                     new_json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset_new.json'
                                      )
 
 
