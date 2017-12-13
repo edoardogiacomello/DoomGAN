@@ -10,7 +10,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import morphology
-from WAD_Parser.Dictionaries.ThingTypes import get_thing
+from WAD_Parser.Dictionaries.ThingTypes import get_type_id_from_index
 
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
@@ -352,7 +352,7 @@ class WADWriter(object):
                     pixel = int(floor_things[x, y])
                     feat_scaling = lambda x, min, max, a, b: round(a + ((x-min)*(b-a))/(max-min))
                     type_index = feat_scaling(pixel, 1, 255, 0,122)
-                    type = get_thing(type_index)
+                    type = get_type_id_from_index(type_index)
                     self.add_thing(level_coord_scale*x,level_coord_scale*y, type)
 
         if debug:

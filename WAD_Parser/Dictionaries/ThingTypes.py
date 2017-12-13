@@ -151,43 +151,59 @@ things['other'] = [
     {'int':14, 	    'hex':'E',   	'version':'S', 	'radius':20,  	'sprite':'none', 	'sequence':'-', 	'class':'',   'description':'Teleport landing'},
 ]
 
-all_things = []
+all_things = list() # Contains the list of "thing" descriptors, ordered by category
 
 for category in ['other', 'keys', 'decorations', 'obstacles',  'monsters', 'ammunitions', 'weapons', 'powerups', 'artifacts']:
     all_things += things[category]
-all_types= [i['int'] for i in all_things]
+all_types= [i['int'] for i in all_things] # Contains the list of Thing types id used by doom (in the same order of 'all_things')
 
-def get_thing_category(index):
-    # Dealing with level start special case
-    if index == 1:
+def get_category_from_type_id(type_id):
+    """
+    Returns the category name for a given Doom thing "type id".
+    :param type_id:
+    :return: one from ('start', 'artifacts', 'powerups', 'weapons', 'ammunitions', 'keys', 'monsters', 'obstacles', 'decorations', 'other')
+    or 'unknown' if the type_id is not present in the list of known things
+    """
+    # Dealing with the 'start' category, not present in doom specification
+    start_type_ids = [s['int'] for s in things['other'] if 'start' in s['description']]
+    if type_id in start_type_ids:
         return 'start'
-
     for category in things:
-        indicies =  [t['int'] for t in things[category]]
-        if index in indicies:
+        indicies = [t['int'] for t in things[category]]
+        if type_id in indicies:
             return category
     return 'unknown'
 
-def get_category_things_types(category):
+def get_index_by_category(category):
     """
-    Return the list of thing types belonging to the given category
+    Return the list of indices (pixel colors) belonging to a given category
     :param category: 'start', 'artifacts', 'powerups', 'weapons', 'ammunitions', 'keys', 'monsters', 'obstacles', 'decorations', 'other'
-    :return:
+    :return: list() of indices corresponding to 'category'
     """
-    if category == 'start':
-        return [1]
-    return [t['int'] for t in things[category]]
+    if category != 'start':
+        return [all_things.index(t) + 1 for t in things[category]]
+    else:
+        start_things = [s for s in things['other'] if 'start' in s['description']]
+        return [all_things.index(t) + 1 for t in start_things]
 
-def get_thing(index):
-    """
-    Get a thing type (Doom shortint) from an index (1-122)
-    :param index:
-    :return:
-    """
-    return all_things[index]['int']
 
-def get_index(thing_type):
+def get_type_id_from_index(index):
+    """
+    Get a thing type (Doom shortint) from an index (1-123)
+    :param index: A index or thingsmap pixel color (1-123)
+    :return: The corresponding doom thing type_id (int) or None if the index is 0 or out of range
+    """
+    if index < 1 or index > len(all_things):
+        return None
+    return all_things[index-1]['int']
+
+def get_index_from_type_id(thing_type):
+    """
+    Get the index (or thingsmap pixel color) for a given thing type.
+    :param thing_type: A doom thing type_id (int)
+    :return: an index (1-123) if the thing type is known, 0 otherwise
+    """
     if thing_type not in all_types:
         return None
     else:
-        return all_types.index(thing_type)
+        return all_types.index(thing_type)+1

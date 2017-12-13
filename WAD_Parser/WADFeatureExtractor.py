@@ -64,13 +64,13 @@ class WADFeatureExtractor(object):
         thingsmap = np.zeros(self.mapsize, dtype=np.uint8)
         things = self.level['lumps']['THINGS']
         for thing in things:
-            is_unknown = ThingTypes.get_thing_category(thing['type']) == 'unknown'
+            is_unknown = ThingTypes.get_category_from_type_id(thing['type']) == 'unknown'
             out_of_bounds = thing['x'] > self.level['features']['x_max'] or thing['x'] < self.level['features']['x_min'] or \
                             thing['y'] > self.level['features']['y_max'] or thing['x'] > self.level['features']['y_max']
             if is_unknown or out_of_bounds:
                 continue
             tx, ty = self._rescale_coord(thing['x'], thing['y'])
-            thingsmap[tx,ty] = ThingTypes.get_index(thing['type'])
+            thingsmap[tx,ty] = ThingTypes.get_index_from_type_id(thing['type'])
         return thingsmap
 
     def compute_maps(self):
@@ -95,7 +95,7 @@ class WADFeatureExtractor(object):
         return self.level['features'], self.level['maps']
 
     def _find_thing_category(self, category):
-        found_things = np.in1d(self.level['maps']['thingsmap'], ThingTypes.get_category_things_types(category)).reshape(self.level['maps']['thingsmap'].shape)
+        found_things = np.in1d(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category(category)).reshape(self.level['maps']['thingsmap'].shape)
         return np.where(found_things)
 
     def show_maps(self):
@@ -214,6 +214,7 @@ class WADFeatureExtractor(object):
         start_location = self._find_thing_category('start')
         if not len(start_location[0]) or not len(start_location[1]):
             start_x, start_y = -1,-1
+            print("This level has no explicit start location")
         else:
             start_x, start_y = start_location[0][0], start_location[1][0]
         self.level['features']['start_location_x_px'] = int(start_x)
