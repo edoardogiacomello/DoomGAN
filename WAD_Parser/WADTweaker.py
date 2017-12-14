@@ -41,10 +41,25 @@ class WADTweaker():
             break
         writer.save('/home/edoardo/Desktop/doom/test.wad')
 
-
+    def build_test_level(self):
+        # Let's create a new WAD
+        writer = WADWriter()
+        # Declare a level
+        writer.add_level('MAP01')
+        # Create a big sector, by specifying its vertices (in clockwise order)
+        big_room = writer.add_sector([(1000, 1000), (1000, -1000), (-1000, -1000), (-1000, 1000)])
+        # Create a "door". It must be specified conuter-clockwise
+        writer.add_door([(100, 100), (-100, 100), (-100, -100), (100, -100)], parent_sector=big_room)
+        # set the starting position for the player 1
+        writer.set_start(-700, -700)
+        # Let's add a Cacodemon to make things more interesting
+        #writer.add_thing(x=500, y=500, thing_type=3005, options=7)
+        # Save the wad file. "bsp" command should work in your shell for this.
+        wad_mine = writer.save('/home/edoardo/Desktop/doom/test.wad')
 
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
-        #WADTweaker().build_levels()
-    WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
+    #WADTweaker().build_levels()
+    #WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
+    WADTweaker().build_test_level()

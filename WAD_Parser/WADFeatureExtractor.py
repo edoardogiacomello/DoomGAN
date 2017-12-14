@@ -80,6 +80,25 @@ class WADFeatureExtractor(object):
 
         return thingsmap
 
+    def draw_triggermap(self):
+        triggermap = np.zeros(self.mapsize, dtype=np.uint8)
+        linedefs = self.level['lumps']['THINGS']
+        for line in linedefs:
+            category = ThingTypes.get_category_from_type_id(thing['type'])
+            is_unknown = category == 'unknown'
+            out_of_bounds = thing['x'] > self.level['features']['x_max'] or thing['x'] < self.level['features'][
+                'x_min'] or \
+                            thing['y'] > self.level['features']['y_max'] or thing['y'] < self.level['features']['y_min']
+            if is_unknown or out_of_bounds:
+                continue
+            tx, ty = self._rescale_coord(thing['x'], thing['y'])
+            if triggermap[tx, ty] in ThingTypes.get_index_by_category('start'):
+                # Avoid overwriting of player start location if something else is placed there (like a teleporter)
+                continue
+            triggermap[tx, ty] = ThingTypes.get_index_from_type_id(thing['type'])
+
+        return triggermap
+
     def compute_maps(self):
         self.mapsize_du = np.array([self.level['features']['width'], self.level['features']['height']])
         self.mapsize = np.ceil(self.mapsize_du / 32).astype(np.int32)

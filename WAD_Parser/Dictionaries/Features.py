@@ -55,6 +55,7 @@ features = {
     'path_wallmap': 'string',
     'path_thingsmap': 'string',
     'path_floormap': 'string',
+    'path_triggermap': 'string',
     'level_area': 'int',
     'floors_area_mean': 'float',
     'floors_area_min': 'int',
@@ -152,5 +153,27 @@ map_paths = {
     'path_heightmap': 'heightmap',
     'path_wallmap': 'wallmap',
     'path_thingsmap': 'thingsmap',
-    'path_floormap': 'floormap'
+    'path_floormap': 'floormap',
+    'path_triggermap': 'triggermap'
 }
+
+wad_features = {'title': 'string',
+    'author': 'string',
+    'description': 'string',
+    'credits': 'string',
+    'base': 'string',
+    'build_time': 'string',
+    'editor_used': 'string',
+    'bugs': 'string',
+    'rating_value': 'float',
+    'rating_count': 'int',
+    'page_visits': 'int',
+    'downloads': 'int',
+    'creation_date': 'string',
+    'file_url': 'string',
+    'game': 'string',
+    'category': 'string',
+    'path': 'string',
+    'name': 'string',
+    'slot': 'string',
+    'path_json': 'string'}

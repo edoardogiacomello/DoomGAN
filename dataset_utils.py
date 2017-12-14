@@ -401,19 +401,12 @@ class DatasetManager(object):
 
 
 
-def plot_dataset_stats(data, features):
-    points = np.array([[d[f] for f in features] for d in data])
-    import pandas as pd
-    import seaborn as sb
-    pd_dataset = pd.DataFrame(points, columns=features)
-    g = sb.pairplot(pd_dataset)
-    import matplotlib.pyplot as plt
-    plt.show()
+
 
 def build_dataset():
     dm = DatasetManager(target_size=(128, 128))
-    dm.filter_dataset('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
-    clean_dataset = dm.filter_dataset('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+    #dm.filter_dataset('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+    #clean_dataset = dm.filter_dataset('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
     # plot_dataset_stats(clean_dataset, features=['number_of_sectors', 'aspect_ratio', 'sector_area_avg', 'lines_per_sector_avg', 'sector_aspect_ratio_avg', 'floors', 'nonempty_percentage', 'walkable_percentage'])
     dm.convert_to_TFRecords(clean_dataset, '/run/media/edoardo/BACKUP/Datasets/DoomDataset/', '/run/media/edoardo/BACKUP/Datasets/DoomDataset/128newmeta.TFRecords')
     # rebuild_database('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Processed/','/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')

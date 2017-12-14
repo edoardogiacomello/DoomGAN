@@ -262,19 +262,21 @@ class WADWriter(object):
         self.current_level = None
         self.lumps = {'THINGS':Lumps.Things(), 'LINEDEFS':Lumps.Linedefs(), 'VERTEXES':Lumps.Vertexes(),'SIDEDEFS': Lumps.Sidedefs(), 'SECTORS':Lumps.Sectors()}  # Temporary lumps for this level
 
+    def _sector_orientation(self, vertices):
+        """
+        Check if the polygon is oriented clock-wise or counter-clockwise.
+        If the polygon is not closed, then closes it
+        :param vertices: the input vertices
+        :return: (Bool, vertices) True if clockwise, False otherwise.
+        """
+        if not vertices[0] == vertices[-1]:
+            vertices.append(vertices[0])
+        xy = np.transpose(np.array(vertices))
+        x, y = xy[0], xy[1]
+        return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
+
     def from_images(self, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, generate_teleporters=True):
-        def sector_orientation(vertices):
-            """
-            Check if the polygon is oriented clock-wise or counter-clockwise.
-            If the polygon is not closed, then closes it
-            :param vertices: the input vertices
-            :return: (Bool, vertices) True if clockwise, False otherwise.
-            """
-            if not vertices[0] == vertices[-1]:
-                vertices.append(vertices[0])
-            xy = np.transpose(np.array(vertices))
-            x,y = xy[0], xy[1]
-            return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
+
 
 
 
@@ -316,13 +318,13 @@ class WADWriter(object):
                 if debug:
                     ax[4].plot(contour[:, 1], contour[:, 0], linewidth=1)
                 vertices = (contour * level_coord_scale).astype(np.int).tolist()
-                clockwise, vertices = sector_orientation(vertices)
+                clockwise, vertices = self._sector_orientation(vertices)
                 if clockwise:
                     # The contour defines the floor boundaries
                     sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
                 else:
                     # The contour defines a hole in the level: Surrounding sector must be defined explicitly
-                    self.add_sector(vertices, ceiling_height=128, tag=floor_id, inside=sector_id)
+                    self.add_sector(vertices, ceiling_height=128, tag=floor_id, sorrounding_sector_id=sector_id, hollow=True)
                     # sector_id is not changed because we don't want to place anything inside a hole, hopefully.
 
             # Placing teleporters
@@ -353,7 +355,8 @@ class WADWriter(object):
                     feat_scaling = lambda x, min, max, a, b: round(a + ((x-min)*(b-a))/(max-min))
                     type_index = feat_scaling(pixel, 1, 255, 0,122)
                     type = get_type_id_from_index(type_index)
-                    self.add_thing(level_coord_scale*x,level_coord_scale*y, type)
+                    if type is not None:
+                        self.add_thing(level_coord_scale*x,level_coord_scale*y, type)
 
         if debug:
             ax[0].imshow(floormap, cmap=plt.cm.gray)
@@ -383,7 +386,7 @@ class WADWriter(object):
         halfsize=size//2
         vertices = [(x-halfsize, y+halfsize),(x+halfsize, y+halfsize),(x+halfsize, y-halfsize),(x-halfsize, y-halfsize)]
 
-        self.add_sector(vertices, floor_flat='GATE1', wall_texture='-', linedef_flags=4, linedef_type=97, linedef_trigger=to_sector, inside=inside)
+        self.add_sector(vertices, floor_flat='GATE1', kw_sidedef={'upper_texture':'-', 'lower_texture':'-', 'middle_texture':'-'}, kw_linedef={'flags':4, 'type':97, 'trigger': to_sector}, sorrounding_sector_id=inside)
 
 
 
@@ -393,8 +396,36 @@ class WADWriter(object):
     def add_thing(self, x,y, thing_type, options=7, angle=0):
         self.lumps['THINGS'].add_thing(int(x), int(y), angle=angle, type=int(thing_type), options=options)
 
-    def add_sector(self, vertices_coords, floor_height=-8, ceiling_height=256, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=128, special=0, tag=0, wall_texture='BRONZE1', linedef_type=0, linedef_flags=1, linedef_trigger=0, inside=None):
+    def add_door(self,vertices_coords, parent_sector, texture='DOORTRAK'):
+        height = self.lumps['SECTORS'][parent_sector]['floor_height']
+        self.add_sector(vertices_coords, ceiling_height=height, kw_sidedef={'upper_texture':texture, 'lower_texture':texture, 'middle_texture':'-'}, kw_linedef={'type':1, 'flags':4, 'trigger':0}, tag=0, sorrounding_sector_id=parent_sector, hollow=False)
 
+    def add_sector(self, vertices_coords, floor_height=0, ceiling_height=128, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=256, special=0, tag=0, sorrounding_sector_id=None, hollow=False, kw_sidedef=None, kw_linedef=None):
+        """
+         Adds a sector with given vertices coordinates, creating all the necessary linedefs and sidedefs and return the relative
+        sector id for passing the reference to other sectors or objects if needed
+        :param vertices_coords: Vertices coordinates (x,y),(x2,y2).. If given in CLOCKWISE order then the room will have
+        its right linedefs facing INWARD, the left one can be left unspecified (i.e. sorrounding_sector_id = None e.g. for the outermost sector)
+        and the hollow parameter has no effect.
+          If vertices are in COUNTER-CLOCKWISE order, then you are defining a sector with RIGHT SIDEDEFS facing outside,
+          for that reason the sorrounding_sector_id parameter is mandatory and you are creating a sector inside another sector,
+          like a column, a wall or a door. You can set if the linedefs can contain an actual sector or not with the "hollow" parameter.
+        :param floor_height: height of the floor in doom map units
+        :param ceiling_height:
+        :param floor_flat:
+        :param ceiling_flat:
+        :param lightlevel:
+        :param special:
+        :param tag:
+        :param wall_texture:
+        :param sorrounding_sector_id: sector id (returned by this function itself) for the sector that sorrounds the one you are creating.
+        Can be None only if the vertices are specified in clockwise order, since a linedef must have a sector on its right side.
+        :param hollow: Has effect only for counter-clockwise specified sectors.
+        Determines if the sector you are creating does actually contains a sector (like for doors) or it's just a
+        hole sorrounded by walls/linedefs, like the column or other static structures. Default to False.
+        :param kw_linedef: A parameter dictionary for the linedefs. Must have the indices: 'type', 'trigger' and 'flags'
+        :return:
+        """
         # In order to add a sector one must add:
         # A vertex for each vertex in the sector, only if not already present
         # a linedef for each edge, if not already present
@@ -410,22 +441,41 @@ class WADWriter(object):
         for v in vertices_coords:
             v_id = self.lumps['VERTEXES'].add_vertex(v)
             vertices_id.append(v_id)
-
+        clockwise, _ = self._sector_orientation(vertices_coords)
         # Iterate over (v0, v1), (v1, v2), ..., (vn-1, vn).
         # Adding the first element at the end for closing the polygon
         startiter, enditer = itertools.tee(vertices_id+[vertices_id[0]], 2)
         next(enditer, None)  # shift the end iterator by one
         for start, end in zip(startiter, enditer):
-            # Create a new sidedef
-            sidedef_id = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture='-', lower_texture='-',
-                                               middle_texture=wall_texture, sector=sector_id)
-            if inside is not None:
-                left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture='-', lower_texture='-',
-                                               middle_texture=wall_texture, sector=inside)
+            if kw_sidedef is None:
+                kw_sidedef = {'upper_texture':'-', 'lower_texture':'-', 'middle_texture':'BRONZE1'}
+            if clockwise:
+                # The room has the right sidedef facing sorrounding_sector_id, toward the new sector
+                right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture=kw_sidedef['upper_texture'], lower_texture=kw_sidedef['lower_texture'],
+                                                   middle_texture=kw_sidedef['middle_texture'], sector=sector_id)
+                if sorrounding_sector_id is not None:
+                    left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture=kw_sidedef['upper_texture'], lower_texture=kw_sidedef['lower_texture'], middle_texture=kw_sidedef['middle_texture'], sector=sorrounding_sector_id)
+                else:
+                    left_sidedef=-1
             else:
-                left_sidedef=-1
+                # The room has the right sidedef facing outside, toward the sorrounding sector
+                right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
+                                                                   upper_texture=kw_sidedef['upper_texture'],
+                                                                   lower_texture=kw_sidedef['lower_texture'],
+                                                                   middle_texture=kw_sidedef['middle_texture'],
+                                                                   sector=sorrounding_sector_id)
+                if not hollow:
+                    left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
+                                                                      upper_texture=kw_sidedef['upper_texture'],
+                                                                      lower_texture=kw_sidedef['lower_texture'],
+                                                                      middle_texture=kw_sidedef['middle_texture'],
+                                                                      sector=sector_id)
+                else:
+                    left_sidedef = -1
             # Linedef creation/Lookup
-            self.lumps['LINEDEFS'].add_linedef(start, end, flags=linedef_flags, types=linedef_type, trigger=linedef_trigger, right_sidedef_index=sidedef_id, left_sidedef_index=left_sidedef)
+            if kw_linedef is None:
+                kw_linedef = {'type':0, 'flags':17, 'trigger':0}
+            self.lumps['LINEDEFS'].add_linedef(start, end, flags=kw_linedef['flags'], types=kw_linedef['type'], trigger=kw_linedef['trigger'], right_sidedef_index=right_sidedef, left_sidedef_index=left_sidedef)
         return sector_id
 
     def _commit_level(self):

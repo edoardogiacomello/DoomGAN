@@ -40,14 +40,14 @@ from WAD_Parser.WADReader import WADWriter
 # Let's create a new WAD
 writer = WADWriter()
 # Declare a level
-mine.add_level('MAP01')
+writer.add_level('MAP01')
 # Create a big sector, by specifying its vertices (in clockwise order)
-mine.add_sector([(1000,1000),(1000,-1000), (-1000,-1000), (-1000,1000) ])
+writer.add_sector([(1000,1000),(1000,-1000), (-1000,-1000), (-1000,1000) ])
 # set the starting position for the player 1
-mine.set_start(0,0)
+writer.set_start(0,0)
 # Let's add a Cacodemon to make things more interesting
-mine.add_thing(x=500,y=500,thing_type=3005, options=7) 
+writer.add_thing(x=500,y=500,thing_type=3005, options=7) 
 # Save the wad file. "bsp" command should work in your shell for this.
-wad_mine = mine.save('path/to/file.wad')
+wad_mine = writer.save('path/to/file.wad')
 ```
 

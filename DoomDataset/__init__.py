@@ -2,6 +2,7 @@ import json
 import os
 import csv
 import WAD_Parser.Dictionaries.Features as Features
+import numpy as np
 
 class DoomDataset():
     """
@@ -132,3 +133,39 @@ class DoomDataset():
             dict_writer.writeheader()
             dict_writer.writerows(levels)
         print("Csv saved to: {}".format(csv_path))
+
+
+    def plot_joint_feature_distributions(self, path_or_data, features):
+        """
+        Plots the joint distribution for each couple of given feature
+        :param path_or_data: (str or list) path of the json_db or the list of record containing data
+        :param features: list of features to plot
+        :return: None
+        """
+        import pandas as pd
+        import seaborn as sb
+        import matplotlib.pyplot as plt
+        from sklearn import decomposition
+        from sklearn import mixture
+        data = self.read_from_json(path_or_data) if isinstance(path_or_data, str) else path_or_data
+        points = np.array([[d[f] for f in features] for d in data])
+        X=points
+        # experiment with some pca
+        #pca = decomposition.PCA(n_components=5)
+        #pca.fit(points)
+        #X = pca.transform(points)
+        #pca_features= ['pca_feat_{}'.format(i) for i in range(5)]
+        gmm = mixture.GaussianMixture(n_components=3,
+                                      covariance_type='spherical')
+        gmm.fit(X)
+        Y_ = gmm.predict(X)
+        X = np.concatenate((X,np.expand_dims(Y_,axis=-1)), axis=-1)
+        # TODO: go on clustering
+        # Plotting
+        pd_dataset = pd.DataFrame(X, columns=features+['label'])
+        g = sb.pairplot(pd_dataset, hue='label', plot_kws={"s": 10})
+        plt.show()
+
+#feats = [f for f in Features.features.keys() if f not in Features.wad_features.keys() and f not in Features.map_paths.keys() ]
+#DoomDataset().plot_joint_feature_distributions('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
+#                                               features=feats)
