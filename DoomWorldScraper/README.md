@@ -21,7 +21,7 @@ These folders contain the zip files that have been downloaded from the website, 
 ```
 This checks for every zip file addressed by the Doom.json database looking for .WAD files and extract them 
 into the *./dataset/Original/* folder. For each WAD, it tries to read each level, doing the following:
-- Parse the [features](https://docs.google.com/spreadsheets/d/1Lv6fVyk_7QaZRpwhSvgRVB9EXe3KcNt1UV5cZx3RS24/edit?usp=sharing)
+- Parse the [features](https://docs.google.com/spreadsheets/d/1MB61Gt-xfp_obJy4nlf5NpnRKb0rt-C1G14Os3uVbQI/edit?usp=sharing)
 - Save all its scalar/string features to  *./dataset/Processed/\<zipname\>\_<LEVELNAME\>_\<level_slot>.json*
 - Save all feature features to *./dataset/Processed/\<zipname\>\_<LEVELNAME\>_\<level_slot>\_\<map_name>.json*
 - The content that is saved to each individual .json is also stored as a row of *./dataset/Processed/Doom.json*

@@ -1,5 +1,7 @@
 import json
 import os
+import csv
+import WAD_Parser.Dictionaries.Features as Features
 
 class DoomDataset():
     """
@@ -121,11 +123,12 @@ class DoomDataset():
             json.dump(new_records, json_out)
         print("Saved {} levels to {}".format(len(new_records), new_json_db))
 
-
-if __name__ == '__main__':
-    DoomDataset().recompute_features(root='/run/media/edoardo/BACKUP/Datasets/DoomDataset/',
-                                     old_json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
-                                     new_json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset_new.json'
-                                     )
-
-
+    def to_csv(self, json_db_path, csv_path):
+        """Converts a json dataset into csv representation, based on Features described in Features.py"""
+        levels = self.read_from_json(json_db_path)
+        with open(csv_path, 'w') as csvfile:
+            keys = Features.features.keys()
+            dict_writer = csv.DictWriter(csvfile, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(levels)
+        print("Csv saved to: {}".format(csv_path))
