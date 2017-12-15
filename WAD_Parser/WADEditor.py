@@ -396,9 +396,26 @@ class WADWriter(object):
     def add_thing(self, x,y, thing_type, options=7, angle=0):
         self.lumps['THINGS'].add_thing(int(x), int(y), angle=angle, type=int(thing_type), options=options)
 
-    def add_door(self,vertices_coords, parent_sector, texture='DOORTRAK'):
+    def add_door(self,vertices_coords, parent_sector, tag=None, remote=False, texture='DOORTRAK'):
+        """
+        adds a door with a given tag. If tag is left unspecified, then it will be equal to the sector index.
+        :param vertices_coords:
+        :param parent_sector:
+        :param tag:
+        :param remote:
+        :param texture:
+        :return:
+        """
         height = self.lumps['SECTORS'][parent_sector]['floor_height']
-        self.add_sector(vertices_coords, ceiling_height=height, kw_sidedef={'upper_texture':texture, 'lower_texture':texture, 'middle_texture':'-'}, kw_linedef={'type':1, 'flags':4, 'trigger':0}, tag=0, sorrounding_sector_id=parent_sector, hollow=False)
+        type = 1 if not remote else 0
+        tag = len(self.lumps['SECTORS']) if tag is None else tag
+        return self.add_sector(vertices_coords, ceiling_height=height, kw_sidedef={'upper_texture':texture, 'lower_texture':texture, 'middle_texture':'-'}, kw_linedef={'type':type, 'flags':4, 'trigger':0}, tag=tag, sorrounding_sector_id=parent_sector, hollow=False)
+
+    def add_trigger(self, vertices_coords, parent_sector, trigger_type, trigger_tag, texture='SW1CMT'):
+        return self.add_sector(vertices_coords,
+                               kw_sidedef={'upper_texture': 'BRONZE1', 'lower_texture': 'BRONZE1', 'middle_texture': texture},
+                               kw_linedef={'type': trigger_type, 'flags': 1, 'trigger': trigger_tag}, tag=0,
+                               sorrounding_sector_id=parent_sector, hollow=False)
 
     def add_sector(self, vertices_coords, floor_height=0, ceiling_height=128, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=256, special=0, tag=0, sorrounding_sector_id=None, hollow=False, kw_sidedef=None, kw_linedef=None):
         """

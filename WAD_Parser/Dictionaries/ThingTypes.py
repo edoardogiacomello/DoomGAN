@@ -207,3 +207,4 @@ def get_index_from_type_id(thing_type):
         return None
     else:
         return all_types.index(thing_type)+1
+

@@ -49,7 +49,9 @@ class WADTweaker():
         # Create a big sector, by specifying its vertices (in clockwise order)
         big_room = writer.add_sector([(1000, 1000), (1000, -1000), (-1000, -1000), (-1000, 1000)])
         # Create a "door". It must be specified conuter-clockwise
-        writer.add_door([(100, 100), (-100, 100), (-100, -100), (100, -100)], parent_sector=big_room)
+        door = writer.add_door([(100, 100), (-100, 100), (-100, -100), (100, -100)], remote=True, parent_sector=big_room)
+        # Create a switch
+        writer.add_trigger([(150+32, 150+32), (150-32, 150+32), (150-32, 150-32), (150+32, 150-32)], parent_sector=big_room, trigger_type=63, trigger_tag=door)
         # set the starting position for the player 1
         writer.set_start(-700, -700)
         # Let's add a Cacodemon to make things more interesting
@@ -57,9 +59,15 @@ class WADTweaker():
         # Save the wad file. "bsp" command should work in your shell for this.
         wad_mine = writer.save('/home/edoardo/Desktop/doom/test.wad')
 
+
+    def inspect_doom2(self):
+        reader = WADReader()
+        wad = reader.read('/home/edoardo/Desktop/doom/Doom2.wad')
+        pass
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
     #WADTweaker().build_levels()
     #WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
+    #WADTweaker().inspect_doom2()
     WADTweaker().build_test_level()
