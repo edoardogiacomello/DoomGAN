@@ -62,12 +62,12 @@ class WADTweaker():
 
     def inspect_doom2(self):
         reader = WADReader()
-        wad = reader.read('/home/edoardo/Desktop/doom/Doom2.wad')
+        wad = reader.extract('/home/edoardo/Desktop/doom/Doom2.wad')
         pass
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
     #WADTweaker().build_levels()
     #WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
-    #WADTweaker().inspect_doom2()
-    WADTweaker().build_test_level()
+    WADTweaker().inspect_doom2()
+    #WADTweaker().build_test_level()

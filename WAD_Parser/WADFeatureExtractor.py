@@ -5,6 +5,7 @@ from scipy.ndimage.measurements import label
 import scipy as sp
 from skimage.measure import regionprops
 import WAD_Parser.Dictionaries.ThingTypes as ThingTypes
+import WAD_Parser.Dictionaries.LinedefTypes as LinedefTypes
 
 class WADFeatureExtractor(object):
     def __init__(self, level_dict):
@@ -27,28 +28,16 @@ class WADFeatureExtractor(object):
         x = np.floor(x_centered / scale_factor).astype(np.int32)
         return x
 
-    def draw_heightmap(self):
-        heightmap = np.zeros(self.mapsize, dtype=np.uint8)
-        for sector in self.level['sectors'].values():
-            if len(sector['vertices_xy'])==0:
-                continue  # This sector is not referenced by any linedef so it's not a real sector
-            coords_DU = np.array(sector['vertices_xy'])  # Coordinates in DoomUnits (un-normalized)
-            # skimage.draw needs all the coordinates to be > 0. They are centered and rescaled (1 pixel = 32DU)
-            x, y = self._rescale_coord(coords_DU[:,0], coords_DU[:,1])
-            px, py = draw.polygon(x,y, shape=tuple(self.mapsize))
-            # 0 is for empty space
-            color = self._rescale_value(sector['lump']['floor_height'], self.level['features']['floor_height_min'], 32) + 1
-            heightmap[px, py] = color
-            # since polygon only draws the inner part of the polygon we now draw the perimeter
-            if len(x) > 2 and len(y) > 2:
-                px, py = draw.polygon_perimeter(x, y, shape=tuple(self.mapsize))
-            heightmap[px, py] = color
-        return heightmap
 
 
-    def draw_wallmap(self):
+    def draw_sector_maps(self):
+
+        # WALLMAP GENERATION
         vertices = self.level['lumps']['VERTEXES']
         wallmap = np.zeros(self.mapsize, dtype=np.uint8)
+        heightmap = np.zeros(self.mapsize, dtype=np.uint8)
+        tagmap = np.zeros(self.mapsize, dtype=np.uint8)
+
         for sector in self.level['sectors'].values():
             if len(sector['vertices_xy'])==0:
                 continue  # This sector is not referenced by any linedef so it's not a real sector
@@ -60,7 +49,25 @@ class WADFeatureExtractor(object):
                 ex, ey = self._rescale_coord(end[0], end[1])
                 lx, ly = draw.line(sx, sy, ex, ey)
                 wallmap[lx, ly] = 255
-        return wallmap
+
+            # HEIGHTMAP GENERATION
+            coords_DU = np.array(sector['vertices_xy'])  # Coordinates in DoomUnits (un-normalized)
+            # skimage.draw needs all the coordinates to be > 0. They are centered and rescaled (1 pixel = 32DU)
+            x, y = self._rescale_coord(coords_DU[:, 0], coords_DU[:, 1])
+            px, py = draw.polygon(x, y, shape=tuple(self.mapsize))
+            # 0 is for empty space
+            color = self._rescale_value(sector['lump']['floor_height'], self.level['features']['floor_height_min'],
+                                        32) + 1
+            heightmap[px, py] = color
+            tag = sector['lump']['tag']
+            tag = tag if tag < 63 else 63
+            tag = tag if tag >= 0 else 0
+            tagmap[px, py] = tag
+            # since polygon only draws the inner part of the polygon we now draw the perimeter
+            if len(x) > 2 and len(y) > 2:
+                px, py = draw.polygon_perimeter(x, y, shape=tuple(self.mapsize))
+            heightmap[px, py] = color
+        return wallmap, heightmap, tagmap
 
     def draw_thingsmap(self):
         thingsmap = np.zeros(self.mapsize, dtype=np.uint8)
@@ -80,10 +87,28 @@ class WADFeatureExtractor(object):
 
         return thingsmap
 
-    def draw_triggermap(self):
+    def _draw_tags_map(self):
+        """
+        This is an helper map that draws each sector
+        :return:
+        """
+
+
+    def draw_triggermap(self, tag_map):
         triggermap = np.zeros(self.mapsize, dtype=np.uint8)
-        linedefs = self.level['lumps']['THINGS']
+        linedefs = self.level['lumps']['LINEDEFS']
+        # TODO: Continue this
         for line in linedefs:
+            pixel_color = LinedefTypes.get_index_from_type(line['types'])
+            if not pixel_color:
+                continue
+            print('found')
+            if pixel_color == 32:
+                # This is a remote door switch. Searching for the corresponding door(s)
+                pass
+            if pixel_color == 16:
+                # We found a local door
+                pass
 
             pass
 
@@ -94,10 +119,11 @@ class WADFeatureExtractor(object):
         self.mapsize = np.ceil(self.mapsize_du / 32).astype(np.int32)
 
         # computing these maps require the knowledge of the level width and height
-        self.level['maps']['heightmap'] = self.draw_heightmap()
-        self.level['maps']['wallmap'] = self.draw_wallmap()
+        #tag_map is an intermediate map needed to build the trigger map
+        self.level['maps']['wallmap'], self.level['maps']['heightmap'], tag_map = self.draw_sector_maps()
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
         self.level['maps']['floormap'], self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
+        self.level['maps']['triggermap'] = self.draw_triggermap(tag_map)
 
     def _features_to_scalar(self):
         for feature in self.level['features']:
