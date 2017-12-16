@@ -165,7 +165,3 @@ class DoomDataset():
         pd_dataset = pd.DataFrame(X, columns=features+['label'])
         g = sb.pairplot(pd_dataset, hue='label', plot_kws={"s": 10})
         plt.show()
-
-#feats = [f for f in Features.features.keys() if f not in Features.wad_features.keys() and f not in Features.map_paths.keys() ]
-#DoomDataset().plot_joint_feature_distributions('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
-#                                               features=feats)

@@ -1,4 +1,29 @@
 # from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
+
+"""
+This file contains the internal representation for each linedef type.
+!!!! UNLIKE ThingsType, THIS FILE DOES NOT ENCODE DIRECTLY THE MAP PIXEL COLOR, IT SPECIFY AN INTERMEDIATE CODING FOR
+RECOGNIZING WHAT IS A LOCAL DOOR, WHAT IS A SWITCH, ETC. !!!!
+
+Final Encoding:
+VALUE   CATEGORY
+10	    local_doors	    Blue key local door
+12	    local_doors	    Red key local door
+14	    local_doors	    Yellow key local door
+16	    local_doors	    Local door
+32+i	remote_doors	Remote door with tag i
+64+i	lifts, stairs.. Lifts, Stairs, etc. with tag i
+128+i	switch	        Linedef that activates the i tag
+192+i	teleports	    teleport to sector i
+255	    exit	        Level Exit
+
+Switches does not exist as an explicit linedef type. They are instead all linedefs that have a non-zero "trigger" field.
+Local doors are instead directly defined in their linedef type since they are not referenced by anything else.
+
+Refer to WADFeatureExtractor for the complete encoding processing
+
+"""
+
 linetypes = {}
 
 linetypes['special'] = {48:0  # Scrolling wall

@@ -32,23 +32,19 @@ class WADFeatureExtractor(object):
 
     def draw_sector_maps(self):
 
-        # WALLMAP GENERATION
+
         vertices = self.level['lumps']['VERTEXES']
         wallmap = np.zeros(self.mapsize, dtype=np.uint8)
         heightmap = np.zeros(self.mapsize, dtype=np.uint8)
         tagmap = np.zeros(self.mapsize, dtype=np.uint8)
+        triggermap = np.zeros(self.mapsize, dtype=np.uint8)
 
         for sector in self.level['sectors'].values():
             if len(sector['vertices_xy'])==0:
                 continue  # This sector is not referenced by any linedef so it's not a real sector
-            walls_linedefs = [line for line in sector['linedefs'] if line['left_sidedef'] == -1]
-            for line in walls_linedefs:
-                start = np.array([vertices[line['from']]['x'],vertices[line['from']]['y']]).astype(np.int32)
-                end = np.array([vertices[line['to']]['x'],vertices[line['to']]['y']]).astype(np.int32)
-                sx, sy = self._rescale_coord(start[0], start[1])
-                ex, ey = self._rescale_coord(end[0], end[1])
-                lx, ly = draw.line(sx, sy, ex, ey)
-                wallmap[lx, ly] = 255
+
+
+
 
             # HEIGHTMAP GENERATION
             coords_DU = np.array(sector['vertices_xy'])  # Coordinates in DoomUnits (un-normalized)
@@ -59,6 +55,7 @@ class WADFeatureExtractor(object):
             color = self._rescale_value(sector['lump']['floor_height'], self.level['features']['floor_height_min'],
                                         32) + 1
             heightmap[px, py] = color
+            # TAGMAP GENERATION (intermediate TRIGGERMAP: Sectors referenced by a trigger)
             tag = sector['lump']['tag']
             tag = tag if tag < 63 else 63
             tag = tag if tag >= 0 else 0
@@ -67,7 +64,56 @@ class WADFeatureExtractor(object):
             if len(x) > 2 and len(y) > 2:
                 px, py = draw.polygon_perimeter(x, y, shape=tuple(self.mapsize))
             heightmap[px, py] = color
-        return wallmap, heightmap, tagmap
+
+        # WALLMAP and TRIGGERMAP GENERATION
+        for line in self.level['lumps']['LINEDEFS']:
+            start = np.array([vertices[line['from']]['x'], vertices[line['from']]['y']]).astype(np.int32)
+            end = np.array([vertices[line['to']]['x'], vertices[line['to']]['y']]).astype(np.int32)
+            sx, sy = self._rescale_coord(start[0], start[1])
+            ex, ey = self._rescale_coord(end[0], end[1])
+            lx, ly = draw.line(sx, sy, ex, ey)
+            if line['left_sidedef'] == -1: # If no sector on the other side
+                # It's a wall
+                wallmap[lx, ly] = 255
+            linedef_type = LinedefTypes.get_index_from_type(line['types'])
+            trigger = line['trigger']
+            # clamping the trigger tag to [1,64] (otherwise the encoding will overflow)
+            trigger = 64 if trigger > 64 else trigger
+            if linedef_type != 0:  # Then something happens if this linedef is activated
+                if trigger != 0:
+                    if linedef_type in [32, 64]:
+                            # Then the sectors tagged with "trigger" are remote doors if type is 32, or moving floors if 64
+                            switch_color = 128+trigger-1  # The switch color is 128+i for i in [0,64)
+                            sector_color = linedef_type+trigger-1  # The destination sector will be colored according to its type
+                            # Drawing the switch
+                            triggermap[lx, ly] = switch_color
+                            # Coloring the dest sector (the remote door, the lift, etc)
+                            dest_tag_pixels = np.transpose(np.where(tagmap==trigger))
+                            for coord in dest_tag_pixels:
+                                triggermap[tuple(coord)] = sector_color
+                    if linedef_type in [192]:
+                        # This is a teleporter source
+                        # color the source
+                        triggermap[lx, ly] = linedef_type + trigger - 1
+                        # Finding and coloring the destination
+                        # First, the destination sector is needed
+                        destinations = [list(self._rescale_coord(t['x'], t['y'])) for t in self.level['lumps']['THINGS'] if t['type'] == 14] # 14 is thing type for "teleport landing"
+                        dest_map = np.zeros(self.mapsize, dtype=np.bool)
+                        for dest_coord in destinations:
+                            dest_map[tuple(dest_coord)] = True
+                        found_dest = np.where(np.logical_and((tagmap==trigger), dest_map))
+                        # Color the destination
+                        if len(found_dest):
+                            triggermap[tuple(found_dest)] =  linedef_type + trigger - 1
+
+                if linedef_type in [10,12,14,16, 255]:
+                    # It's a local door or an exit. Simply color the linedefs
+                    triggermap[lx, ly] = linedef_type
+
+
+
+
+        return wallmap, heightmap, triggermap
 
     def draw_thingsmap(self):
         thingsmap = np.zeros(self.mapsize, dtype=np.uint8)
@@ -87,32 +133,6 @@ class WADFeatureExtractor(object):
 
         return thingsmap
 
-    def _draw_tags_map(self):
-        """
-        This is an helper map that draws each sector
-        :return:
-        """
-
-
-    def draw_triggermap(self, tag_map):
-        triggermap = np.zeros(self.mapsize, dtype=np.uint8)
-        linedefs = self.level['lumps']['LINEDEFS']
-        # TODO: Continue this
-        for line in linedefs:
-            pixel_color = LinedefTypes.get_index_from_type(line['types'])
-            if not pixel_color:
-                continue
-            print('found')
-            if pixel_color == 32:
-                # This is a remote door switch. Searching for the corresponding door(s)
-                pass
-            if pixel_color == 16:
-                # We found a local door
-                pass
-
-            pass
-
-        return triggermap
 
     def compute_maps(self):
         self.mapsize_du = np.array([self.level['features']['width'], self.level['features']['height']])
@@ -120,10 +140,10 @@ class WADFeatureExtractor(object):
 
         # computing these maps require the knowledge of the level width and height
         #tag_map is an intermediate map needed to build the trigger map
-        self.level['maps']['wallmap'], self.level['maps']['heightmap'], tag_map = self.draw_sector_maps()
+        self.level['maps']['wallmap'], self.level['maps']['heightmap'], self.level['maps']['triggermap'] = self.draw_sector_maps()
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
         self.level['maps']['floormap'], self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
-        self.level['maps']['triggermap'] = self.draw_triggermap(tag_map)
+
 
     def _features_to_scalar(self):
         for feature in self.level['features']:
