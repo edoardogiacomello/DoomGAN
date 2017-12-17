@@ -113,8 +113,11 @@ class DoomDataset():
             wad_reader = we.WADReader()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                parsed_wad = wad_reader.extract(wad_fp=root+record['path'], save_to=root+'Processed/', update_record=record,
-                                            root_path=root)
+                try:
+                    parsed_wad = wad_reader.extract(wad_fp=root+record['path'], save_to=root+'Processed/', update_record=record,
+                                                root_path=root)
+                except:
+                    print("Error parsing {}".format(root+record['path']))
             for level in parsed_wad['levels']:
                 new_records.append(level['features'])
             if len(new_records) % (len(sorted_input)//100) == 0:
@@ -165,3 +168,4 @@ class DoomDataset():
         pd_dataset = pd.DataFrame(X, columns=features+['label'])
         g = sb.pairplot(pd_dataset, hue='label', plot_kws={"s": 10})
         plt.show()
+

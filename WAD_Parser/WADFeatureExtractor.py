@@ -304,10 +304,7 @@ class WADFeatureExtractor(object):
         self.level['features']['number_of_decorations'] = int(
             np.size(self._find_thing_category('decorations'), axis=-1))
 
-        self.level['features']['bounding_box_size'] = int(self.mapsize[0] * self.mapsize[1])
         self.level['features']['walkable_area'] = feature_walkablemap[0]['area']
-        self.level['features']['nonempty_percentage'] = float(
-            self.level['features']['level_area'] / self.level['features']['level_bbox_area'])
         self.level['features']['walkable_percentage'] = float(
             feature_walkablemap[0]['area'] / self.level['features']['level_area'])
 
