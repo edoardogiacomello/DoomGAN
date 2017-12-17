@@ -137,8 +137,13 @@ class DoomDataset():
             dict_writer.writerows(levels)
         print("Csv saved to: {}".format(csv_path))
 
+    def filter_data(self, data, list_of_lambdas):
+        for condition in list_of_lambdas:
+            data = filter(condition, data)
+        return list(data)
 
-    def plot_joint_feature_distributions(self, path_or_data, features):
+
+    def plot_joint_feature_distributions(self, path_or_data, features, cluster = False):
         """
         Plots the joint distribution for each couple of given feature
         :param path_or_data: (str or list) path of the json_db or the list of record containing data
@@ -153,19 +158,33 @@ class DoomDataset():
         data = self.read_from_json(path_or_data) if isinstance(path_or_data, str) else path_or_data
         points = np.array([[d[f] for f in features] for d in data])
         X=points
-        # experiment with some pca
-        #pca = decomposition.PCA(n_components=5)
-        #pca.fit(points)
-        #X = pca.transform(points)
-        #pca_features= ['pca_feat_{}'.format(i) for i in range(5)]
-        gmm = mixture.GaussianMixture(n_components=3,
-                                      covariance_type='spherical')
-        gmm.fit(X)
-        Y_ = gmm.predict(X)
-        X = np.concatenate((X,np.expand_dims(Y_,axis=-1)), axis=-1)
-        # TODO: go on clustering
-        # Plotting
-        pd_dataset = pd.DataFrame(X, columns=features+['label'])
-        g = sb.pairplot(pd_dataset, hue='label', plot_kws={"s": 10})
-        plt.show()
+        if cluster:
+            from sklearn.cluster import DBSCAN
+            Y = DBSCAN(eps=0.3, min_samples=300).fit_predict(X)
+            X = np.concatenate((X, np.expand_dims(Y, axis=-1)), axis=-1)
+            # TODO: go on clustering
+            # Plotting
+            pd_dataset = pd.DataFrame(X, columns=features+['label'])
+            g = sb.pairplot(pd_dataset, hue='label', plot_kws={"s": 10})
+        else:
+            pd_dataset = pd.DataFrame(X, columns=features)
+            g = sb.pairplot(pd_dataset, plot_kws={"s": 10})
+        return g
 
+    def generate_stats(self):
+        dataset = DoomDataset()
+        # TODO: Remove this absolute path
+        data = dataset.read_from_json('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+        size_filter = lambda l: l['height']/32 <= 128 and l['width']/32 <= 128
+        bound_things_number = lambda l: l['number_of_things'] < 1000 # Remove a few sample with a huge number of items
+        bound_lines_per_sector = lambda l: l['lines_per_sector_avg'] < 150  # Removes a few samples with too many lines per sector
+        bound_euler_number = lambda l: l['level_euler_number'] > -50  # Remove a few samples with too many holes
+
+        data = dataset.filter_data(data, [size_filter,bound_things_number,bound_lines_per_sector,bound_euler_number])
+
+        base_features = ['lines_per_sector_avg', 'number_of_things', 'walkable_area', 'walkable_percentage']
+        level_features = [f for f in Features.features if f.startswith('level_') and not '_hu_' in f]
+        floor_features = [f for f in Features.features if f.startswith('floors_') and (f.endswith('_mean'))]
+        dataset.plot_joint_feature_distributions(data, features=base_features).savefig('./../dataset/statistics/128_base_features_no_outliers')
+        dataset.plot_joint_feature_distributions(data, features=level_features).savefig('./../dataset/statistics/128_level_features_no_outliers')
+        dataset.plot_joint_feature_distributions(data, features=floor_features).savefig('./../dataset/statistics/128_floor_features_no_outliers')

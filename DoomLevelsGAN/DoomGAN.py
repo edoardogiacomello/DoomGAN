@@ -348,9 +348,9 @@ class DoomGAN(object):
             # Clipping the D Weights
             clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.vars_d]
             # Define an optimizer
-            d_optim = (tf.train.RMSPropOptimizer(learning_rate=5e-5)
+            d_optim = (tf.train.RMSPropOptimizer(learning_rate=config.learning_rate)
                        .minimize(self.loss_d, var_list=self.vars_d))
-            g_optim = (tf.train.RMSPropOptimizer(learning_rate=5e-5)
+            g_optim = (tf.train.RMSPropOptimizer(learning_rate=config.learning_rate)
                        .minimize(self.loss_g_wgan, var_list=self.vars_g))
         else:
             # Define an optimizer
