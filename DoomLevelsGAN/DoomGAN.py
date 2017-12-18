@@ -262,7 +262,6 @@ class DoomGAN(object):
         # Code from https://github.com/carpedm20/DCGAN-tensorflow
         import re
         print(" [*] Reading checkpoints...")
-        checkpoint_dir = os.path.join(checkpoint_dir, self.checkpoint_dir)
 
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
@@ -544,6 +543,6 @@ if __name__ == '__main__':
             if FLAGS.generate:
                 y = np.array([[3702.0, 2849.0, 1147.0, 216.0, 1.2994033098220825, 18279.986328125, 7.3287038803100586, 2.0, 0.38256704807281494, 2514.0]])
                 y = y*np.ones((32, 10))  # y needs to be replicated for each sample in the batch size
-                gan.generate_levels(y, 42)
+                gan.generate_levels(y, 44448)
             else:
                 gan.train(FLAGS) if FLAGS.train else gan.sample(seeds=[42, 314, 123123, 65847968, 46546868])
