@@ -188,3 +188,56 @@ class DoomDataset():
         dataset.plot_joint_feature_distributions(data, features=base_features).savefig('./../dataset/statistics/128_base_features_no_outliers')
         dataset.plot_joint_feature_distributions(data, features=level_features).savefig('./../dataset/statistics/128_level_features_no_outliers')
         dataset.plot_joint_feature_distributions(data, features=floor_features).savefig('./../dataset/statistics/128_floor_features_no_outliers')
+
+    def to_txt(self, json_db, root,  output_path):
+        """
+        Represent the levels using 2-characters textual information.
+        
+        
+        ENCODING:
+        The encoding is in part taken from the TheVGLC dataset, so not all the information is displayed
+        Each tile is represented as XY, with X being the VGLC encoding and Y being the ascii-encoding of the trigger tag.
+        
+        "-" : ["empty","out of bounds"],
+        "X" : ["solid","wall"],
+        "." : ["floor","walkable"],
+        "," : ["floor","walkable","stairs"],
+        "E" : ["enemy","walkable"],
+        "W" : ["weapon","walkable"],
+        "A" : ["ammo","walkable"],
+        "H" : ["health","armor","walkable"],
+        "B" : ["explosive barrel","walkable"],
+        "K" : ["key","walkable"],
+        "<" : ["start","walkable"],
+        "T" : ["teleport","walkable","destination"],
+        ":" : ["decorative","walkable"],
+        "L" : ["door","locked"],
+        "t" : ["teleport","source","activatable"],
+        "+" : ["door","walkable","activatable"],
+        ">" : ["exit","activatable"]
+        
+        :param json_db: 
+        :param output_path: 
+        :return: 
+        """
+        import skimage.io as io
+
+        levels = self.read_from_json(json_db)
+        for l in levels:
+            maps = {}
+            for m in Features.map_paths:
+                path = l[m]
+                map_data = io.imread(root+path)
+                maps[Features.map_paths[m]] = map_data
+
+            txtmap = np.ndarray(shape=(2*maps['floormap'].shape[0], maps['floormap'].shape[1]), dtype=np.uint8)
+            txtmap[...] = bytearray('-', encoding='ascii')[0]
+            txtmap[:, 1::2] = 0
+            walls = maps['floormap'] == 255
+            pass
+
+
+
+DoomDataset().to_txt(json_db='/home/edoardo/Desktop/DoomGAN/DoomDataset Latest/DoomDataset/dataset.json',
+                     root='/home/edoardo/Desktop/DoomGAN/DoomDataset Latest/DoomDataset/',
+                     output_path='/home/edoardo/Desktop/DoomGAN/DoomDataset Latest/DoomDataset/Processed-txt/')
