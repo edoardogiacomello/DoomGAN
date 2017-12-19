@@ -286,8 +286,9 @@ class WADWriter(object):
         wallmap = io.imread(wallmap).astype(dtype=np.bool)
         # Pad with a frame for getting boundaries
         wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant')
-        thingsmap = io.imread(thingsmap).astype(np.uint16)
-        thingsmap = np.pad(thingsmap, pad_width=(1, 1), mode='constant')
+        if thingsmap is not None:
+            thingsmap = io.imread(thingsmap).astype(np.uint16)
+            thingsmap = np.pad(thingsmap, pad_width=(1, 1), mode='constant')
 
         floormap = morphology.binary_dilation(floormap)
 
@@ -311,7 +312,7 @@ class WADWriter(object):
         from scipy.ndimage.measurements import label
         segmented, total_floors = label(cleaned_walls, structure=np.ones((3, 3)))
         floors = [np.equal(segmented, f) for f in range(1, total_floors)]
-        teleport_graph = np.roll(range(5), -1).tolist()
+        teleport_graph = np.roll(range(len(floors)), -1).tolist()
         for floor_id, floor in enumerate(floors):
             contours_walls = find_contours(floor, 0.5, positive_orientation='low')
             for i, contour in enumerate(contours_walls):
@@ -342,7 +343,7 @@ class WADWriter(object):
                 self.add_teleporter_source(src_coord[0], src_coord[1], dest_sector, inside=sector_id)
 
             # Placing "Things"
-
+            if thingsmap is not None:
                 floor_things = floor * thingsmap
                 for x,y in np.transpose(np.nonzero(floor_things)):
                     # FIXME: With the new thing encoding this function may be no more valid

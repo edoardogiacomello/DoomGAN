@@ -221,6 +221,8 @@ class DoomDataset():
         :return: 
         """
         import skimage.io as io
+        import WAD_Parser.Dictionaries.ThingTypes as ThingTypes
+        import WAD_Parser.Dictionaries.LinedefTypes as LineTypes
 
         levels = self.read_from_json(json_db)
         for l in levels:
@@ -230,14 +232,57 @@ class DoomDataset():
                 map_data = io.imread(root+path)
                 maps[Features.map_paths[m]] = map_data
 
-            txtmap = np.ndarray(shape=(2*maps['floormap'].shape[0], maps['floormap'].shape[1]), dtype=np.uint8)
-            txtmap[...] = bytearray('-', encoding='ascii')[0]
-            txtmap[:, 1::2] = 0
-            walls = maps['floormap'] == 255
-            pass
+            X_map = np.ndarray(shape=maps['floormap'].shape, dtype=np.uint8)
+            Y_map = np.ndarray(shape=maps['floormap'].shape, dtype=np.uint8)
+            txtmap = np.zeros(shape=(X_map.shape[0], X_map.shape[1]*2), dtype=np.byte)
+
+            from skimage.filters import roberts
+            walls = maps['wallmap'] != 0
+            floor = maps['floormap'] != 0
+            change_in_height = roberts(maps['heightmap']) != 0
+            enemies = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('monsters'))
+            weapons = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('weapons'))
+            ammo = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('ammunitions'))
+            health = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('powerups'))
+            barrels = np.isin(maps['thingsmap'], [ThingTypes.get_index_from_type_id(t) for t in [2035, 70]])
+            keys = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('keys'))
+            start = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('start'))
+            teleport_dst = np.isin(maps['thingsmap'], [ThingTypes.get_index_from_type_id(14)])
+            decorative = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('decorations'))
+            door_locked = np.isin(maps['triggermap'], [LineTypes.get_index_from_type(l) for l in [26, 28, 27, 32, 33, 34]])
+            door_open = np.isin(maps['triggermap'], [LineTypes.get_index_from_type(l) for l in [1, 31, 46, 117, 118]] + list(range(32,64)))
+            teleport_src = np.logical_and(maps['triggermap'] >= 192, maps['triggermap'] < 255)
+            exit = maps['triggermap'] == 255
+
+
+            # Rebuild the tagmap (contains sector and trigger tags)
+            tagmap = np.where(maps['triggermap'] >= 32, maps['triggermap'], -1) # -1 means "no tags here".
+            tagmap = np.mod(tagmap + 1, 64) # Now all tags are from 1 to 63, 0 means "no tag"
 
 
 
-DoomDataset().to_txt(json_db='/home/edoardo/Desktop/DoomGAN/DoomDataset Latest/DoomDataset/dataset.json',
-                     root='/home/edoardo/Desktop/DoomGAN/DoomDataset Latest/DoomDataset/',
-                     output_path='/home/edoardo/Desktop/DoomGAN/DoomDataset Latest/DoomDataset/Processed-txt/')
+            X_map[...] = ord("-")
+            Y_map[...] = ord("-") + tagmap
+            X_map = np.where(floor, ord("."), X_map)
+            X_map = np.where(change_in_height, ord(","), X_map)
+            X_map = np.where(decorative, ord(":"), X_map)
+            X_map = np.where(enemies, ord("E"), X_map)
+            X_map = np.where(weapons, ord("W"), X_map)
+            X_map = np.where(ammo, ord("A"), X_map)
+            X_map = np.where(health, ord("H"), X_map)
+            X_map = np.where(barrels, ord("B"), X_map)
+            X_map = np.where(keys, ord("K"), X_map)
+            X_map = np.where(start, ord("<"), X_map)
+            X_map = np.where(teleport_dst, ord("T"), X_map)
+            X_map = np.where(teleport_src, ord("t"), X_map)
+            X_map = np.where(door_locked, ord("L"), X_map)
+            X_map = np.where(door_open, ord("+"), X_map)
+            X_map = np.where(walls, ord("X"), X_map)
+            X_map = np.where(exit, ord(">"), X_map)
+
+            txtmap[:, 0::2] = X_map
+            txtmap[:, 1::2] = Y_map
+            txt = txtmap.tolist()
+            txt_fname = l['path_json'].split('/')[-1].replace('json','txt')
+            with open(output_path+txt_fname, 'wb') as txtout:
+                txtout.writelines([bytes(row + [10]) for row in txt])
