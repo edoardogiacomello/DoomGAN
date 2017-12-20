@@ -230,141 +230,18 @@ class DatasetManager(object):
         self.min_size = min_size
 
 
-    def _sample_to_TFRecord(self, json_record):
-        # converting the record to a default_dict since it may does not contain some keys for empty values.
-        json_record = defaultdict(lambda: "", json_record)
-
-        feature_dict = dict()
-        # Dinamically build a tf.train.Feature dictionary based on dataset Features
-        for f in Features.features:
-            if Features.features[f] == 'int':
-                feat_type = tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record[f])]))
-            if Features.features[f] == 'float':
-                feat_type = tf.train.Feature(float_list=tf.train.FloatList(value=[float(json_record[f])]))
-            if Features.features[f] == 'string':
-                feat_type = tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record[f])]))
-            feature_dict[f] = feat_type
-
-        # Doing the same for the maps
-        for m in Features.map_paths:
-            feature_dict[Features.map_paths[m]] = tf.train.Feature(bytes_list=tf.train.BytesList(value=[json_record[Features.map_paths[m]].tobytes()]))
-
-        return tf.train.Example(features=tf.train.Features(feature=feature_dict))
-
-    def _TFRecord_to_sample(self, TFRecord):
-        feature_dict = dict()
-        # Dinamically build a tf.train.Feature dictionary based on dataset Features
-        for f in Features.features:
-            if Features.features[f] == 'int':
-                feat_type = tf.FixedLenFeature([],tf.int64)
-            if Features.features[f] == 'float':
-                feat_type = tf.FixedLenFeature([],tf.float32)
-            if Features.features[f] == 'string':
-                feat_type = tf.FixedLenFeature([],tf.string)
-            feature_dict[f] = feat_type
-
-        # Doing the same for the maps
-        for m in Features.map_paths:
-            feature_dict[Features.map_paths[m]] = tf.FixedLenFeature([],tf.string)
-
-        parsed_features = tf.parse_single_example(TFRecord, feature_dict)
-
-        # Decoding the maps
-        for m in Features.map_paths:
-            parsed_img = tf.decode_raw(parsed_features[Features.map_paths[m]], tf.uint8)
-            parsed_img = tf.reshape(parsed_img, shape=(self.target_size[0], self.target_size[1]))
-            parsed_features[Features.map_paths[m]] = parsed_img
-        return parsed_features
-
-    def _update_meta(self, level):
-        """
-        Updates the metadata for a level.
-        Metadata contain information such the global number of entries, the min and max values for each feature, etc.
-        :param level: The json record for a level
-        :return:
-        """
-        def _compute_feature(level, feature, type):
-            if type == 'int64' or type == 'float' or type == 'int':
-                if feature not in self.meta['features']:
-                    self.meta['features'][feature] = dict()
-                feat_dict = self.meta['features'][feature]
-                feat_dict['type'] = type
-                feat_dict['min'] = float(level[feature]) if 'min' not in feat_dict else min(feat_dict['min'], float(level[feature]))
-                feat_dict['max'] = float(level[feature]) if 'max' not in feat_dict else max(feat_dict['max'], float(level[feature]))
-                feat_dict['avg'] = float(level[feature]) if 'avg' not in feat_dict else feat_dict['avg'] + (float(level[feature]) - feat_dict['avg'])/float(self.meta['count'])
-
-        def _compute_map(level, map):
-                if map not in self.meta['maps']:
-                    self.meta['maps'][map] = dict()
-                feat_dict = self.meta['maps'][map]
-                feat_dict['type'] = str(level[map].dtype)
-                feat_dict['min'] = float(level[map].min()) if 'min' not in feat_dict else min(feat_dict['min'],
-                                                                                            float(level[map].min()))
-                feat_dict['max'] = float(level[map].max()) if 'max' not in feat_dict else max(feat_dict['max'],
-                                                                                              float(level[map].max()))
-                feat_dict['avg'] = float(level[map].mean()) if 'avg' not in feat_dict else feat_dict['avg'] + (float(
-                    level[map].mean()) - feat_dict['avg']) / float(self.meta['count'])
 
 
 
 
-        self.meta['features'] = dict() if 'features' not in self.meta else self.meta['features']
-        self.meta['maps'] = dict() if 'maps' not in self.meta else self.meta['maps']
-        self.meta['count'] = 1 if 'count' not in self.meta else self.meta['count'] +1
-        import WAD_Parser.Dictionaries.Features as Features
-        for f in Features.features:
-            _compute_feature(level, f, Features.features[f])
-        for m in Features.map_paths:
-            _compute_map(level, Features.map_paths[m])
-
-    def _pad_image(self, image):
-        """Center pads an image, adding a black border up to "target size" """
-        assert image.shape[0] <= self.target_size[0], "The image to pad is bigger than the target size"
-        assert image.shape[1] <= self.target_size[1], "The image to pad is bigger than the target size"
-        padded = np.zeros((self.target_size[0],self.target_size[1]), dtype=np.uint8)
-        offset = (self.target_size[0] - image.shape[0])//2, (self.target_size[1] - image.shape[1])//2  # Top, Left
-        padded[offset[0]:offset[0]+image.shape[0], offset[1]:offset[1]+image.shape[1]] = image
-        return padded
-
-    def load_TFRecords_database(self, path):
-        """Returns a tensorflow dataset from the .tfrecord file specified in path"""
-        dataset = tf.contrib.data.TFRecordDataset(path)
-        dataset = dataset.map(self._TFRecord_to_sample, num_threads=9)
-        return dataset
 
 
-    def convert_to_TFRecords(self, record_list, dataset_root, output_path):
-        """
-        Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
-        Pads each sample to the target size, DISCARDING the samples that are larger.
-        Also save meta information in a separated file.
-        :return: None.
-        """
-        print("{} levels loaded.".format(len(record_list)))
 
 
-        with tf.python_io.TFRecordWriter(output_path) as writer:
-            saved_levels = 0
-            for counter, level in enumerate(record_list):
-                # Reading the maps
-                for path in Features.map_paths:
-                    map_img = skimage.io.imread(dataset_root + level[path], mode='L')
-                    padded = self._pad_image(map_img)
-                    level[Features.map_paths[path]] = padded
-                self._update_meta(level)
-                sample = self._sample_to_TFRecord(level)
-                writer.write(sample.SerializeToString())
-                saved_levels += 1
 
-                if counter % (len(record_list) // 100) == 0:
-                    print("{}% completed.".format(round(counter / len(record_list) * 100)))
-            print("{} levels Saved.".format(saved_levels))
 
-        meta_path = output_path + '.meta'
-        with open(meta_path, 'w') as meta_out:
-            # Saving metadata
-            json.dump(self.meta, meta_out)
-            print("Metadata saved to {}".format(meta_path))
+
+
 
     def remove_outliers(self, samples):
         """

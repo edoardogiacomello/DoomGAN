@@ -10,7 +10,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import morphology
-from WAD_Parser.Dictionaries.ThingTypes import get_type_id_from_index
+from WAD_Parser.Dictionaries.ThingTypes import *
 
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
@@ -275,24 +275,23 @@ class WADWriter(object):
         x, y = xy[0], xy[1]
         return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
 
-    def from_images(self, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, generate_teleporters=True):
-
-
-
-
-        floormap = io.imread(floormap).astype(dtype=np.bool)
-        # Pad with a frame for getting boundaries
-        floormap = np.pad(floormap, pad_width=(1, 1), mode='constant')
-        wallmap = io.imread(wallmap).astype(dtype=np.bool)
-        # Pad with a frame for getting boundaries
-        wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant')
+    def from_images(self, heightmap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, generate_teleporters=True):
+        if isinstance(heightmap, str):
+            heightmap = io.imread(heightmap).astype(dtype=np.bool)
+        if isinstance(wallmap, str):
+            wallmap = io.imread(wallmap).astype(dtype=np.bool)
         if thingsmap is not None:
-            thingsmap = io.imread(thingsmap).astype(np.uint16)
+            if isinstance(thingsmap, str):
+                thingsmap = io.imread(thingsmap).astype(np.uint8)
+            # Pad with a frame
             thingsmap = np.pad(thingsmap, pad_width=(1, 1), mode='constant')
 
+        floormap = heightmap > 0
+        # Pad with a frame for getting boundaries
+        floormap = np.pad(floormap, pad_width=(1, 1), mode='constant')
+        wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant')
+
         floormap = morphology.binary_dilation(floormap)
-
-
 
         # Apply some morphology transformation to the maps for combining them and removing artifacts
         denoised = morphology.remove_small_holes(floormap, min_size=16)
@@ -324,10 +323,15 @@ class WADWriter(object):
                     # The contour defines the floor boundaries
                     sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
                 else:
+                    if (i == 0):
+                        # The first sector has been defined as counter-clockwise, need a bounding sector
+                        level_height = floormap.shape[0]*level_coord_scale
+                        level_width = floormap.shape[1]*level_coord_scale
+                        sector_id = self.add_sector([(0,0),(0,level_height),(level_width,level_height),(level_width, 0)], floor_height=-255*level_coord_scale, ceiling_height=255*level_coord_scale, tag=floor_id)
+                        print("Added a bounding box because the first sector has been specified as counter-clockwise")
                     # The contour defines a hole in the level: Surrounding sector must be defined explicitly
                     self.add_sector(vertices, ceiling_height=128, tag=floor_id, sorrounding_sector_id=sector_id, hollow=True)
                     # sector_id is not changed because we don't want to place anything inside a hole, hopefully.
-
             # Placing teleporters
             if total_floors > 1 and generate_teleporters:
                 # Teleporters are needed. Place a landing somewhere in the sector
@@ -342,21 +346,31 @@ class WADWriter(object):
                 # Add a source for another sector
                 self.add_teleporter_source(src_coord[0], src_coord[1], dest_sector, inside=sector_id)
 
+
+
+            # Finding and placing new player start
+            possible_pos = np.where(np.logical_and(np.equal(thingsmap, 1), cleaned_walls))
+            if (len(possible_pos[0]) == 0):
+                possible_pos = np.where(cleaned_walls)
+            rand_i = np.random.choice(range(len(possible_pos[0])))
+            start_pos = (
+            int(possible_pos[0][rand_i]) * level_coord_scale, int(possible_pos[1][rand_i]) * level_coord_scale)
+            self.set_start(start_pos[0], start_pos[1])
+
             # Placing "Things"
             if thingsmap is not None:
                 floor_things = floor * thingsmap
                 for x,y in np.transpose(np.nonzero(floor_things)):
-                    # FIXME: With the new thing encoding this function may be no more valid
-                    # skip a good number of things
-                    if np.random.sample() < 0.7:
-                        continue
+                    # FIXME: When things are put, player cannot move
+                    # FIXME: When adding triggers, check for the sector tag cause currently is the floor tag
 
                     # Pixels are in range (0,255) but things type are in range (0,122). Moreover, 0 means "no thing"
                     pixel = int(floor_things[x, y])
-                    feat_scaling = lambda x, min, max, a, b: round(a + ((x-min)*(b-a))/(max-min))
-                    type_index = feat_scaling(pixel, 1, 255, 0,122)
-                    type = get_type_id_from_index(type_index)
-                    if type is not None:
+                    # feat_scaling = lambda x, min, max, a, b: np.around(a + ((x-min)*(b-a))/(max-min))
+                    # type_index = feat_scaling(pixel, 1, 255, 0,122)
+                    type = get_type_id_from_index(pixel)
+                    too_close_to_start = abs(x - start_pos[0]) < 64 * level_coord_scale or abs(y - start_pos[1]) < 64 * level_coord_scale
+                    if type is not None and get_category_from_type_id(type) != 'start' and not too_close_to_start:
                         self.add_thing(level_coord_scale*x,level_coord_scale*y, type)
 
         if debug:
@@ -368,13 +382,7 @@ class WADWriter(object):
             ax[4].imshow(segmented, cmap=plt.cm.gray)
             plt.show()
 
-        # Finding and placing new player start
-        possible_pos = np.where(np.logical_and(np.equal(thingsmap,1), cleaned_walls))
-        if (len(possible_pos[0]) == 0):
-            possible_pos = np.where(cleaned_walls)
-        rand_i = np.random.choice(range(len(possible_pos[0])))
-        start_pos = (int(possible_pos[0][rand_i])*level_coord_scale, int(possible_pos[1][rand_i])*level_coord_scale)
-        self.set_start(start_pos[0], start_pos[1])
+
 
 
     def add_teleporter_destination(self, x, y):

@@ -33,11 +33,11 @@ class WADTweaker():
         writer = WADWriter()
 
         for index in range(32):
-            floormap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_floormap.png'.format(index)
+            heightmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_heightmap.png'.format(index)
             wallmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_wallmap.png'.format(index)
             thingsmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_thingsmap.png'.format(index)
             writer.add_level(name='MAP{i:02d}'.format(i=index+1))
-            writer.from_images(floormap, wallmap, thingsmap=None, debug=False)
+            writer.from_images(heightmap, wallmap, thingsmap=None, debug=False)
         writer.save('/home/edoardo/Desktop/doom/test.wad')
 
     def build_test_level(self):

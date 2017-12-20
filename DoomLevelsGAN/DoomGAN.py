@@ -1,11 +1,11 @@
-import tensorflow as tf
 import os
+
 import numpy as np
-import math
-from DoomLevelsGAN.NNHelpers import *
-import dataset_utils as d_utils
+import tensorflow.contrib as contrib
+
 import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
+from DoomLevelsGAN.NNHelpers import *
 
 
 class DoomGAN(object):
@@ -161,7 +161,11 @@ class DoomGAN(object):
         # The channel are encoded dicrectly as in the dataset
         self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [self.output_channels],
                                 name="real_inputs")
+        self.x_rotation = tf.placeholder(tf.float32, shape=(), name="x_rotation")
         self.x_norm = DataTransform.scaling_maps(self.x, self.maps, self.dataset_path, self.use_sigmoid)
+        self.x_norm = contrib.image.rotate(self.x_norm, self.x_rotation, "NEAREST")
+
+
 
         if self.use_features:
             self.y = tf.placeholder(tf.float32, [self.batch_size, len(self.features)])
@@ -263,10 +267,10 @@ class DoomGAN(object):
         import re
         print(" [*] Reading checkpoints...")
 
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir+'checkpoint')
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.session, os.path.join(checkpoint_dir, ckpt_name))
+            self.saver.restore(self.session, os.path.join(checkpoint_dir+'checkpoint', ckpt_name))
             counter = int(next(re.finditer("(\d+)(?!.*\d)", ckpt_name)).group(0))
             print(" [*] Success to read {}".format(ckpt_name))
             return True, counter
@@ -279,7 +283,7 @@ class DoomGAN(object):
         Loads a TFRecord dataset and creates batches.
         :return: An initializable Iterator for the loaded dataset
         """
-        self.dataset = d_utils.DatasetManager(target_size=self.output_size).load_TFRecords_database(self.dataset_path)
+        self.dataset = DoomDataset().read_from_TFRecords(self.dataset_path, target_size=self.output_size)
         # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
         # for discarding the last incomplete batch)
         try:
@@ -331,15 +335,15 @@ class DoomGAN(object):
         :return:
         """
         # FIXME: The encoding interval is different for each channel when in sg mode
-        encoding_interval = d_utils.channel_s_interval if self.split_channels else d_utils.channel_grey_interval
+        # encoding_interval = d_utils.channel_s_interval if self.split_channels else d_utils.channel_grey_interval
 
         rescaled = g * tf.constant(255.0, dtype=tf.float32)
-        half_interval = tf.constant(encoding_interval / 2, dtype=tf.float32)
+        # half_interval = tf.constant(encoding_interval / 2, dtype=tf.float32)
         # Since the error has to be differentiable and neither the floor nor the div operation are, we define directly
         # an error function that is 0 where the encoding is correct and 1 in-between the encoding values
         pi = tf.constant(math.pi, dtype=tf.float32)
-        enc_error = 1.0 + tf.sin(pi * (rescaled / half_interval - 0.5))
-        return enc_error
+        # enc_error = 1.0 + tf.sin(pi * (rescaled / half_interval - 0.5))
+        # return enc_error
 
     def train(self, config):
 
@@ -382,21 +386,23 @@ class DoomGAN(object):
                     x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
                     y_batch = np.stack([train_batch[f] for f in self.features], axis=-1) if self.use_features else None
 
-                    # TODO: We train D 5 times for each G update, but's not what is done on the paper, check it
-                    if self.use_wgan:
-                        for i in range(5):
+                    # TODO: D should be trained several times for each G update, check the WGAN paper
+                    # TODO: Consider shuffling the dataset at each epoch
+                    for rotation in [0, 90, 180, 270]:
+                        if self.use_wgan:
+                            for i in range(5):
+                                # D update
+                                d, sum_d = self.session.run([d_optim, summary_d],
+                                                            feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch, self.x_rotation:math.radians(rotation)})
+                            _, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.y: y_batch, self.z: z_batch})
+                        else:
                             # D update
                             d, sum_d = self.session.run([d_optim, summary_d],
-                                                        feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch})
-                        _, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.y: y_batch, self.z: z_batch})
-                    else:
-                        # D update
-                        d, sum_d = self.session.run([d_optim, summary_d],
-                                                    feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch})
+                                                        feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch, self.x_rotation:math.radians(rotation)})
 
-                        # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
-                        # self.session.run([g_optim], feed_dict={self.z: z_batch})
-                        _, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.y: y_batch, self.z: z_batch})
+                            # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
+                            self.session.run([g_optim], feed_dict={self.z: z_batch})
+                            _, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.y: y_batch, self.z: z_batch})
 
                     # Write the summaries and increment the counter
                     writer.add_summary(sum_d, global_step=self.checkpoint_counter)
@@ -481,9 +487,8 @@ class DoomGAN(object):
             np.random.seed(seed)
             z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
             # TODO: Write this function in numpy
-            y_sample = self.session.run(d_utils.MetaReader(self.dataset_path).label_average(self.features, np.zeros(
-                [self.batch_size, len(self.features)])))
-
+            meta = DoomDataset().read_meta(self.dataset_path)
+            y_sample = [meta['features'][f]['avg'] for f in self.features] * np.ones((32, len(features)))
             sample = self.session.run([summaries], feed_dict={self.z: z_sample, self.y: y_sample})
             writer.add_summary(sample[0], global_step=0)
 
@@ -495,6 +500,25 @@ class DoomGAN(object):
         z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
         samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
         samples = DataTransform.postprocess_output(samples[0], self.maps)
+
+    def test(self):
+        # Given a set of features Fn = An (ie an y vector), calculate the distribution of the network output for each feature
+        # Load and initialize the network
+        self.initialize_and_restore()
+        # TODO: Sample j elements around the mean of each y_i -> a_i
+        # TODO: check the value of rho[a_i|i] over a given number of observations j
+        # Define a test y vector an an input noise
+        feat_factors = [-1 for f in features]
+        y = DoomDataset().get_feature_sample(FLAGS.dataset_path, feat_factors, features, FLAGS.batch_size)
+        z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+        g_rescaled = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})[0]
+        try:
+            output_features = DataTransform.extract_features_from_net_output(g_rescaled, self.features, self.maps, self.batch_size)
+        except:
+            # Feature computation may fail if very noisy samples are generated, just ignore this sample
+            pass
+        print("Done")
+        pass
 
 def clean_tensorboard_cache(tensorBoardPath):
     # Removing previous tensorboard session
@@ -519,7 +543,7 @@ if __name__ == '__main__':
     flags.DEFINE_boolean("use_sigmoid", True,
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
-    flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
+    flags.DEFINE_string("checkpoint_dir", "./checkpoint/", "Directory name to save the checkpoints [checkpoint]")
     flags.DEFINE_string("summary_folder", "/tmp/tflow/",
                         "Directory name to save the temporary files for visualization [/tmp/tflow/]")
 
@@ -527,11 +551,28 @@ if __name__ == '__main__':
 
     with tf.Session() as s:
         clean_tensorboard_cache('/tmp/tflow')
-
-        features = ['height', 'width', 'number_of_lines', 'number_of_sectors', 'aspect_ratio', 'sector_area_avg',
-                    'lines_per_sector_avg', 'floors', 'nonempty_percentage', 'walkable_area']
-        maps = ['floormap', 'wallmap', 'thingsmap']
         # Define here which features to use
+        features = ['height', 'width',
+                   'number_of_sectors',
+                   'sector_area_avg',
+                   'sector_aspect_ratio_avg',
+                   'lines_per_sector_avg',
+                   'floor_height_avg',
+                   'floor_height_max',
+                   'floor_height_min',
+                   'walkable_percentage',
+                   'level_extent',
+                   'level_solidity',
+                   'artifacts_per_walkable_area',
+                   'powerups_per_walkable_area',
+                   'weapons_per_walkable_area',
+                   'ammunitions_per_walkable_area',
+                   'keys_per_walkable_area',
+                   'monsters_per_walkable_area',
+                   'obstacles_per_walkable_area',
+                   'decorations_per_walkable_area']
+        maps = ['heightmap', 'wallmap', 'thingsmap', 'triggermap']
+
         gan = DoomGAN(session=s,
                       config=FLAGS, features=features, maps=maps
                       )
@@ -541,8 +582,8 @@ if __name__ == '__main__':
             gan.train(FLAGS)
         else:
             if FLAGS.generate:
-                y = np.array([[3702.0, 2849.0, 1147.0, 216.0, 1.2994033098220825, 18279.986328125, 7.3287038803100586, 2.0, 0.38256704807281494, 2514.0]])
-                y = y*np.ones((32, 10))  # y needs to be replicated for each sample in the batch size
+                feat_factors = [-1 for f in features]
+                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, feat_factors, features, FLAGS.batch_size)
                 gan.generate_levels(y, 44448)
             else:
-                gan.train(FLAGS) if FLAGS.train else gan.sample(seeds=[42, 314, 123123, 65847968, 46546868])
+                gan.test()

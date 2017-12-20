@@ -2,6 +2,7 @@ import tensorflow as tf
 import DoomDataset as dd
 import numpy as np
 import skimage.io
+from WAD_Parser.WADEditor import WADWriter, WADReader
 
 def scaling_maps(x, map_names, dataset_path, use_sigmoid=True):
     """
@@ -58,16 +59,60 @@ def scaling_maps_inverse(g, map_names, dataset_path, used_sigmoid=True):
 def postprocess_output(g, maps, folder = './generated_samples/'):
     """
     This function takes care of denoising network output and other steps, in order to prepare the maps to be processed
-    by the WADEditor
+    by the WADEditor. If "folder" is set to none, output is not saved but returned in a ndarray instead
+    :param g:
+    :param maps:
+    :param folder:
     :return:
     """
     # floormap is an enumeration, so low levels may be barely visible. It could be better to rescale based on the
     # min/max value of the map instead of the whole dataset.
+    processed_output = g.copy()
     for s_id, sample in enumerate(g):
         for m, mapname in enumerate(maps):
             feature_map = sample[:,:,m]
             feature_map = np.around(feature_map)
             if mapname == 'floormap':
                 feature_map = (feature_map > 0)*255
+            if mapname == 'wallmap':
+                feature_map = (feature_map > 255/2)*255
             # Saving
-            skimage.io.imsave(folder + 'level{}_map_{}.png'.format(s_id, mapname), feature_map.astype(np.uint))
+            processed_output[s_id,:,:,m] = feature_map
+            if folder is not None:
+                skimage.io.imsave(folder + 'level{}_map_{}.png'.format(s_id, mapname), feature_map.astype(np.uint))
+    return processed_output
+
+def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/'):
+    """
+    Post-processes a rescaled network output, saves a wad from that and outputs the features for the newly created wad
+    :param rescaled_g: Rescaled network output, in the same scale of the dataset
+    :param batch_size:
+    :param tmp_folder: temp folder where to store the wad file
+    :return:
+    """
+    # Create a new WAD
+    writer = WADWriter()
+    reader = WADReader()
+    heightmap = None
+    wallmap = None
+    thingsmap = None
+    rescaled_g = postprocess_output(rescaled_g, maps, folder=None)
+    for index in range(batch_size):
+        for m, map in enumerate(maps):
+            heightmap = rescaled_g[index,:,:,m] if map == 'heightmap' else heightmap
+            wallmap = rescaled_g[index,:,:,m] if map == 'wallmap' else wallmap
+            thingsmap = rescaled_g[index,:,:,m] if map == 'thingsmap' else thingsmap
+        writer.add_level(name='MAP{i:02d}'.format(i=index + 1))
+        writer.from_images(heightmap, wallmap, thingsmap=thingsmap, debug=False, level_coord_scale=32)
+    import os
+    os.makedirs(tmp_folder, exist_ok=True)
+    writer.save(tmp_folder+'test.wad')
+    return reader.extract(tmp_folder+'test.wad')
+
+def extract_features_from_net_output(rescaled_g, features, maps, batch_size, tmp_folder = '/tmp/doomgan/'):
+    extracted_features = np.zeros(shape=(batch_size, len(features)))
+    wad = build_levels(rescaled_g, maps, batch_size, tmp_folder)
+    for l, level in enumerate(wad['levels']):
+        for f, feature in enumerate(features):
+            extracted_features[l,f] = level['features'][feature]
+    return extracted_features

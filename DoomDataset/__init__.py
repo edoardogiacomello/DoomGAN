@@ -3,6 +3,9 @@ import os
 import csv
 import WAD_Parser.Dictionaries.Features as Features
 import numpy as np
+import skimage.io as io
+import tensorflow as tf
+from collections import defaultdict
 
 class DoomDataset():
     """
@@ -45,6 +48,12 @@ class DoomDataset():
         with open(json_db, 'r') as fin:
             levels += json.load(fin)
         return levels
+
+    def read_from_TFRecords(self, tfrecords_path, target_size):
+        """Returns a tensorflow dataset from the .tfrecord file specified in path"""
+        dataset = tf.contrib.data.TFRecordDataset(tfrecords_path)
+        dataset = dataset.map(lambda l: self._TFRecord_to_sample(l, target_size), num_threads=9)
+        return dataset
 
     def get_path_of(self, feature_field):
         """
@@ -143,7 +152,7 @@ class DoomDataset():
         return list(data)
 
 
-    def plot_joint_feature_distributions(self, path_or_data, features, cluster = False):
+    def plot_joint_feature_distributions(self, path_or_data, features, constraints_lambdas=list(), cluster = False):
         """
         Plots the joint distribution for each couple of given feature
         :param path_or_data: (str or list) path of the json_db or the list of record containing data
@@ -156,8 +165,15 @@ class DoomDataset():
         from sklearn import decomposition
         from sklearn import mixture
         data = self.read_from_json(path_or_data) if isinstance(path_or_data, str) else path_or_data
+        data = self.filter_data(data, constraints_lambdas)
         points = np.array([[d[f] for f in features] for d in data])
         X=points
+
+        # Print some stats
+        by_col = np.transpose(X)
+        for f, fname in enumerate(features):
+            print("{}: \t mean={} \t std={} \t median={} \t min={} \t max={}".format(fname,by_col[f].mean(), by_col[f].std(), np.median(by_col[f]), by_col[f].min(), by_col[f].max()))
+
         if cluster:
             from sklearn.cluster import DBSCAN
             Y = DBSCAN(eps=0.3, min_samples=300).fit_predict(X)
@@ -170,6 +186,176 @@ class DoomDataset():
             pd_dataset = pd.DataFrame(X, columns=features)
             g = sb.pairplot(pd_dataset, plot_kws={"s": 10})
         return g
+
+    def _update_meta(self, meta, level):
+        """
+        Updates the dataset metadata given a new level.
+        Metadata contain information such the global number of entries, the min and max values for each feature, etc.
+        :param level: The json record for a level
+        :return:
+        """
+        def _compute_feature(level, feature, type):
+            if type == 'int64' or type == 'float' or type == 'int':
+                if feature not in meta['features']:
+                    meta['features'][feature] = dict()
+                feat_dict = meta['features'][feature]
+                feat_dict['type'] = type
+                feat_dict['min'] = float(level[feature]) if 'min' not in feat_dict else min(feat_dict['min'], float(level[feature]))
+                feat_dict['max'] = float(level[feature]) if 'max' not in feat_dict else max(feat_dict['max'], float(level[feature]))
+                feat_dict['avg'] = float(level[feature]) if 'avg' not in feat_dict else feat_dict['avg'] + (float(level[feature]) - feat_dict['avg'])/float(meta['count'])
+
+        def _compute_map(level, map):
+                if map not in meta['maps']:
+                    meta['maps'][map] = dict()
+                feat_dict = meta['maps'][map]
+                feat_dict['type'] = str(level[map].dtype)
+                feat_dict['min'] = float(level[map].min()) if 'min' not in feat_dict else min(feat_dict['min'],
+                                                                                            float(level[map].min()))
+                feat_dict['max'] = float(level[map].max()) if 'max' not in feat_dict else max(feat_dict['max'],
+                                                                                              float(level[map].max()))
+                feat_dict['avg'] = float(level[map].mean()) if 'avg' not in feat_dict else feat_dict['avg'] + (float(
+                    level[map].mean()) - feat_dict['avg']) / float(meta['count'])
+
+
+
+
+        meta['features'] = dict() if 'features' not in meta else meta['features']
+        meta['maps'] = dict() if 'maps' not in meta else meta['maps']
+        meta['count'] = 1 if 'count' not in meta else meta['count'] +1
+        import WAD_Parser.Dictionaries.Features as Features
+        for f in Features.features:
+            _compute_feature(level, f, Features.features[f])
+        for m in Features.map_paths:
+            _compute_map(level, Features.map_paths[m])
+        return meta
+
+    def _pad_image(self, image, target_size):
+        """Center pads an image, adding a black border up to "target size" """
+        assert image.shape[0] <= target_size[0], "The image to pad is bigger than the target size"
+        assert image.shape[1] <= target_size[1], "The image to pad is bigger than the target size"
+        padded = np.zeros((target_size[0],target_size[1]), dtype=np.uint8)
+        offset = (target_size[0] - image.shape[0])//2, (target_size[1] - image.shape[1])//2  # Top, Left
+        padded[offset[0]:offset[0]+image.shape[0], offset[1]:offset[1]+image.shape[1]] = image
+        return padded
+
+    def _sample_to_TFRecord(self, json_record):
+        # converting the record to a default_dict since it may does not contain some keys for empty values.
+        json_record = defaultdict(lambda: "", json_record)
+
+        feature_dict = dict()
+        # Dinamically build a tf.train.Feature dictionary based on dataset Features
+        for f in Features.features:
+            if Features.features[f] == 'int':
+                feat_type = tf.train.Feature(int64_list=tf.train.Int64List(value=[int(json_record[f])]))
+            if Features.features[f] == 'float':
+                feat_type = tf.train.Feature(float_list=tf.train.FloatList(value=[float(json_record[f])]))
+            if Features.features[f] == 'string':
+                feat_type = tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(json_record[f])]))
+            feature_dict[f] = feat_type
+
+        # Doing the same for the maps
+        for m in Features.map_paths:
+            feature_dict[Features.map_paths[m]] = tf.train.Feature(bytes_list=tf.train.BytesList(value=[json_record[Features.map_paths[m]].tobytes()]))
+
+        return tf.train.Example(features=tf.train.Features(feature=feature_dict))
+
+    def _TFRecord_to_sample(self, TFRecord, target_size):
+        feature_dict = dict()
+        # Dinamically build a tf.train.Feature dictionary based on dataset Features
+        for f in Features.features:
+            if Features.features[f] == 'int':
+                feat_type = tf.FixedLenFeature([],tf.int64)
+            if Features.features[f] == 'float':
+                feat_type = tf.FixedLenFeature([],tf.float32)
+            if Features.features[f] == 'string':
+                feat_type = tf.FixedLenFeature([],tf.string)
+            feature_dict[f] = feat_type
+
+        # Doing the same for the maps
+        for m in Features.map_paths:
+            feature_dict[Features.map_paths[m]] = tf.FixedLenFeature([],tf.string)
+
+        parsed_features = tf.parse_single_example(TFRecord, feature_dict)
+
+        # Decoding the maps
+        for m in Features.map_paths:
+            parsed_img = tf.decode_raw(parsed_features[Features.map_paths[m]], tf.uint8)
+            parsed_img = tf.reshape(parsed_img, shape=(target_size[0], target_size[1]))
+            parsed_features[Features.map_paths[m]] = parsed_img
+        return parsed_features
+
+    def to_TFRecords(self, json_db, output_path, target_size=(128,128), constraints_lambdas=list()):
+        """
+        Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
+        Pads each sample to the target size, DISCARDING the samples that are larger.
+        Also save meta information in a separated file.
+
+        :param json_db: the .json database file to read features from
+        :param output_path: full path for the .TFRecords file
+        :param target_size: tuple for the largest selected sample (smaller will be padded, largest discarded)
+        :param constraints_lambdas: list of lambdas defining constraint on data, EG. [lambda x: x['floors']==1]
+        :return: None. Saves a .TFRecords file at the given output_path and a .meta json file at <output_path>.meta
+        """
+        record_list = self.read_from_json(json_db)
+
+        print("{} levels loaded.".format(len(record_list)))
+        meta = dict()
+        constraints_lambdas.append(lambda x: x["width"] <= 32*target_size[0])
+        constraints_lambdas.append(lambda x: x["height"] <= 32*target_size[1])
+        record_list = self.filter_data(record_list, constraints_lambdas)
+
+        with tf.python_io.TFRecordWriter(output_path) as writer:
+            saved_levels = 0
+            for counter, level in enumerate(record_list):
+                # Reading the maps
+                for path in Features.map_paths:
+                    map_img = io.imread(self.root + level[path], mode='L')
+                    padded = self._pad_image(map_img, target_size=target_size)
+                    level[Features.map_paths[path]] = padded
+                meta = self._update_meta(meta, level)
+                sample = self._sample_to_TFRecord(level)
+                writer.write(sample.SerializeToString())
+                saved_levels += 1
+
+                if counter % (len(record_list) // 100) == 0:
+                    print("{}% completed.".format(round(counter / len(record_list) * 100)))
+            print("{} levels Saved.".format(saved_levels))
+
+        meta_path = output_path + '.meta'
+        with open(meta_path, 'w') as meta_out:
+            # Saving metadata
+            json.dump(meta, meta_out)
+            print("Metadata saved to {}".format(meta_path))
+
+    def get_feature_sample(self, tf_dataset_path, factors, features, batch_size):
+        """
+        Returns a sample of a feature vector (y) given a list of feature names and a list of factors.
+        Each factor is a scalar relative to the corresponding feature:
+        If it's in [0,1] then the returned corresponding feature will range from the min value (0) to the max value (1)
+        If the factor is -1 then the returned feature is the average value for that feature.
+        :param tf_dataset_path: The dataset to read data from
+        :param factors: A list of scalars in {-1, [0,1]}, same length of features.
+        :param features: A list of feature names
+        :param batch_size: The batch size for the feature
+        :return: a vector y of shape (batch_size, len(features)) containing the desired values
+        """
+        assert len(factors) == len(features), "Length of factor and features array should be the same."
+        meta = self.read_meta(tf_dataset_path)
+        y = np.zeros(shape=(batch_size, len(features)), dtype=np.float32)
+        for f, f_name in enumerate(features):
+            if factors[f] >= 0 and factors[f] <= 1:
+                a = 0
+                b = 1
+                x = factors[f]
+                f_min = meta['features'][f_name]['min']
+                f_max = meta['features'][f_name]['max']
+                y[:,f] = f_min + ((x-a)*(f_max-f_min))/(b-a)
+            else:
+                if factors[f] == -1:
+                    y[:, f] = meta['features'][f_name]['avg']
+                else:
+                    raise ValueError("Factor for {} not in range.".format(f_name))
+        return y
 
     def generate_stats(self):
         dataset = DoomDataset()
@@ -189,6 +375,7 @@ class DoomDataset():
         dataset.plot_joint_feature_distributions(data, features=level_features).savefig('./../dataset/statistics/128_level_features_no_outliers')
         dataset.plot_joint_feature_distributions(data, features=floor_features).savefig('./../dataset/statistics/128_floor_features_no_outliers')
 
+    
     def to_txt(self, json_db, root,  output_path):
         """
         Represent the levels using 2-characters textual information.
@@ -286,3 +473,4 @@ class DoomDataset():
             txt_fname = l['path_json'].split('/')[-1].replace('json','txt')
             with open(output_path+txt_fname, 'wb') as txtout:
                 txtout.writelines([bytes(row + [10]) for row in txt])
+
