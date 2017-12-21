@@ -343,7 +343,6 @@ class DoomDataset():
             json.dump(meta, meta_out)
             print("Metadata saved to {}".format(meta_path))
 
-
     def get_feature_sample(self, tf_dataset_path, factors, features, batch_size):
         """
         Returns a sample of a feature vector (y) given a list of feature names and a list of factors.
@@ -369,10 +368,27 @@ class DoomDataset():
                 y[:,f] = f_min + ((x-a)*(f_max-f_min))/(b-a)
             else:
                 if factors[f] == -1:
-                    y[:, f] = meta['features'][f_name]['avg']
+                    y[:, f] = meta['features'][f_name]['mean']
                 else:
                     raise ValueError("Factor for {} not in range.".format(f_name))
         return y
+
+    def get_feature_stats(self,tf_dataset_path, features, stat):
+        """
+        Returns an array containing the requested stat for the given set of features
+        :param tf_dataset_path: path of the tfrecords dataset
+        :param features: list of feature names
+        :param stat: (str) name of the stat. can be 'min', 'max', 'mean', 'var', 'skewness', 'kurtosis'
+        :return:
+        """
+        meta = self.read_meta(tf_dataset_path)
+        stats = np.zeros(shape=(len(features)), dtype=np.float32)
+        for f, fname in enumerate(features):
+            stats[f] = meta['features'][fname][stat]
+        return stats
+
+    def get_normal_feature_sample(self ):
+        pass
 
     def generate_stats(self):
         dataset = DoomDataset()

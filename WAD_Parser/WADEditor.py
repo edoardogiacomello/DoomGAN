@@ -525,14 +525,16 @@ class WADWriter(object):
             self._commit_level()
         self.current_level = name
 
-    def save(self, fp):
+    def save(self, fp, call_node_builder=True):
         # Always commit the last level
         self._commit_level()
         wad_bytes = self.wad.to_bytes()
         with open(fp,'wb') as out:
             out.write(wad_bytes)
-        print('Calling ZenNode...')
-        subprocess.check_call(["bsp", fp, '-o', fp] )
+        if call_node_builder:
+            # Calling ZenNode to build subsectors and other lumps needed to play the level on doom
+            print('Calling ZenNode...')
+            subprocess.check_call(["bsp", fp, '-o', fp] )
 
 
 

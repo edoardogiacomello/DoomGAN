@@ -82,9 +82,9 @@ def postprocess_output(g, maps, folder = './generated_samples/'):
                 skimage.io.imsave(folder + 'level{}_map_{}.png'.format(s_id, mapname), feature_map.astype(np.uint))
     return processed_output
 
-def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/'):
+def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = True):
     """
-    Post-processes a rescaled network output, saves a wad from that and outputs the features for the newly created wad
+    Post-processes a rescaled network output, saves a wad from that and outputs the features for the newly created wad.
     :param rescaled_g: Rescaled network output, in the same scale of the dataset
     :param batch_size:
     :param tmp_folder: temp folder where to store the wad file
@@ -106,12 +106,23 @@ def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/'):
         writer.from_images(heightmap, wallmap, thingsmap=thingsmap, debug=False, level_coord_scale=32)
     import os
     os.makedirs(tmp_folder, exist_ok=True)
-    writer.save(tmp_folder+'test.wad')
+    writer.save(tmp_folder+'test.wad', call_node_builder=call_node_builder)
     return reader.extract(tmp_folder+'test.wad')
 
-def extract_features_from_net_output(rescaled_g, features, maps, batch_size, tmp_folder = '/tmp/doomgan/'):
+def extract_features_from_net_output(rescaled_g, features, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = False):
+    """
+    This function creates a .WAD from the net output (still not playable unless "call_node_builder" is set to true) and returns a vector
+    containing the features extracted from the newly created WAD file.
+    :param rescaled_g:
+    :param features:
+    :param maps:
+    :param batch_size:
+    :param tmp_folder:
+    :param call_node_builder:
+    :return:
+    """
     extracted_features = np.zeros(shape=(batch_size, len(features)))
-    wad = build_levels(rescaled_g, maps, batch_size, tmp_folder)
+    wad = build_levels(rescaled_g, maps, batch_size, tmp_folder, call_node_builder)
     for l, level in enumerate(wad['levels']):
         for f, feature in enumerate(features):
             extracted_features[l,f] = level['features'][feature]

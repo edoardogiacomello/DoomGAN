@@ -501,24 +501,55 @@ class DoomGAN(object):
         samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
         samples = DataTransform.postprocess_output(samples[0], self.maps)
 
-    def test(self):
+    def test(self, n_samples_for_feature=11):
         # Given a set of features Fn = An (ie an y vector), calculate the distribution of the network output for each feature
         # Load and initialize the network
         self.initialize_and_restore()
         # TODO: Sample j elements around the mean of each y_i -> a_i
         # TODO: check the value of rho[a_i|i] over a given number of observations j
-        # Define a test y vector an an input noise
-        feat_factors = [-1 for f in features]
-        y = DoomDataset().get_feature_sample(FLAGS.dataset_path, feat_factors, features, FLAGS.batch_size)
-        z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
-        g_rescaled = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})[0]
-        try:
-            output_features = DataTransform.extract_features_from_net_output(g_rescaled, self.features, self.maps, self.batch_size)
-        except:
-            # Feature computation may fail if very noisy samples are generated, just ignore this sample
-            pass
-        print("Done")
-        pass
+        # TODO: For now a linear sampling is used for checking the correlation between a requested feature and the returned one, but it could be useful to random sample since this correlation may change near the mean value
+        corr = np.zeros(shape=[len(self.features)])
+        for f, fname in enumerate(self.features):
+            print("Evaluating network response for {}.. ".format(fname))
+            # Define a test y vector an an input noise
+            feat_factors = [-1 for f in features]
+            factor_changes = np.linspace(0, 1, num=n_samples_for_feature)
+            # for each feature f and sampling j in (0..n_samples_for_feature), let's call:
+            # Y_fj the requested features
+            # R_fj = extract_features(wad(net(z, Y_fi)) the features obtained from the generated output
+            Y_f = list()
+            R_f = list()
+            for j in range(n_samples_for_feature):
+                print("Sampling with feature coefficient {}={}  ({}/{})...".format(fname, factor_changes[j], j+1, n_samples_for_feature))
+                feat_factors[f] = factor_changes[j]
+                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, feat_factors, features, self.batch_size)
+                # Now building R by launching the newtork
+
+                retry_counter = 3
+                success = False
+                while retry_counter > 0 and not success:
+                    try:
+                            # TODO: Noise is sampled each time. Should it be fixed?
+                            np.random.seed(42)
+                            z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+                            net_output = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})[0]
+                            output_features = DataTransform.extract_features_from_net_output(net_output, self.features, self.maps,
+                                                                                     self.batch_size)
+                    except:
+                        # TODO: if there's an exception it means that the output is too noisy to be converted to a level. We might have chosen a "bad" input noise or y.
+                        if retry_counter <= 0:
+                            continue
+                        else:
+                            retry_counter -= 1
+                    success = True
+                Y_f.append(y[0])
+                R_f.append(output_features.mean(axis=0))
+                print("Done")
+            Y_f = np.asarray(Y_f)
+            R_f = np.asarray(R_f)
+            corr[f] = np.corrcoef(Y_f[:, f], R_f[:, f])[0,1]
+        for f, fname in enumerate(self.features):
+            print("{}: \t {}".format(fname, corr[f]))
 
 def clean_tensorboard_cache(tensorBoardPath):
     # Removing previous tensorboard session
