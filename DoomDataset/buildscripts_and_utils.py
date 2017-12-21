@@ -35,6 +35,6 @@ features_to_use = ['height', 'width',
 #dd.plot_joint_feature_distributions('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json', features_to_use,
 #                                    constraints_lambdas=constraints).savefig('./../dataset/statistics/128_one_floor')
 dd.to_TFRecords(json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
-                output_path='/run/media/edoardo/BACKUP/Datasets/DoomDataset/128-one-floor.TFRecords',
+                output_path='/run/media/edoardo/BACKUP/Datasets/DoomDataset/128-one-floor-metatest.TFRecords',
                 target_size=(128,128),
                 constraints_lambdas=constraints)

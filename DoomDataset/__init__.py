@@ -6,6 +6,7 @@ import numpy as np
 import skimage.io as io
 import tensorflow as tf
 from collections import defaultdict
+import scipy.stats as stats
 
 class DoomDataset():
     """
@@ -187,46 +188,59 @@ class DoomDataset():
             g = sb.pairplot(pd_dataset, plot_kws={"s": 10})
         return g
 
-    def _update_meta(self, meta, level):
+    def _add_maps_meta(self, meta, level):
         """
-        Updates the dataset metadata given a new level.
-        Metadata contain information such the global number of entries, the min and max values for each feature, etc.
+        Updates the dataset metadata given a new level, adding stats about its featuremaps.
         :param level: The json record for a level
-        :return:
+        :return: the updated meta dictionary
         """
-        def _compute_feature(level, feature, type):
-            if type == 'int64' or type == 'float' or type == 'int':
-                if feature not in meta['features']:
-                    meta['features'][feature] = dict()
-                feat_dict = meta['features'][feature]
-                feat_dict['type'] = type
-                feat_dict['min'] = float(level[feature]) if 'min' not in feat_dict else min(feat_dict['min'], float(level[feature]))
-                feat_dict['max'] = float(level[feature]) if 'max' not in feat_dict else max(feat_dict['max'], float(level[feature]))
-                feat_dict['avg'] = float(level[feature]) if 'avg' not in feat_dict else feat_dict['avg'] + (float(level[feature]) - feat_dict['avg'])/float(meta['count'])
 
-        def _compute_map(level, map):
-                if map not in meta['maps']:
-                    meta['maps'][map] = dict()
-                feat_dict = meta['maps'][map]
-                feat_dict['type'] = str(level[map].dtype)
-                feat_dict['min'] = float(level[map].min()) if 'min' not in feat_dict else min(feat_dict['min'],
-                                                                                            float(level[map].min()))
-                feat_dict['max'] = float(level[map].max()) if 'max' not in feat_dict else max(feat_dict['max'],
-                                                                                              float(level[map].max()))
-                feat_dict['avg'] = float(level[map].mean()) if 'avg' not in feat_dict else feat_dict['avg'] + (float(
-                    level[map].mean()) - feat_dict['avg']) / float(meta['count'])
+        import WAD_Parser.Dictionaries.Features as Features
+        meta['maps'] = dict()
+        for m in Features.map_paths:
+            current_map = Features.map_paths[m]
+            if current_map not in meta['maps']:
+                meta['maps'][current_map] = dict()
+            feat_dict = meta['maps'][current_map]
+            feat_dict['type'] = str(level[current_map].dtype)
+            feat_dict['min'] = float(level[current_map].min()) if 'min' not in feat_dict else min(feat_dict['min'],
+                                                                                          float(level[current_map].min()))
+            feat_dict['max'] = float(level[current_map].max()) if 'max' not in feat_dict else max(feat_dict['max'],
+                                                                                          float(level[current_map].max()))
+            feat_dict['avg'] = float(level[current_map].mean()) if 'avg' not in feat_dict else feat_dict['avg'] + (float(
+                level[current_map].mean()) - feat_dict['avg']) / float(meta['count'])
+        return meta
 
+    def _feature_meta(self, level_records):
+        """
+        Compute the metadata for each feature of the given list of level records.
+        Metadata contain descriptive statistical information about each feature. Image maps are not considered by this function.
+        :param level_records:
+        :return: dict()
+        """
+        meta = dict()
+        meta['features'] = dict()
+        meta['maps'] = dict()
+        meta['count'] = len(level_records)
 
-
-
-        meta['features'] = dict() if 'features' not in meta else meta['features']
-        meta['maps'] = dict() if 'maps' not in meta else meta['maps']
-        meta['count'] = 1 if 'count' not in meta else meta['count'] +1
         import WAD_Parser.Dictionaries.Features as Features
         for f in Features.features:
-            _compute_feature(level, f, Features.features[f])
-        for m in Features.map_paths:
-            _compute_map(level, Features.map_paths[m])
+            type = Features.features[f]
+            if type in ['int64', 'float', 'int']:
+                dtype = np.float64 if type == 'float' else np.int32
+                values = np.asarray([v[f] for v in level_records], dtype=dtype)
+                s = stats.describe(values)
+                meta['features'][f] = dict()
+                meta['features'][f]['min'] = s.minmax[0]
+                meta['features'][f]['max'] = s.minmax[1]
+                meta['features'][f]['mean'] = s.mean
+                meta['features'][f]['var'] = s.variance
+                meta['features'][f]['skewness'] = s.skewness
+                meta['features'][f]['kurtosis'] = s.kurtosis
+                # Saving every value as a scalar so it can be serialized by json
+                for statname in meta['features'][f]:
+                    meta['features'][f][statname] = np.asscalar(np.asarray(meta['features'][f][statname]))
+
         return meta
 
     def _pad_image(self, image, target_size):
@@ -299,10 +313,12 @@ class DoomDataset():
         record_list = self.read_from_json(json_db)
 
         print("{} levels loaded.".format(len(record_list)))
-        meta = dict()
         constraints_lambdas.append(lambda x: x["width"] <= 32*target_size[0])
         constraints_lambdas.append(lambda x: x["height"] <= 32*target_size[1])
         record_list = self.filter_data(record_list, constraints_lambdas)
+
+        # Calculating meta for the scalar features
+        meta = self._feature_meta(record_list)
 
         with tf.python_io.TFRecordWriter(output_path) as writer:
             saved_levels = 0
@@ -312,7 +328,8 @@ class DoomDataset():
                     map_img = io.imread(self.root + level[path], mode='L')
                     padded = self._pad_image(map_img, target_size=target_size)
                     level[Features.map_paths[path]] = padded
-                meta = self._update_meta(meta, level)
+                # Adding map meta to global meta (cannot load all the dataset in memory for computing stats)
+                meta = self._add_maps_meta(meta, level)
                 sample = self._sample_to_TFRecord(level)
                 writer.write(sample.SerializeToString())
                 saved_levels += 1
@@ -320,12 +337,12 @@ class DoomDataset():
                 if counter % (len(record_list) // 100) == 0:
                     print("{}% completed.".format(round(counter / len(record_list) * 100)))
             print("{} levels Saved.".format(saved_levels))
-
         meta_path = output_path + '.meta'
         with open(meta_path, 'w') as meta_out:
             # Saving metadata
             json.dump(meta, meta_out)
             print("Metadata saved to {}".format(meta_path))
+
 
     def get_feature_sample(self, tf_dataset_path, factors, features, batch_size):
         """
