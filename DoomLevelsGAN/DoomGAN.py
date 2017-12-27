@@ -328,22 +328,6 @@ class DoomGAN(object):
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
 
-    def encoding_error(self, g):
-        """
-        Return an error value for each pixel forming a batch of images.
-        The error is 0 if the color matches the encoding of the true set.
-        :return:
-        """
-        # FIXME: The encoding interval is different for each channel when in sg mode
-        # encoding_interval = d_utils.channel_s_interval if self.split_channels else d_utils.channel_grey_interval
-
-        rescaled = g * tf.constant(255.0, dtype=tf.float32)
-        # half_interval = tf.constant(encoding_interval / 2, dtype=tf.float32)
-        # Since the error has to be differentiable and neither the floor nor the div operation are, we define directly
-        # an error function that is 0 where the encoding is correct and 1 in-between the encoding values
-        pi = tf.constant(math.pi, dtype=tf.float32)
-        # enc_error = 1.0 + tf.sin(pi * (rescaled / half_interval - 0.5))
-        # return enc_error
 
     def train(self, config):
 
@@ -486,27 +470,67 @@ class DoomGAN(object):
             summaries = generate_sample_summary('seed_{}'.format(seed))
             np.random.seed(seed)
             z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
-            # TODO: Write this function in numpy
             meta = DoomDataset().read_meta(self.dataset_path)
             y_sample = [meta['features'][f]['avg'] for f in self.features] * np.ones((32, len(features)))
             sample = self.session.run([summaries], feed_dict={self.z: z_sample, self.y: y_sample})
             writer.add_summary(sample[0], global_step=0)
 
-    def generate_levels(self, y, seed):
+    def generate_levels(self, y, seed=None, z=None):
         # Load and initialize the network
         self.initialize_and_restore()
         if seed is not None:
             np.random.seed(seed)
-        z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+        z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32) if z is None else z
         samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
         samples = DataTransform.postprocess_output(samples[0], self.maps)
+
+    def generate_levels_feature_interpolation(self, feature_to_interpolate, seed=None):
+
+        def slerp(val, low, high):
+            """Spherical interpolation. val has a range of 0 to 1.
+            Code from: https://github.com/dribnet/plat
+            """
+            if val <= 0:
+                return low
+            elif val >= 1:
+                return high
+            elif np.allclose(low, high):
+                return low
+
+            dot = np.dot(low / np.linalg.norm(low), high / np.linalg.norm(high))
+            omega = np.arccos(dot)
+            so = np.sin(omega)
+            return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+
+        # Load and initialize the network
+        self.initialize_and_restore()
+        # Fix a sample so the change gets more visible
+        if seed is not None:
+            np.random.seed(seed)
+        z_sample = np.random.normal(0, 1, [self.z_dim]).astype(np.float32)
+        # Replicate the same noise vector for each sample (each level should be the same except for the controlled feature)
+        z_sample = np.tile(z_sample, (self.batch_size, 1))
+        feat_factors = np.ones(shape=(self.batch_size, len(self.features)))*-1
+        # building a matrix factors of size (batch_size, len(features)).
+        # The factors will all be -1 (so we get the mean value for every feature) except the column
+        # corresponding to the feature that has to be interpolated, which will range from min to max.
+        for f, fname in enumerate(self.features):
+            if fname == feature_to_interpolate:
+                # TODO: Still using linear interpolation, spherical may lead to better results (between which starting points?)
+                feat_factors[:, f] = np.linspace(0,1,num=self.batch_size)
+        y = DoomDataset().get_feature_sample(self.dataset_path, feat_factors, features=self.features, extremes='minmax')
+        # Constructing a y vector with a different y for each sample in the batch
+        samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
+        samples = DataTransform.postprocess_output(samples[0], self.maps, folder=None)
+        DataTransform.build_levels(samples, self.maps, self.batch_size, call_node_builder=False,
+                                   level_images_path='./interpolated_features/{}/'.format(feature_to_interpolate))
+
+
 
     def test(self, n_samples_for_feature=11):
         # Given a set of features Fn = An (ie an y vector), calculate the distribution of the network output for each feature
         # Load and initialize the network
         self.initialize_and_restore()
-        # TODO: Sample j elements around the mean of each y_i -> a_i
-        # TODO: check the value of rho[a_i|i] over a given number of observations j
         # TODO: For now a linear sampling is used for checking the correlation between a requested feature and the returned one, but it could be useful to random sample since this correlation may change near the mean value
         corr = np.zeros(shape=[len(self.features)])
         for f, fname in enumerate(self.features):
@@ -522,14 +546,14 @@ class DoomGAN(object):
             for j in range(n_samples_for_feature):
                 print("Sampling with feature coefficient {}={}  ({}/{})...".format(fname, factor_changes[j], j+1, n_samples_for_feature))
                 feat_factors[f] = factor_changes[j]
-                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, feat_factors, features, self.batch_size)
+                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, np.tile(feat_factors, (self.batch_size, 1)), features)
                 # Now building R by launching the newtork
 
                 retry_counter = 3
                 success = False
                 while retry_counter > 0 and not success:
                     try:
-                            # TODO: Noise is sampled each time. Should it be fixed?
+                            # Using a fixed seed each time
                             np.random.seed(42)
                             z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
                             net_output = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})[0]
@@ -571,6 +595,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer("save_net_every", 20, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("train", True, "enable training if true")
     flags.DEFINE_boolean("generate", False, "If true, generate some levels with a fixed y value and seed and save them into ./generated_samples")
+    flags.DEFINE_boolean("interpolate", False, "If true, generate levels by interpolating the feature vector along each dimension")
+    flags.DEFINE_boolean("test", False, "If true, compute evaluation metrics over produced samples")
     flags.DEFINE_boolean("use_sigmoid", True,
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
@@ -612,9 +638,18 @@ if __name__ == '__main__':
         if FLAGS.train:
             gan.train(FLAGS)
         else:
+            feat_factors = [-1 for f in features]
             if FLAGS.generate:
-                feat_factors = [-1 for f in features]
-                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, feat_factors, features, FLAGS.batch_size)
-                gan.generate_levels(y, 44448)
-            else:
+                factors = np.tile(-1, (FLAGS.batch_size, len(features)))
+                y=  [2.38500000e+03,   2.59300000e+03,   1.04000000e+02,   3.30504609e+04,
+                     4.05471373e+00,   6.25000000e+00,   3.25000000e+01,   1.92000000e+02,
+                     -7.20000000e+01,   7.77239680e-01,   6.04390264e-01,   7.40881026e-01,
+                     1.38456211e-03,   6.92281057e-04,   3.46140529e-04,   1.38456211e-03,
+                     6.92281057e-04,   3.11526470e-03,   1.73070270e-03,   0.00000000e+00]
+                y = np.tile (np.asarray(y), (FLAGS.batch_size, 1))
+                gan.generate_levels(y, seed=3337747405)
+            if FLAGS.interpolate:
+                for feat in features:
+                    gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)
+            if FLAGS.test:
                 gan.test()

@@ -275,21 +275,31 @@ class WADWriter(object):
         x, y = xy[0], xy[1]
         return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
 
-    def from_images(self, heightmap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, generate_teleporters=True):
+    def from_images(self, heightmap, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, save_debug = './generated_levels_debug/', generate_teleporters=True, flat_levels=False):
+        assert heightmap is not None or floormap is not None, "heightmap and floormap cannot be both None"
+
+        if isinstance(floormap, str):
+            floormap = io.imread(floormap).astype(dtype=np.bool)
         if isinstance(heightmap, str):
-            heightmap = io.imread(heightmap).astype(dtype=np.bool)
+            heightmap = io.imread(heightmap)
         if isinstance(wallmap, str):
             wallmap = io.imread(wallmap).astype(dtype=np.bool)
+        if isinstance(thingsmap, str):
+            thingsmap = io.imread(thingsmap).astype(np.uint8)
+
         if thingsmap is not None:
-            if isinstance(thingsmap, str):
-                thingsmap = io.imread(thingsmap).astype(np.uint8)
             # Pad with a frame
             thingsmap = np.pad(thingsmap, pad_width=(1, 1), mode='constant')
 
-        floormap = heightmap > 0
+        if floormap is None:
+            floormap = heightmap > 0
+        if heightmap is None:
+            heightmap = np.ones_like(floormap) * 128
+
         # Pad with a frame for getting boundaries
         floormap = np.pad(floormap, pad_width=(1, 1), mode='constant')
         wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant')
+        heightmap = np.pad(heightmap, pad_width=(1, 1), mode='constant')
 
         floormap = morphology.binary_dilation(floormap)
 
@@ -300,11 +310,29 @@ class WADWriter(object):
         cleaned_walls = morphology.remove_small_holes(denoised_walls, min_size=4)
         cleaned_walls = morphology.remove_small_objects(cleaned_walls, min_size=16)
 
+        # HEIGHTMAP
+        from skimage import data, util, filters, color
+        from skimage.morphology import watershed
+        from skimage.segmentation import slic, slic_superpixels
+        from scipy.ndimage import median
+        edges = filters.sobel(heightmap)
+        grid = util.regular_grid(heightmap.shape, n_points=300)
+        seeds = np.zeros(heightmap.shape, dtype=int)
+        seeds[grid] = np.arange(seeds[grid].size).reshape(seeds[grid].shape) + 1
+        segmented_heightmap = watershed(edges, seeds)
+
+        label_medians = median(heightmap, segmented_heightmap, index=range(1, segmented_heightmap.max() + 1))
+
+        for l in range(1, segmented_heightmap.max() + 1):
+            segmented_heightmap = np.where(segmented_heightmap == l, label_medians[l - 1], segmented_heightmap)
+
 
         if debug:
             # Display the image and plot all contours found
-            fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(8, 5), sharex=True,
+            fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(8, 5), sharex=True,
                                    sharey=True, subplot_kw={'adjustable': 'box-forced'})
+        if save_debug:
+            fig_show_levels = plt.subplot()
 
         # Placing sectors, one floor at a time
 
@@ -314,24 +342,48 @@ class WADWriter(object):
         teleport_graph = np.roll(range(len(floors)), -1).tolist()
         for floor_id, floor in enumerate(floors):
             contours_walls = find_contours(floor, 0.5, positive_orientation='low')
-            for i, contour in enumerate(contours_walls):
+            for i, floor_contour in enumerate(contours_walls):
                 if debug:
-                    ax[4].plot(contour[:, 1], contour[:, 0], linewidth=1)
-                vertices = (contour * level_coord_scale).astype(np.int).tolist()
+                    ax[4].plot(floor_contour[:, 1], floor_contour[:, 0], linewidth=1)
+                if save_debug:
+                    fig_show_levels.plot(floor_contour[:, 1], floor_contour[:, 0], linewidth=1)
+                vertices = (floor_contour * level_coord_scale).astype(np.int).tolist()
                 clockwise, vertices = self._sector_orientation(vertices)
                 if clockwise:
                     # The contour defines the floor boundaries
                     sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
                 else:
-                    if (i == 0):
-                        # The first sector has been defined as counter-clockwise, need a bounding sector
-                        level_height = floormap.shape[0]*level_coord_scale
-                        level_width = floormap.shape[1]*level_coord_scale
-                        sector_id = self.add_sector([(0,0),(0,level_height),(level_width,level_height),(level_width, 0)], floor_height=-255*level_coord_scale, ceiling_height=255*level_coord_scale, tag=floor_id)
-                        print("Added a bounding box because the first sector has been specified as counter-clockwise")
+                    if i ==0:
+                        sector_id = self.add_sector(list(reversed(vertices)), ceiling_height=128, tag=floor_id)
+
+                    #if i == 0:
+                    #    # The first sector has been defined as counter-clockwise, need a bounding sector
+                    #    level_height = floormap.shape[0]*level_coord_scale
+                    #    level_width = floormap.shape[1]*level_coord_scale
+                    #    sector_id = self.add_sector([(0,0),(0,level_height),(level_width,level_height),(level_width, 0)], floor_height=-255*level_coord_scale, ceiling_height=255*level_coord_scale, tag=floor_id)
+                    #    print("Added a bounding box because the first sector has been specified as counter-clockwise")
                     # The contour defines a hole in the level: Surrounding sector must be defined explicitly
                     self.add_sector(vertices, ceiling_height=128, tag=floor_id, sorrounding_sector_id=sector_id, hollow=True)
                     # sector_id is not changed because we don't want to place anything inside a hole, hopefully.
+            if not flat_levels:
+                # Placing inner sectors (heightmap)
+                floor_heightmap = segmented_heightmap*floor
+                for sector_height in np.unique(floor_heightmap):
+                    if sector_height == 0:
+                        continue
+                    same_height_map = (floor_heightmap == sector_height)*1
+                    sector_contours = find_contours(same_height_map, 0.5, positive_orientation='low')
+                    for ch_number, sector_contours in enumerate(sector_contours):
+                        vertices = (sector_contours * level_coord_scale).astype(np.int).tolist()
+                        clockwise, vertices = self._sector_orientation(vertices)
+                        if not clockwise:
+                            vertices = list(reversed(vertices))
+                        # Drawing the sector with invisible walls
+                        self.add_sector(vertices, floor_height=int(sector_height*level_coord_scale), ceiling_height=int(sector_height*level_coord_scale)+256,
+                                        kw_sidedef={'upper_texture':'BRONZE1', 'lower_texture':'BRONZE1', 'middle_texture':'-'},
+                                        sorrounding_sector_id=sector_id,
+                                        kw_linedef={'type': 0, 'trigger': 0, 'flags': 4})
+
             # Placing teleporters
             if total_floors > 1 and generate_teleporters:
                 # Teleporters are needed. Place a landing somewhere in the sector
@@ -380,8 +432,14 @@ class WADWriter(object):
             ax[3].imshow(denoised_walls, cmap=plt.cm.gray)
             ax[4].imshow(cleaned_walls, cmap=plt.cm.gray)
             ax[4].imshow(segmented, cmap=plt.cm.gray)
+        if debug:
             plt.show()
-
+        if save_debug:
+            plt.axis('off')
+            fig_show_levels.imshow(segmented, cmap=plt.cm.gray)
+            os.makedirs(save_debug, exist_ok=True)
+            plt.savefig(save_debug+'lv_{}.png'.format(self.current_level), bbox_inches='tight')
+        plt.clf()
 
 
 
@@ -590,6 +648,9 @@ class WADReader(object):
             level['features']['path_json'] = relative_path + '.json'
             with open(base_filename + '.json', 'w') as jout:
                 json.dump(level['features'], jout)
+            # Saving the text representation
+            with open(base_filename + '.txt', 'wb') as txtout:
+                txtout.writelines([bytes(row + [10]) for row in level['text']])
 
 
 
@@ -612,8 +673,8 @@ class WADReader(object):
         parsed_wad['levels'] = list()
         for level in parsed_wad['wad'].levels:
             extractor = WADFeatureExtractor(level)
-            features, maps = extractor.extract_features()
-            parsed_wad['levels'] += [{'name': level['name'], 'features': features, 'maps':maps}]
+            features, maps, txt = extractor.extract_features()
+            parsed_wad['levels'] += [{'name': level['name'], 'features': features, 'maps':maps, 'text':txt}]
         if save_to is not None:
             self.save_sample(parsed_wad, save_to, root_path, update_record)
         return parsed_wad

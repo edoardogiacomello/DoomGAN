@@ -126,8 +126,8 @@ class DoomDataset():
                 try:
                     parsed_wad = wad_reader.extract(wad_fp=root+record['path'], save_to=root+'Processed/', update_record=record,
                                                 root_path=root)
-                except:
-                    print("Error parsing {}".format(root+record['path']))
+                except Exception as e:
+                    print("Error parsing {}: {}".format(root+record['path'], e))
             for level in parsed_wad['levels']:
                 new_records.append(level['features'])
             if len(new_records) % (len(sorted_input)//100) == 0:
@@ -343,34 +343,34 @@ class DoomDataset():
             json.dump(meta, meta_out)
             print("Metadata saved to {}".format(meta_path))
 
-    def get_feature_sample(self, tf_dataset_path, factors, features, batch_size):
+    def get_feature_sample(self, tf_dataset_path, factors, features, extremes='minmax'):
         """
-        Returns a sample of a feature vector (y) given a list of feature names and a list of factors.
-        Each factor is a scalar relative to the corresponding feature:
-        If it's in [0,1] then the returned corresponding feature will range from the min value (0) to the max value (1)
-        If the factor is -1 then the returned feature is the average value for that feature.
+        Returns a sample of a feature vector (y) given a list of feature names and an array of "factors" having the same shape of y (batch_size, len(features)).
+        Each factor is a scalar relative to the corresponding batch sample and feature:
+        If it's in [0,1] then the returned corresponding feature will range from the min value (factor = 0) to the max value (factor = 1)
+        If the factor is -1 then the returned feature is the mean value for that feature.
+
         :param tf_dataset_path: The dataset to read data from
-        :param factors: A list of scalars in {-1, [0,1]}, same length of features.
+        :param factors: A vector of scalars in {-1, [0,1]}, having size (batch_size, len(features)).
         :param features: A list of feature names
-        :param batch_size: The batch size for the feature
-        :return: a vector y of shape (batch_size, len(features)) containing the desired values
+        :param extremes: 'minmax' or 'std'
+        :return: a vector y having the same shape of "factors".
         """
-        assert len(factors) == len(features), "Length of factor and features array should be the same."
+        assert factors.shape[-1] == len(features), "Length of factor and features array should be the same."
         meta = self.read_meta(tf_dataset_path)
-        y = np.zeros(shape=(batch_size, len(features)), dtype=np.float32)
+        y = np.zeros_like(factors, dtype=np.float32)
         for f, f_name in enumerate(features):
-            if factors[f] >= 0 and factors[f] <= 1:
-                a = 0
-                b = 1
-                x = factors[f]
-                f_min = meta['features'][f_name]['min']
-                f_max = meta['features'][f_name]['max']
-                y[:,f] = f_min + ((x-a)*(f_max-f_min))/(b-a)
-            else:
-                if factors[f] == -1:
-                    y[:, f] = meta['features'][f_name]['mean']
-                else:
-                    raise ValueError("Factor for {} not in range.".format(f_name))
+            # Apply the feature mean where the factor is -1
+            y[:,f] = np.where((factors[:,f] == -1), meta['features'][f_name]['mean'], y[:,f])
+
+            # Apply the rescaled feature where the factor is between 0 and 1
+            between = np.logical_and(factors[:,f] >= 0, factors[:,f] <= 1)
+            a = 0
+            b = 1
+            f_min = meta['features'][f_name]['min'] if (extremes == 'minmax') else (meta['features'][f_name]['mean'] - np.sqrt(meta['features'][f_name]['var']))
+            f_max = meta['features'][f_name]['max'] if (extremes == 'minmax') else (meta['features'][f_name]['mean'] + np.sqrt(meta['features'][f_name]['var']))
+
+            y[:, f] = np.where(between, f_min + ((factors[:,f]-a)*(f_max-f_min))/(b-a), y[:, f])
         return y
 
     def get_feature_stats(self,tf_dataset_path, features, stat):
@@ -407,103 +407,4 @@ class DoomDataset():
         dataset.plot_joint_feature_distributions(data, features=base_features).savefig('./../dataset/statistics/128_base_features_no_outliers')
         dataset.plot_joint_feature_distributions(data, features=level_features).savefig('./../dataset/statistics/128_level_features_no_outliers')
         dataset.plot_joint_feature_distributions(data, features=floor_features).savefig('./../dataset/statistics/128_floor_features_no_outliers')
-
-    
-    def to_txt(self, json_db, root,  output_path):
-        """
-        Represent the levels using 2-characters textual information.
-        
-        
-        ENCODING:
-        The encoding is in part taken from the TheVGLC dataset, so not all the information is displayed
-        Each tile is represented as XY, with X being the VGLC encoding and Y being the ascii-encoding of the trigger tag.
-        
-        "-" : ["empty","out of bounds"],
-        "X" : ["solid","wall"],
-        "." : ["floor","walkable"],
-        "," : ["floor","walkable","stairs"],
-        "E" : ["enemy","walkable"],
-        "W" : ["weapon","walkable"],
-        "A" : ["ammo","walkable"],
-        "H" : ["health","armor","walkable"],
-        "B" : ["explosive barrel","walkable"],
-        "K" : ["key","walkable"],
-        "<" : ["start","walkable"],
-        "T" : ["teleport","walkable","destination"],
-        ":" : ["decorative","walkable"],
-        "L" : ["door","locked"],
-        "t" : ["teleport","source","activatable"],
-        "+" : ["door","walkable","activatable"],
-        ">" : ["exit","activatable"]
-        
-        :param json_db: 
-        :param output_path: 
-        :return: 
-        """
-        import skimage.io as io
-        import WAD_Parser.Dictionaries.ThingTypes as ThingTypes
-        import WAD_Parser.Dictionaries.LinedefTypes as LineTypes
-
-        levels = self.read_from_json(json_db)
-        for l in levels:
-            maps = {}
-            for m in Features.map_paths:
-                path = l[m]
-                map_data = io.imread(root+path)
-                maps[Features.map_paths[m]] = map_data
-
-            X_map = np.ndarray(shape=maps['floormap'].shape, dtype=np.uint8)
-            Y_map = np.ndarray(shape=maps['floormap'].shape, dtype=np.uint8)
-            txtmap = np.zeros(shape=(X_map.shape[0], X_map.shape[1]*2), dtype=np.byte)
-
-            from skimage.filters import roberts
-            walls = maps['wallmap'] != 0
-            floor = maps['floormap'] != 0
-            change_in_height = roberts(maps['heightmap']) != 0
-            enemies = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('monsters'))
-            weapons = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('weapons'))
-            ammo = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('ammunitions'))
-            health = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('powerups'))
-            barrels = np.isin(maps['thingsmap'], [ThingTypes.get_index_from_type_id(t) for t in [2035, 70]])
-            keys = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('keys'))
-            start = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('start'))
-            teleport_dst = np.isin(maps['thingsmap'], [ThingTypes.get_index_from_type_id(14)])
-            decorative = np.isin(maps['thingsmap'], ThingTypes.get_index_by_category('decorations'))
-            door_locked = np.isin(maps['triggermap'], [LineTypes.get_index_from_type(l) for l in [26, 28, 27, 32, 33, 34]])
-            door_open = np.isin(maps['triggermap'], [LineTypes.get_index_from_type(l) for l in [1, 31, 46, 117, 118]] + list(range(32,64)))
-            teleport_src = np.logical_and(maps['triggermap'] >= 192, maps['triggermap'] < 255)
-            exit = maps['triggermap'] == 255
-
-
-            # Rebuild the tagmap (contains sector and trigger tags)
-            tagmap = np.where(maps['triggermap'] >= 32, maps['triggermap'], -1) # -1 means "no tags here".
-            tagmap = np.mod(tagmap + 1, 64) # Now all tags are from 1 to 63, 0 means "no tag"
-
-
-
-            X_map[...] = ord("-")
-            Y_map[...] = ord("-") + tagmap
-            X_map = np.where(floor, ord("."), X_map)
-            X_map = np.where(change_in_height, ord(","), X_map)
-            X_map = np.where(decorative, ord(":"), X_map)
-            X_map = np.where(enemies, ord("E"), X_map)
-            X_map = np.where(weapons, ord("W"), X_map)
-            X_map = np.where(ammo, ord("A"), X_map)
-            X_map = np.where(health, ord("H"), X_map)
-            X_map = np.where(barrels, ord("B"), X_map)
-            X_map = np.where(keys, ord("K"), X_map)
-            X_map = np.where(start, ord("<"), X_map)
-            X_map = np.where(teleport_dst, ord("T"), X_map)
-            X_map = np.where(teleport_src, ord("t"), X_map)
-            X_map = np.where(door_locked, ord("L"), X_map)
-            X_map = np.where(door_open, ord("+"), X_map)
-            X_map = np.where(walls, ord("X"), X_map)
-            X_map = np.where(exit, ord(">"), X_map)
-
-            txtmap[:, 0::2] = X_map
-            txtmap[:, 1::2] = Y_map
-            txt = txtmap.tolist()
-            txt_fname = l['path_json'].split('/')[-1].replace('json','txt')
-            with open(output_path+txt_fname, 'wb') as txtout:
-                txtout.writelines([bytes(row + [10]) for row in txt])
 

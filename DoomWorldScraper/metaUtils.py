@@ -66,7 +66,6 @@ def merge_json(file_list, output_path):
     print("Merged {} records in one file".format(len(final)))
 
 
-# TODO: This function is out-of-date. A minimization of the number of steps required to build the dataset is needed
 def extract_database(json_database, output_path):
     """This function takes the folder of scraped data as input (the folder structure should be
         <root_path>/<catname>/levelname.zip) and generates a representation that is similar to that used by

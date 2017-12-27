@@ -31,7 +31,6 @@ features_to_use = ['height', 'width',
                    'obstacles_per_walkable_area',
                    'decorations_per_walkable_area']
 
-
 #dd.plot_joint_feature_distributions('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json', features_to_use,
 #                                    constraints_lambdas=constraints).savefig('./../dataset/statistics/128_one_floor')
 dd.to_TFRecords(json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',

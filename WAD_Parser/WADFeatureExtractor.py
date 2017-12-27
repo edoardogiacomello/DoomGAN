@@ -23,28 +23,20 @@ class WADFeatureExtractor(object):
         y = np.floor(y_centered / 32).astype(np.int32)
         return x, y
 
-    def _rescale_value(self, x, x_min, scale_factor):
-        x_centered = x - x_min
-        x = np.floor(x_centered / scale_factor).astype(np.int32)
-        return x
-
-
 
     def draw_sector_maps(self):
-
 
         vertices = self.level['lumps']['VERTEXES']
         wallmap = np.zeros(self.mapsize, dtype=np.uint8)
         heightmap = np.zeros(self.mapsize, dtype=np.uint8)
         tagmap = np.zeros(self.mapsize, dtype=np.uint8)
         triggermap = np.zeros(self.mapsize, dtype=np.uint8)
-
+        self.special_sector_map = np.zeros(self.mapsize, dtype=np.uint8)
+        height_levels = sorted({s['lump']['floor_height'] for s in self.level['sectors'].values()})
+        scale_color = lambda x, levels, a, b: int((levels.index(x)+1)*(b-a)/len(levels))
         for sector in self.level['sectors'].values():
             if len(sector['vertices_xy'])==0:
                 continue  # This sector is not referenced by any linedef so it's not a real sector
-
-
-
 
             # HEIGHTMAP GENERATION
             coords_DU = np.array(sector['vertices_xy'])  # Coordinates in DoomUnits (un-normalized)
@@ -52,14 +44,17 @@ class WADFeatureExtractor(object):
             x, y = self._rescale_coord(coords_DU[:, 0], coords_DU[:, 1])
             px, py = draw.polygon(x, y, shape=tuple(self.mapsize))
             # 0 is for empty space
-            color = self._rescale_value(sector['lump']['floor_height'], self.level['features']['floor_height_min'],
-                                        32) + 1
+            h = sector['lump']['floor_height']
+            color = scale_color(h, height_levels, 0, 255)
+
             heightmap[px, py] = color
             # TAGMAP GENERATION (intermediate TRIGGERMAP: Sectors referenced by a trigger)
             tag = sector['lump']['tag']
             tag = tag if tag < 63 else 63
             tag = tag if tag >= 0 else 0
             tagmap[px, py] = tag
+            # DAMAGING FLOOR MAP
+            self.special_sector_map[px, py] = sector['lump']['special_sector']
             # since polygon only draws the inner part of the polygon we now draw the perimeter
             if len(x) > 2 and len(y) > 2:
                 px, py = draw.polygon_perimeter(x, y, shape=tuple(self.mapsize))
@@ -101,17 +96,14 @@ class WADFeatureExtractor(object):
                         dest_map = np.zeros(self.mapsize, dtype=np.bool)
                         for dest_coord in destinations:
                             dest_map[tuple(dest_coord)] = True
-                        found_dest = np.where(np.logical_and((tagmap==trigger), dest_map))
+                        found_dest = np.where(np.logical_and((tagmap == trigger), dest_map))
                         # Color the destination
                         if len(found_dest):
-                            triggermap[tuple(found_dest)] =  linedef_type + trigger - 1
+                            triggermap[tuple(found_dest)] = linedef_type + trigger - 1
 
                 if linedef_type in [10,12,14,16, 255]:
                     # It's a local door or an exit. Simply color the linedefs
                     triggermap[lx, ly] = linedef_type
-
-
-
 
         return wallmap, heightmap, triggermap
 
@@ -133,7 +125,97 @@ class WADFeatureExtractor(object):
 
         return thingsmap
 
+    def draw_textmap(self):
+        """
+               Represent the levels using 2-characters textual information.
 
+
+               ENCODING:
+               The encoding is in part taken from the TheVGLC dataset, so not all the information is displayed
+               Each tile is represented as XY, with X being the VGLC encoding and Y being the ascii-encoding of the trigger tag.
+
+               "-" : ["empty","out of bounds"],
+               "X" : ["solid","wall"],
+               "." : ["floor","walkable"],
+               "," : ["floor","walkable","stairs"],
+               "E" : ["enemy","walkable"],
+               "W" : ["weapon","walkable"],
+               "A" : ["ammo","walkable"],
+               "H" : ["health","armor","walkable"],
+               "B" : ["explosive barrel","walkable"],
+               "K" : ["key","walkable"],
+               "<" : ["start","walkable"],
+               "T" : ["teleport","walkable","destination"],
+               ":" : ["decorative","walkable"],
+               "L" : ["door","locked"],
+               "t" : ["teleport","source","activatable"],
+               "+" : ["door","walkable","activatable"],
+               ">" : ["exit","activatable"]
+
+               :param json_db: 
+               :param output_path: 
+               :return: 
+               """
+
+        X_map = np.ndarray(shape=self.level['maps']['floormap'].shape, dtype=np.uint8)
+        Y_map = np.ndarray(shape=self.level['maps']['floormap'].shape, dtype=np.uint8)
+        txtmap = np.zeros(shape=(X_map.shape[0], X_map.shape[1] * 2), dtype=np.byte)
+
+        from skimage.filters import roberts
+        walls = self.level['maps']['wallmap'] != 0
+        floor = self.level['maps']['floormap'] != 0
+        change_in_height = roberts(self.level['maps']['heightmap']) != 0
+        enemies = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('monsters'))
+        weapons = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('weapons'))
+        ammo = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('ammunitions'))
+        health = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('powerups'))
+        barrels = np.isin(self.level['maps']['thingsmap'], [ThingTypes.get_index_from_type_id(t) for t in [2035, 70]])
+        keys = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('keys'))
+        start = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('start'))
+        teleport_dst = np.isin(self.level['maps']['thingsmap'], [ThingTypes.get_index_from_type_id(14)])
+        decorative = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('decorations'))
+        door_locked = np.isin(self.level['maps']['triggermap'],
+                              [LinedefTypes.get_index_from_type(l) for l in [26, 28, 27, 32, 33, 34]])
+        door_open = np.isin(self.level['maps']['triggermap'],
+                            [LinedefTypes.get_index_from_type(l) for l in [1, 31, 46, 117, 118]] + list(range(32, 64)))
+        teleport_src = np.logical_and(self.level['maps']['triggermap'] >= 192, self.level['maps']['triggermap'] < 255)
+        exit = self.level['maps']['triggermap'] == 255
+
+        dmging_floor = np.isin(self.special_sector_map, [4, 5, 7, 11, 16]) # If special tag is one of these, then it hurts the player
+
+
+        # Rebuild the tagmap (contains sector and trigger tags)
+        tagmap = np.where(self.level['maps']['triggermap'] >= 32, self.level['maps']['triggermap'], -1)  # -1 means "no tags here".
+        tagmap = np.mod(tagmap + 1, 64)  # Now all tags are from 1 to 63, 0 means "no tag"
+
+        X_map[...] = ord("-")
+        Y_map[...] = ord("-") + tagmap
+        Y_map = np.where(dmging_floor, ord("~"), Y_map)
+
+        X_map = np.where(floor, ord("."), X_map)
+        X_map = np.where(change_in_height, ord(","), X_map)
+        X_map = np.where(decorative, ord(":"), X_map)
+        X_map = np.where(enemies, ord("E"), X_map)
+        X_map = np.where(weapons, ord("W"), X_map)
+        X_map = np.where(ammo, ord("A"), X_map)
+        X_map = np.where(health, ord("H"), X_map)
+        X_map = np.where(barrels, ord("B"), X_map)
+        X_map = np.where(keys, ord("K"), X_map)
+        X_map = np.where(start, ord("<"), X_map)
+        X_map = np.where(teleport_dst, ord("T"), X_map)
+        X_map = np.where(teleport_src, ord("t"), X_map)
+        X_map = np.where(door_locked, ord("L"), X_map)
+        X_map = np.where(door_open, ord("+"), X_map)
+        X_map = np.where(walls, ord("X"), X_map)
+        X_map = np.where(exit, ord(">"), X_map)
+
+
+
+        txtmap[:, 0::2] = X_map
+        txtmap[:, 1::2] = Y_map
+        return txtmap.tolist()
+
+            
     def compute_maps(self):
         self.mapsize_du = np.array([self.level['features']['width'], self.level['features']['height']])
         self.mapsize = np.ceil(self.mapsize_du / 32).astype(np.int32)
@@ -144,6 +226,7 @@ class WADFeatureExtractor(object):
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
         self.level['maps']['floormap'], self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
 
+        self.level['text'] = self.draw_textmap()
 
     def _features_to_scalar(self):
         for feature in self.level['features']:
@@ -160,7 +243,7 @@ class WADFeatureExtractor(object):
         self.topological_features()
         # Convert every feature to scalar
         self._features_to_scalar()
-        return self.level['features'], self.level['maps']
+        return self.level['features'], self.level['maps'], self.level['text']
 
     def _find_thing_category(self, category):
         found_things = np.in1d(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category(category)).reshape(self.level['maps']['thingsmap'].shape)
@@ -333,7 +416,3 @@ class WADFeatureExtractor(object):
             self.level['features']['number_of_obstacles'] / self.level['features']['walkable_area'])
         self.level['features']['decorations_per_walkable_area'] = float(
             self.level['features']['number_of_decorations'] / self.level['features']['walkable_area'])
-
-
-
-        pass
