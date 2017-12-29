@@ -6,6 +6,7 @@ import tensorflow.contrib as contrib
 import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
 from DoomLevelsGAN.NNHelpers import *
+import DoomLevelsGAN.inception.inception_score as inception
 
 
 class DoomGAN(object):
@@ -21,10 +22,13 @@ class DoomGAN(object):
         def calc_filter_size(output_size, stride):
             return [int(math.ceil(float(z) / float(t))) for z, t in zip(output_size, stride)]
 
-        def g_activ_batch_nrm(x, name='g_a'):
-            '''Activation function used in the generator, also includes a batch normalization layer '''
-            batch_norm_layer = batch_norm(name=name)
-            return tf.nn.relu(batch_norm_layer(x))
+        def g_activation(x, name='g_a'):
+            '''
+            Activation function used in the generator, also includes batch/layer normalization if the architecture
+            requires it
+             '''
+            norm_layer = batch_norm(name=name)
+            return tf.nn.relu(norm_layer(x))
 
         with tf.variable_scope("G") as scope:
             # Calculating filter size
@@ -37,7 +41,7 @@ class DoomGAN(object):
             # Calculating layer size
             g_size = []
             for layer_id, layer in enumerate(hidden_layers):
-                size = [self.batch_size, g_size_filter[layer_id][0], g_size_filter[layer_id][1], layer['n_filters']]
+                size = [self.config.batch_size, g_size_filter[layer_id][0], g_size_filter[layer_id][1], layer['n_filters']]
                 # First and last layer differs from the others
                 if layer_id == 0:
                     size[0] = -1
@@ -62,7 +66,7 @@ class DoomGAN(object):
             self.w_G = []  # Keep track of the weights for visualization
             for layer_id, layer in enumerate(hidden_layers):
                 if layer_id == 0:
-                    l = g_activ_batch_nrm(tf.reshape(z_p, g_size[0]))
+                    l = g_activation(tf.reshape(z_p, g_size[0]))
                     # Concatenating the features to the activations
                     l = concatenate_features(l, y) if self.use_features else l
                 else:
@@ -82,7 +86,7 @@ class DoomGAN(object):
                                                  k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
                                                  remove_artifacts=layer['remove_artifacts'],
                                                  with_w=True)
-                        l = g_activ_batch_nrm(c, name='g_a{}'.format(layer_id))
+                        l = g_activation(c, name='g_a{}'.format(layer_id))
                         l = concatenate_features(l, y) if self.use_features else l
                     self.w_G.append(w)
                 self.layers_G.append(l)
@@ -91,9 +95,19 @@ class DoomGAN(object):
         return tf.nn.sigmoid(self.layers_G[-1])
 
     def discriminator_generalized(self, input, hidden_layers, reuse=False, y=None):
-        def d_activ_batch_norm(x, name="d_a"):
-            batch_norm_layer = batch_norm(name=name)
-            return leaky_relu(batch_norm_layer(x))
+        def d_activation(x, name="d_a"):
+            """
+            Activation function for the discriminator. Also applies batch/layer normalization as requested by the architecture.
+            :param x:
+            :param name:
+            :return:
+            """
+            if self.config.use_gradient_penalty:
+                # WGAN_GP uses layer normalization instead of batch norm in the discriminator (critic)
+                norm_layer = layer_norm(name=name)
+            else:
+                norm_layer = batch_norm(name=name)
+            return leaky_relu(norm_layer(x))
 
         with tf.variable_scope("D") as scope:
             if reuse:
@@ -109,13 +123,13 @@ class DoomGAN(object):
                     l = leaky_relu(c)
                 else:
                     if layer_id == len(hidden_layers) - 1:  # Last layer (output)
-                        l = linear_layer(tf.reshape(layers_D[-1], [self.batch_size, -1]), 1,
+                        l = linear_layer(tf.reshape(layers_D[-1], [self.config.batch_size, -1]), 1,
                                          scope='d_a{}'.format(layer_id))
                     else:  # Hidden layers
                         c, w = conv2d(layers_D[-1], layer['n_filters'], name="d_h{}".format(layer_id),
                                       k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
                                       stride_h=layer['stride'][0], stride_w=layer['stride'][1], with_w=True)
-                        l = d_activ_batch_norm(c, name="g_a{}".format(layer_id))
+                        l = d_activation(c, name="g_a{}".format(layer_id))
                         l = concatenate_features(l, y) if self.use_features else l
 
                 layers_D.append(l)
@@ -129,11 +143,30 @@ class DoomGAN(object):
         return tf.nn.sigmoid(layers_D[-1]), layers_D[-1]
 
     def loss_function(self):
-        if self.use_wgan:
-            self.loss_d = self.D_logits_fake - self.D_logits_real
+        if self.config.use_wgan:
+            self.loss_d = tf.reduce_mean(self.D_logits_fake - self.D_logits_real)
             self.loss_g_wgan = tf.reduce_mean(-self.D_logits_fake)
+
+            if self.config.use_gradient_penalty:
+                # Code from WGAN-GP paper https://arxiv.org/pdf/1704.00028.pdf (https://github.com/igul222/improved_wgan_training/)
+                # Code has been modified to make one computation for the whole batch instead of repeating it for each sample
+                alpha = tf.random_uniform(
+                    shape=[self.config.batch_size, 1, 1, 1], # If multi-gpu, batchsize should be divided by num_gpu
+                    minval=0.,
+                    maxval=1.
+                )
+                alpha = tf.tile(alpha, multiples=[1, self.output_size[0], self.output_size[1], self.output_channels])
+                differences = self.G - self.x_norm
+                interpolates = self.x_norm + (alpha * differences)
+                d_interp, d_logit_interp = self.discriminator_generalized(interpolates, self.d_layers, reuse=True, y=self.y_norm)
+                gradients = tf.gradients(d_logit_interp, [interpolates])[0]
+                slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1,2,3]))
+                gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
+            self.loss_d += self.config.lambda_gradient_penalty * gradient_penalty
+
             return self.loss_d, self.loss_g_wgan
         else:
+            # Here we are using standard DCGAN loss
             def sigmoid_cross_entropy_with_logits(x, y):
                 try:
                     return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, labels=y)
@@ -146,7 +179,6 @@ class DoomGAN(object):
                 sigmoid_cross_entropy_with_logits(self.D_logits_fake, tf.zeros_like(self.D_fake)))
             self.loss_g = tf.reduce_mean(
                 sigmoid_cross_entropy_with_logits(self.D_logits_fake, tf.ones_like(self.D_fake)))
-            # TODO: Try to re-enforce encoding
             self.loss_d = self.loss_d_real + self.loss_d_fake
 
             self.balance = tf.abs(self.loss_g - self.loss_d)
@@ -159,42 +191,29 @@ class DoomGAN(object):
 
 
         # The channel are encoded dicrectly as in the dataset
-        self.x = tf.placeholder(tf.float32, [self.batch_size] + self.output_size + [self.output_channels],
+        self.x = tf.placeholder(tf.float32, [self.config.batch_size] + self.output_size + [self.output_channels],
                                 name="real_inputs")
-        self.x_rotation = tf.placeholder(tf.float32, shape=(), name="x_rotation")
-        self.x_norm = DataTransform.scaling_maps(self.x, self.maps, self.dataset_path, self.use_sigmoid)
+        self.x_rotation = tf.placeholder(tf.float32, shape=(1), name="x_rotation")
+        self.x_norm = DataTransform.scaling_maps(self.x, self.maps, self.config.dataset_path, self.config.use_sigmoid)
         self.x_norm = contrib.image.rotate(self.x_norm, self.x_rotation, "NEAREST")
 
 
 
         if self.use_features:
-            self.y = tf.placeholder(tf.float32, [self.batch_size, len(self.features)])
-            self.y_norm = DataTransform.scaling_features(self.y, self.features, self.dataset_path, self.use_sigmoid)
+            self.y = tf.placeholder(tf.float32, [self.config.batch_size, len(self.features)])
+            self.y_norm = DataTransform.scaling_features(self.y, self.features, self.config.dataset_path, self.config.use_sigmoid)
 
-        self.z = tf.placeholder(tf.float32, [self.batch_size, self.z_dim], name='z')
-        # Generator network
-        g_layers = [
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 2, 'remove_artifacts': False},
-        ]
+        self.z = tf.placeholder(tf.float32, [self.config.batch_size, self.config.z_dim], name='z')
 
-        d_layers = [
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 2, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
-        ]
 
-        self.G = self.generator_generalized(self.z, hidden_layers=g_layers, y=self.y_norm)
+        self.G = self.generator_generalized(self.z, hidden_layers=self.g_layers, y=self.y_norm)
         # G outputs in the same scale of x_norm. For reading output samples we can rescale them back to their original range
-        self.G_rescaled = DataTransform.scaling_maps_inverse(self.G, self.maps, self.dataset_path, self.use_sigmoid)
+        self.G_rescaled = DataTransform.scaling_maps_inverse(self.G, self.maps, self.config.dataset_path, self.config.use_sigmoid)
 
         # Discriminator networks for each input type (real and generated)
-        self.D_real, self.D_logits_real = self.discriminator_generalized(self.x_norm, d_layers, reuse=False,
+        self.D_real, self.D_logits_real = self.discriminator_generalized(self.x_norm, self.d_layers, reuse=False,
                                                                          y=self.y_norm)
-        self.D_fake, self.D_logits_fake = self.discriminator_generalized(self.G, d_layers, reuse=True, y=self.y_norm)
+        self.D_fake, self.D_logits_fake = self.discriminator_generalized(self.G, self.d_layers, reuse=True, y=self.y_norm)
 
         # Define the loss function
         self.loss_d, self.loss_g = self.loss_function()
@@ -205,7 +224,7 @@ class DoomGAN(object):
         self.vars_g = [var for var in vars if 'g_' in var.name]
 
     def generate_summary(self):
-        if self.use_wgan:
+        if self.config.use_wgan:
             s_loss_d = tf.summary.scalar('c_loss', tf.reduce_mean(self.loss_d))
             s_loss_g = tf.summary.scalar('g_loss', tf.reduce_mean(self.loss_g_wgan))
             # s_loss_enc = tf.summary.scalar('g_loss_enc', self.loss_enc)
@@ -236,7 +255,7 @@ class DoomGAN(object):
         # s_d_activations_x = visualize_activations('x_sample_{}_d_layer_'.format(sample_index), d_layers_to_show_x,
         #                                          sample_index)
 
-        if self.use_wgan:
+        if self.config.use_wgan:
             s_d = tf.summary.merge([s_loss_d, s_y_distrib, s_x_chosen_input])
             s_g = tf.summary.merge([s_loss_g, s_z_distrib, s_g_chosen_input])
             s_samples = tf.summary.merge([s_sample])
@@ -246,14 +265,14 @@ class DoomGAN(object):
             s_samples = tf.summary.merge(
                 [s_sample, s_g_chosen_input, s_x_chosen_input])
 
-        summary_writer = tf.summary.FileWriter(self.summary_folder)
+        summary_writer = tf.summary.FileWriter(self.config.summary_folder)
 
         return s_d, s_g, s_samples, summary_writer
 
     def save(self, checkpoint_dir):
         # Code from https://github.com/carpedm20/DCGAN-tensorflow
         model_name = "DOOMGAN.model"
-        checkpoint_dir = os.path.join(checkpoint_dir, self.checkpoint_dir)
+        checkpoint_dir = os.path.join(checkpoint_dir, self.config.checkpoint_dir)
 
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
@@ -283,11 +302,11 @@ class DoomGAN(object):
         Loads a TFRecord dataset and creates batches.
         :return: An initializable Iterator for the loaded dataset
         """
-        self.dataset = DoomDataset().read_from_TFRecords(self.dataset_path, target_size=self.output_size)
+        self.dataset = DoomDataset().read_from_TFRecords(self.config.dataset_path, target_size=self.output_size)
         # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
         # for discarding the last incomplete batch)
         try:
-            self.dataset_size = DoomDataset().get_dataset_count(self.dataset_path)
+            self.dataset_size = DoomDataset().get_dataset_count(self.config.dataset_path)
         except:
             if self.dataset_size is None:
                 counter_iter = self.dataset.batch(1).make_one_shot_iterator().get_next()
@@ -300,12 +319,15 @@ class DoomGAN(object):
                         # We reached the end of the dataset, break the loop and start a new epoch
                         self.dataset_size = n_samples
                         break
-        remainder = np.remainder(self.dataset_size, self.batch_size)
+        remainder = np.remainder(self.dataset_size, self.config.batch_size)
         print(
             "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, self.dataset_size,
-                                                                                           self.batch_size))
+                                                                                           self.config.batch_size))
+
+        self.dataset = self.dataset.shuffle(buffer_size=self.dataset_size*100)
         self.dataset = self.dataset.skip(remainder)
-        self.dataset = self.dataset.batch(self.batch_size)
+        self.dataset = self.dataset.shuffle(buffer_size=(self.dataset_size-remainder)*100)
+        self.dataset = self.dataset.batch(self.config.batch_size)
 
         iterator = self.dataset.make_initializable_iterator()
 
@@ -320,7 +342,7 @@ class DoomGAN(object):
 
         # Trying to load a checkpoint
         self.saver = tf.train.Saver()
-        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
+        could_load, checkpoint_counter = self.load(self.config.checkpoint_dir)
         if could_load:
             self.checkpoint_counter = checkpoint_counter
             print(" [*] Load SUCCESS")
@@ -328,22 +350,66 @@ class DoomGAN(object):
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
 
+    def inception_score(self):
+        scores = {mapname: list() for mapname in self.maps}
+        # Load the dataset
+        dataset_iterator = self.load_dataset()
+
+        self.session.run([dataset_iterator.initializer])
+        next_batch = dataset_iterator.get_next()
+        batch_index = 0
+        while True:
+            # Train Step
+            try:
+
+                train_batch = self.session.run(next_batch)  # Batch of true samples
+                z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32)  # Batch of noise
+                x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
+                y_batch = np.stack([train_batch[f] for f in self.features], axis=-1) if self.use_features else None
+                # Transpose from (batch, width, height, map) to (map, batch, width, height, 1)
+                x_batch = np.expand_dims(x_batch.transpose(-1,0,1,2), axis=-1)
+                # now replicate the last channel to make it rgb (inception works on rgb)
+                x_batch = np.repeat(x_batch, 3, -1)
+                for id, mapname in enumerate(self.maps):
+                    x_map = list(x_batch[id])
+                    scores[mapname] = inception.get_inception_score(x_map)
+
+
+            except tf.errors.OutOfRangeError:
+                # We reached the end of the dataset, break the loop and start a new epoch
+                break
+        print("Done")
+
+
 
     def train(self, config):
 
-        if self.use_wgan:
-            # Clipping the D Weights
-            clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.vars_d]
-            # Define an optimizer
-            d_optim = (tf.train.RMSPropOptimizer(learning_rate=config.learning_rate)
-                       .minimize(self.loss_d, var_list=self.vars_d))
-            g_optim = (tf.train.RMSPropOptimizer(learning_rate=config.learning_rate)
-                       .minimize(self.loss_g_wgan, var_list=self.vars_g))
+        if self.config.use_wgan:
+
+            if not self.config.use_gradient_penalty:
+                # Here we are using WGAN
+                # Clipping D Weights
+                clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.vars_d]
+                # Define an optimizer
+                d_optim = (tf.train.RMSPropOptimizer(learning_rate=config.wgan_lr)
+                           .minimize(self.loss_d, var_list=self.vars_d))
+                g_optim = (tf.train.RMSPropOptimizer(learning_rate=config.wgan_lr)
+                           .minimize(self.loss_g_wgan, var_list=self.vars_g))
+            else:
+                # Here we are using WGAN-GP
+                d_optim = tf.train.AdamOptimizer(config.wgangp_lr,
+                                                 beta1=config.wgangp_beta1,
+                                                 beta2=config.wgangp_beta2).minimize(self.loss_d,
+                                                                                     var_list=self.vars_d)
+                g_optim = tf.train.AdamOptimizer(config.wgangp_lr,
+                                                 beta1=config.wgangp_beta1,
+                                                 beta2=config.wgangp_beta2).minimize(self.loss_g,
+                                                                                     var_list=self.vars_g)
         else:
             # Define an optimizer
-            d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_d,
+            d_optim = tf.train.AdamOptimizer(config.dcgan_lr, beta1=config.dcgan_beta1).minimize(self.loss_d,
                                                                                                 var_list=self.vars_d)
-            g_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1).minimize(self.loss_g,
+            g_optim = tf.train.AdamOptimizer(config.dcgan_lr, beta1=config.dcgan_beta1).minimize(self.loss_g,
                                                                                                 var_list=self.vars_g)
 
         # Generate the summaries
@@ -355,91 +421,86 @@ class DoomGAN(object):
         # Load the dataset
         dataset_iterator = self.load_dataset()
 
-        i_epoch = 1
+        # Define how many times g and d has to be trained
+        if self.config.use_wgan:
+            d_iters = 5
+        else:
+            d_iters = 1
+
         for i_epoch in range(1, config.epoch + 1):
             self.session.run([dataset_iterator.initializer])
             next_batch = dataset_iterator.get_next()
             batch_index = 0
-            while True:
-                # Train Step
-                try:
+            # Rotate the whole dataset for each epoch
+            for rotation in [0, 90, 180, 270]:
+                while True:
+                    # Train Step
+                    try:
 
-                    train_batch = self.session.run(next_batch)  # Batch of true samples
-                    z_batch = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(
-                        np.float32)  # Batch of noise
-                    x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
-                    y_batch = np.stack([train_batch[f] for f in self.features], axis=-1) if self.use_features else None
-
-                    # TODO: D should be trained several times for each G update, check the WGAN paper
-                    # TODO: Consider shuffling the dataset at each epoch
-                    for rotation in [0, 90, 180, 270]:
-                        if self.use_wgan:
-                            for i in range(5):
-                                # D update
-                                d, sum_d = self.session.run([d_optim, summary_d],
-                                                            feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch, self.x_rotation:math.radians(rotation)})
-                            _, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.y: y_batch, self.z: z_batch})
-                        else:
-                            # D update
+                        # Train D
+                        for i in range(d_iters):
+                            # Get a new batch
+                            train_batch = self.session.run(next_batch)  # Batch of true samples
+                            z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
+                                np.float32)  # Batch of noise
+                            x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
+                            y_batch = np.stack([train_batch[f] for f in self.features],
+                                               axis=-1) if self.use_features else None
+                            #Train D
                             d, sum_d = self.session.run([d_optim, summary_d],
-                                                        feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch, self.x_rotation:math.radians(rotation)})
+                                                        feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
+                                                                   self.x_rotation: [math.radians(rotation)]})
+                            # Train G (one time every d_iters)
+                            if i == 0:
+                                _, sum_g = self.session.run([g_optim, summary_g],
+                                                            feed_dict={self.y: y_batch, self.z: z_batch})
 
-                            # G Update (twice as stated in DCGAN comment, it makes sure d_loss does not go to zero
-                            self.session.run([g_optim], feed_dict={self.z: z_batch})
-                            _, sum_g = self.session.run([g_optim, summary_g], feed_dict={self.y: y_batch, self.z: z_batch})
 
-                    # Write the summaries and increment the counter
-                    writer.add_summary(sum_d, global_step=self.checkpoint_counter)
-                    writer.add_summary(sum_g, global_step=self.checkpoint_counter)
+                        # Write the summaries and increment the counter
+                        writer.add_summary(sum_d, global_step=self.checkpoint_counter)
+                        writer.add_summary(sum_g, global_step=self.checkpoint_counter)
 
-                    batch_index += 1
-                    self.checkpoint_counter += 1
-                    print("Batch {}, Epoch {} of {}".format(batch_index, i_epoch, config.epoch))
+                        batch_index += d_iters
+                        self.checkpoint_counter += 1
+                        print("Iteration: {}".format(self.checkpoint_counter))
 
-                    # Check if the net should be saved
-                    if np.mod(self.checkpoint_counter, self.save_net_every) == 5:
-                        self.save(config.checkpoint_dir)
+                        # Check if the net should be saved
+                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 5:
+                            self.save(config.checkpoint_dir)
+                            if self.freeze_samples:
+                                # Pick one x, y and z sample and keep it always the same for comparison
+                                from copy import copy
+                                self.x_sample = copy(x_batch)
+                                self.y_sample = copy(y_batch)
+                                # Sample the network
+                                # Sample in a sphere
+                                np.random.seed(42)
+                                self.z_sample = np.random.normal(0, 1, [config.batch_size, self.config.z_dim]).astype(np.float32)
+                                self.freeze_samples = False
+                            samples = self.session.run([summary_samples],
+                                                       feed_dict={self.x: self.x_sample, self.z: self.z_sample,
+                                                                  self.y: self.y_sample})
 
-                        if self.freeze_samples:
-                            # Pick one x, y and z sample and keep it always the same for comparison
-                            from copy import copy
-                            self.x_sample = copy(x_batch)
-                            self.y_sample = copy(y_batch)
-                            # Sample the network
-                            # Sample in a sphere
-                            np.random.seed(42)
-                            self.z_sample = np.random.normal(0, 1, [config.batch_size, self.z_dim]).astype(np.float32)
-                            self.freeze_samples = False
-                        samples = self.session.run([summary_samples],
-                                                   feed_dict={self.x: self.x_sample, self.z: self.z_sample,
-                                                              self.y: self.y_sample})
+                            writer.add_summary(samples[0], global_step=self.checkpoint_counter)
 
-                        writer.add_summary(samples[0], global_step=self.checkpoint_counter)
+                    except tf.errors.OutOfRangeError:
+                        # We reached the end of the dataset, break the loop and start a new epoch
+                        i_epoch += 1
+                        break
 
-                except tf.errors.OutOfRangeError:
-                    # We reached the end of the dataset, break the loop and start a new epoch
-                    i_epoch += 1
-                    break
-
-    def __init__(self, session, config, features, maps):
+    def __init__(self, session, config, features, maps, d_layers, g_layers):
         self.session = session
-        self.dataset_path = config.dataset_path
+        self.d_layers = d_layers
+        self.g_layers = g_layers
+        self.config = config
         self.output_size = [config.height, config.width]
-        self.z_dim = config.z_dim
-        self.batch_size = config.batch_size
-        self.summary_folder = config.summary_folder
-        self.checkpoint_dir = config.checkpoint_dir
-        self.save_net_every = config.save_net_every
         self.features = features
         self.use_features = len(self.features) > 0
-        self.use_sigmoid = config.use_sigmoid
-        self.use_wgan = config.use_wgan
         self.maps = maps
         self.output_channels = len(maps)
         self.freeze_samples = True  # Used for freezing an x sample for net comparison
         self.build()
 
-        pass
 
     def sample(self, seeds):
         def generate_sample_summary(name):
@@ -464,13 +525,13 @@ class DoomGAN(object):
 
         # Load and initialize the network
         self.initialize_and_restore()
-        writer = tf.summary.FileWriter(self.summary_folder)
+        writer = tf.summary.FileWriter(self.config.summary_folder)
 
         for seed in seeds:
             summaries = generate_sample_summary('seed_{}'.format(seed))
             np.random.seed(seed)
-            z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
-            meta = DoomDataset().read_meta(self.dataset_path)
+            z_sample = np.random.normal(0, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32)
+            meta = DoomDataset().read_meta(self.config.dataset_path)
             y_sample = [meta['features'][f]['avg'] for f in self.features] * np.ones((32, len(features)))
             sample = self.session.run([summaries], feed_dict={self.z: z_sample, self.y: y_sample})
             writer.add_summary(sample[0], global_step=0)
@@ -480,12 +541,12 @@ class DoomGAN(object):
         self.initialize_and_restore()
         if seed is not None:
             np.random.seed(seed)
-        z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32) if z is None else z
+        z_sample = np.random.normal(0, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32) if z is None else z
         samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
         samples = DataTransform.postprocess_output(samples[0], self.maps)
 
     def generate_levels_feature_interpolation(self, feature_to_interpolate, seed=None):
-
+        # TODO: Implement this or remove it
         def slerp(val, low, high):
             """Spherical interpolation. val has a range of 0 to 1.
             Code from: https://github.com/dribnet/plat
@@ -507,22 +568,22 @@ class DoomGAN(object):
         # Fix a sample so the change gets more visible
         if seed is not None:
             np.random.seed(seed)
-        z_sample = np.random.normal(0, 1, [self.z_dim]).astype(np.float32)
+        z_sample = np.random.normal(0, 1, [self.config.z_dim]).astype(np.float32)
         # Replicate the same noise vector for each sample (each level should be the same except for the controlled feature)
-        z_sample = np.tile(z_sample, (self.batch_size, 1))
-        feat_factors = np.ones(shape=(self.batch_size, len(self.features)))*-1
+        z_sample = np.tile(z_sample, (self.config.batch_size, 1))
+        feat_factors = np.ones(shape=(self.config.batch_size, len(self.features)))*-1
         # building a matrix factors of size (batch_size, len(features)).
         # The factors will all be -1 (so we get the mean value for every feature) except the column
         # corresponding to the feature that has to be interpolated, which will range from min to max.
         for f, fname in enumerate(self.features):
             if fname == feature_to_interpolate:
                 # TODO: Still using linear interpolation, spherical may lead to better results (between which starting points?)
-                feat_factors[:, f] = np.linspace(0,1,num=self.batch_size)
-        y = DoomDataset().get_feature_sample(self.dataset_path, feat_factors, features=self.features, extremes='minmax')
+                feat_factors[:, f] = np.linspace(0,1,num=self.config.batch_size)
+        y = DoomDataset().get_feature_sample(self.config.dataset_path, feat_factors, features=self.features, extremes='minmax')
         # Constructing a y vector with a different y for each sample in the batch
         samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
         samples = DataTransform.postprocess_output(samples[0], self.maps, folder=None)
-        DataTransform.build_levels(samples, self.maps, self.batch_size, call_node_builder=False,
+        DataTransform.build_levels(samples, self.maps, self.config.batch_size, call_node_builder=False,
                                    level_images_path='./interpolated_features/{}/'.format(feature_to_interpolate))
 
 
@@ -546,7 +607,7 @@ class DoomGAN(object):
             for j in range(n_samples_for_feature):
                 print("Sampling with feature coefficient {}={}  ({}/{})...".format(fname, factor_changes[j], j+1, n_samples_for_feature))
                 feat_factors[f] = factor_changes[j]
-                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, np.tile(feat_factors, (self.batch_size, 1)), features)
+                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, np.tile(feat_factors, (self.config.batch_size, 1)), features)
                 # Now building R by launching the newtork
 
                 retry_counter = 3
@@ -555,10 +616,10 @@ class DoomGAN(object):
                     try:
                             # Using a fixed seed each time
                             np.random.seed(42)
-                            z_sample = np.random.normal(0, 1, [self.batch_size, self.z_dim]).astype(np.float32)
+                            z_sample = np.random.normal(0, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32)
                             net_output = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})[0]
                             output_features = DataTransform.extract_features_from_net_output(net_output, self.features, self.maps,
-                                                                                     self.batch_size)
+                                                                                     self.config.batch_size)
                     except:
                         # TODO: if there's an exception it means that the output is too noisy to be converted to a level. We might have chosen a "bad" input noise or y.
                         if retry_counter <= 0:
@@ -575,6 +636,7 @@ class DoomGAN(object):
         for f, fname in enumerate(self.features):
             print("{}: \t {}".format(fname, corr[f]))
 
+
 def clean_tensorboard_cache(tensorBoardPath):
     # Removing previous tensorboard session
     import shutil
@@ -584,9 +646,23 @@ def clean_tensorboard_cache(tensorBoardPath):
 
 if __name__ == '__main__':
     flags = tf.app.flags
-    flags.DEFINE_integer("epoch", 25, "Epoch to train [25]")
-    flags.DEFINE_float("learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
-    flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
+    flags.DEFINE_integer("epoch", 400, "Epoch to train [400]")
+    # HYPERPARAMETERS
+    # DCGAN
+    flags.DEFINE_float("dcgan_lr", 2e-4, "Learning rate for DCGAN adam [2e-4]")
+    flags.DEFINE_float("dcgan_beta1", 0.5, "Momentum term of adam [0.5]")
+    # WGAN
+    flags.DEFINE_float("wgan_lr", 5e-5, "Learning rate for WGAN RMSProp [5e-5]")
+    # WGAN-GP
+    flags.DEFINE_float("wgangp_lr", 2e-4, "Learning rate for WGAN-GP adam [2e-4]")
+    flags.DEFINE_float("wgangp_beta1", 0., "beta1 for WGAN-GP adam [0.]")
+    flags.DEFINE_float("wgangp_beta2", 0.9, "beta2 for WGAN-GP adam [0.9]")
+
+
+
+    flags.DEFINE_float("lr_wgangp", 5e-5, "Learning rate of for WGAN RMSProp [5e-5]")
+
+    flags.DEFINE_float("beta1_wgan", 0, "Momentum term of adam [0.5]")
     flags.DEFINE_string("dataset_path", None, "Path to the .TfRecords file containing the dataset")
     flags.DEFINE_integer("height", 128, "Target sample height")
     flags.DEFINE_integer("width", 128, "Target sample width")
@@ -600,6 +676,8 @@ if __name__ == '__main__':
     flags.DEFINE_boolean("use_sigmoid", True,
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
+    flags.DEFINE_boolean("use_gradient_penalty", True, "Whether to use the gradient penalty from WGAN_GP architecture or the WGAN weight clipping")
+    flags.DEFINE_integer("lambda_gradient_penalty", 10, "Gradient penalty lambda hyperparameter")
     flags.DEFINE_string("checkpoint_dir", "./checkpoint/", "Directory name to save the checkpoints [checkpoint]")
     flags.DEFINE_string("summary_folder", "/tmp/tflow/",
                         "Directory name to save the temporary files for visualization [/tmp/tflow/]")
@@ -614,9 +692,6 @@ if __name__ == '__main__':
                    'sector_area_avg',
                    'sector_aspect_ratio_avg',
                    'lines_per_sector_avg',
-                   'floor_height_avg',
-                   'floor_height_max',
-                   'floor_height_min',
                    'walkable_percentage',
                    'level_extent',
                    'level_solidity',
@@ -628,13 +703,30 @@ if __name__ == '__main__':
                    'monsters_per_walkable_area',
                    'obstacles_per_walkable_area',
                    'decorations_per_walkable_area']
-        maps = ['heightmap', 'wallmap', 'thingsmap', 'triggermap']
+        maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap', 'triggermap']
+
+        # Generator network
+        g_layers = [
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 2, 'remove_artifacts': False},
+        ]
+
+        d_layers = [
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 2, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
+            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
+        ]
+
+
 
         gan = DoomGAN(session=s,
-                      config=FLAGS, features=features, maps=maps
+                      config=FLAGS, features=features, maps=maps,
+                      g_layers = g_layers, d_layers = d_layers
                       )
         show_all_variables()
-
         if FLAGS.train:
             gan.train(FLAGS)
         else:
@@ -647,7 +739,7 @@ if __name__ == '__main__':
                      1.38456211e-03,   6.92281057e-04,   3.46140529e-04,   1.38456211e-03,
                      6.92281057e-04,   3.11526470e-03,   1.73070270e-03,   0.00000000e+00]
                 y = np.tile (np.asarray(y), (FLAGS.batch_size, 1))
-                gan.generate_levels(y, seed=3337747405)
+                gan.generate_levels(y, seed=567465416)
             if FLAGS.interpolate:
                 for feat in features:
                     gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)

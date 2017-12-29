@@ -59,6 +59,14 @@ class batch_norm(object):
                       is_training=train,
                       scope=self.name)
 
+class layer_norm(object):
+  def __init__(self, name="layer_norm"):
+    with tf.variable_scope(name):
+      self.name = name
+
+  def __call__(self, x, train=True):
+    return tf.contrib.layers.layer_norm(x, scope=self.name)
+
 
 def conv2d(input_, output_dim,
            k_h=5, k_w=5, stride_h=2, stride_w=2, stddev=0.02,

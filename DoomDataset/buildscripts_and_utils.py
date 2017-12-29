@@ -4,7 +4,7 @@ dd = DoomDataset.DoomDataset()
 
 
 constraints = [
-    lambda x: x['floors'] == 1, lambda x: x['width'] <= 32*128,  lambda x: x['height'] <= 32*128,
+    lambda x: x['width'] <= 32*128,  lambda x: x['height'] <= 32*128,
     lambda x: abs(x['floor_height_avg']) <= 352,
     lambda x: abs(x['lines_per_sector_avg']) <= 200,
     lambda x: abs(x['floor_height_max']) <= 2000,
@@ -34,6 +34,6 @@ features_to_use = ['height', 'width',
 #dd.plot_joint_feature_distributions('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json', features_to_use,
 #                                    constraints_lambdas=constraints).savefig('./../dataset/statistics/128_one_floor')
 dd.to_TFRecords(json_db='/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json',
-                output_path='/run/media/edoardo/BACKUP/Datasets/DoomDataset/128-one-floor-metatest.TFRecords',
+                output_path='/run/media/edoardo/BACKUP/Datasets/DoomDataset/128-all-floors.TFRecords',
                 target_size=(128,128),
                 constraints_lambdas=constraints)

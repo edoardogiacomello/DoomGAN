@@ -62,10 +62,10 @@ class Linedefs(list):
         """
         found_left = [self.index(l) for l in self if l['from']==vertex_to and l['to']==vertex_from]
         if found_left:
-            self[found_left[0]]['flags']=flags
-            self[found_left[0]]['types']=types
-            self[found_left[0]]['trigger']=trigger
-            self[found_left[0]]['left_sidedef']=right_sidedef_index
+            self[found_left[0]]['flags'] = flags
+            self[found_left[0]]['types'] = types
+            self[found_left[0]]['trigger'] = trigger
+            self[found_left[0]]['left_sidedef'] = right_sidedef_index
         else:
             line = {'from': vertex_from, 'to': vertex_to, 'flags': flags, 'types': types, 'trigger': trigger,
                     'right_sidedef': right_sidedef_index, 'left_sidedef': left_sidedef_index}
