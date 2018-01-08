@@ -1,0 +1,69 @@
+%% This style file was created by Luca Fossati
+
+%% This style file is called by
+%%    \usepackage{phdtitle}
+
+\ProvidesPackage{phdtitle}[2009/05/05 v1.0 PhD Thesis Title]
+\RequirePackage{graphicx}
+
+% Macros for setting the advisor, etc of the phd
+%\def\@advisor{\space}
+%\def\@tutor{\space}
+%\def\@supervisor{\space}
+\newcommand{\department}[1]{\def\@department{#1}}
+\newcommand{\phdprogram}[1]{\def\@phdprogram{#1}}
+\newcommand{\advisor}[1]{\def\@advisor{#1}}
+\newcommand{\tutor}[1]{\def\@tutor{#1}}
+\newcommand{\supervisor}[1]{\def\@supervisor{#1}}
+\newcommand{\titleimage}[1]{\def\@titleimage{#1}}
+\newcommand{\phdcycle}[1]{\def\@phdcycle{#1}}
+
+\renewcommand{\maketitle}{
+\thispagestyle{empty}
+\begin{center}
+\bfseries
+\vspace*{-2.5cm}
+  \begin{figure}[htbp]
+    \begin{center}
+       \includegraphics[width=26mm]{\@titleimage}
+    \end{center}
+  \end{figure}
+%\vspace*{-0.2cm}
+  \large{\sc Politecnico di Milano\\%}\\
+  %\normalsize
+  \@department\\
+  %\large{\sc 
+  \@phdprogram}\\
+  \normalsize
+\vspace*{0.5cm}
+\hrule
+\vspace*{4cm}
+ \LARGE\sc
+  \@title\\
+\end{center}
+\vspace*{3cm}
+\large
+\begin{flushright}
+  \normalsize Doctoral Dissertation of:\\
+  \large \textbf{\@author}\\
+\end{flushright}
+\vspace*{1cm}
+\begin{flushleft}
+  \normalsize Supervisor:\\
+ \large \textbf{Prof. \@supervisor}\\
+\end{flushleft}
+\begin{flushleft}
+  \normalsize Tutor:\\
+  \large \textbf{Prof. \@tutor}\\
+ \end{flushleft}
+\begin{flushleft}
+  \normalsize The Chair of the Doctoral Program:\\
+  \large \textbf{Prof. \@supervisor}\\
+ \end{flushleft}
+ \vfill
+\begin{center}
+\@phdcycle
+\end{center}
+\cleardoublepage
+\setcounter{page}{1}
+}

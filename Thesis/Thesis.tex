@@ -1,0 +1,79 @@
+% For printing in a4
+%\documentclass[a4,10pt,twoside,openright,italian,english]{book}% twoside!
+
+% For printing with the A5 format
+\documentclass[10pt,twoside,openright,english,italian]{report}% twoside!
+
+% Set paper size
+\usepackage[twoside=true]{geometry}
+
+%For printing with the weird format
+\geometry{
+	paperwidth=17cm,
+	paperheight=24cm,
+	margin=2cm,
+	top=2.3cm,
+	bindingoffset=0.4cm
+}
+% For printing in a4
+%\geometry{a4paper,
+%  margin=3cm,
+%  top=3.8cm,
+%  bindingoffset=0.4cm
+%}
+
+%Uncomment this for final prints: this just enables printing on a4 paper
+\usepackage[cam,center,a4,pdflatex,axes]{crop}
+% See https://en.wikibooks.org/wiki/LaTeX/Internationalization
+\usepackage[english, italian]{babel}
+
+
+
+\title{First Person Shooter level generation using Generative Adversarial Networks}
+\author{Edoardo Giacomello}
+
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true, %set true if you want colored links
+	linktoc=all,     %set to all if you want both sections and subsections linked
+	linkcolor=black,  %choose some color if you want links to stand out
+}
+
+\begin{document}
+	\selectlanguage{english}
+	
+	\maketitle
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{abstract}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{dedication}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{acknowledgments}
+	\thispagestyle{empty} \normalfont \cleardoublepage	
+	\include{Content}
+	\thispagestyle{empty} \normalfont \cleardoublepage	
+	\include{introduction}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{LearnBasedlevelgeneration}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{DatasetandDataRepresentation}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{SystemOverview}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{SystemArchitecture}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{ExperimentDesignandResults}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{ResultsEvaluationandConclusions}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{FutureWork}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{Appendix}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{Glossary}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	\include{Bibliography}
+	\thispagestyle{empty} \normalfont \cleardoublepage
+	
+	
+\end{document}

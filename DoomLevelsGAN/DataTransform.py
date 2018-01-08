@@ -74,7 +74,7 @@ def postprocess_output(g, maps, folder = './generated_samples/'):
                 feature_map = ((feature_map-feature_map.min())*255.0)/(feature_map.max()-feature_map.min())
             feature_map = np.around(feature_map)
             if mapname == 'floormap':
-                feature_map = (feature_map > 0)*255
+                feature_map = (feature_map > 0.5)*255
             if mapname == 'wallmap':
                 feature_map = (feature_map > 255/2)*255
             # Saving
@@ -83,7 +83,7 @@ def postprocess_output(g, maps, folder = './generated_samples/'):
                 skimage.io.imsave(folder + 'level{}_map_{}.png'.format(s_id, mapname), feature_map.astype(np.uint))
     return processed_output
 
-def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = True, level_images_path='./generated_levels_images/'):
+def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = True, level_images_path='./generated_samples/'):
     """
     Post-processes a rescaled network output and saves the corresponding wad file.
     :param rescaled_g: Rescaled network output, in the same scale of the dataset
@@ -96,17 +96,19 @@ def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', cal
     heightmap = None
     wallmap = None
     thingsmap = None
+    floormap = None
     rescaled_g = postprocess_output(rescaled_g, maps, folder=None)
     for index in range(batch_size):
         for m, map in enumerate(maps):
             heightmap = rescaled_g[index,:,:,m] if map == 'heightmap' else heightmap
             wallmap = rescaled_g[index,:,:,m] if map == 'wallmap' else wallmap
             thingsmap = rescaled_g[index,:,:,m] if map == 'thingsmap' else thingsmap
+            floormap = rescaled_g[index,:,:,m] if map == 'floormap' else floormap
         writer.add_level(name='MAP{i:02d}'.format(i=index + 1))
-        writer.from_images(heightmap, wallmap, thingsmap=thingsmap, debug=False, save_debug=level_images_path, level_coord_scale=32)
+        writer.from_images(heightmap, floormap=floormap, wallmap=wallmap, thingsmap=thingsmap, save_debug=level_images_path, level_coord_scale=32)
     import os
     os.makedirs(tmp_folder, exist_ok=True)
-    wad_path = tmp_folder+'test.wad'
+    wad_path = tmp_folder+'generated_wad.wad'
     writer.save(wad_path, call_node_builder=call_node_builder)
     return wad_path
 

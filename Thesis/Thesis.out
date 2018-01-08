@@ -1,0 +1,52 @@
+\BOOKMARK [0][-]{chapter*.1}{Abstract}{}% 1
+\BOOKMARK [0][-]{chapter*.2}{Estratto in lingua Italiana}{}% 2
+\BOOKMARK [0][-]{chapter*.3}{Acknowledgments}{}% 3
+\BOOKMARK [0][-]{chapter.1}{Introduction}{}% 4
+\BOOKMARK [1][-]{section.1.1}{Background: Level Design}{chapter.1}% 5
+\BOOKMARK [1][-]{section.1.2}{State of the Art}{chapter.1}% 6
+\BOOKMARK [2][-]{subsection.1.2.1}{Procedurally Generated Content}{section.1.2}% 7
+\BOOKMARK [2][-]{subsection.1.2.2}{Procedural Content Generation via Machine Learning \(PCGML\)}{section.1.2}% 8
+\BOOKMARK [1][-]{section.1.3}{Scope}{chapter.1}% 9
+\BOOKMARK [1][-]{section.1.4}{Thesis Structure}{chapter.1}% 10
+\BOOKMARK [1][-]{section.1.5}{Summary}{chapter.1}% 11
+\BOOKMARK [0][-]{chapter.2}{Toward learn-based level generation}{}% 12
+\BOOKMARK [1][-]{section.2.1}{Generative Adversarial Networks}{chapter.2}% 13
+\BOOKMARK [2][-]{subsection.2.1.1}{Overview}{section.2.1}% 14
+\BOOKMARK [2][-]{subsection.2.1.2}{Deep Convolutional GAN}{section.2.1}% 15
+\BOOKMARK [2][-]{subsection.2.1.3}{Wesserstein GAN}{section.2.1}% 16
+\BOOKMARK [2][-]{subsection.2.1.4}{Wesserstein GAN with Gradient Penalty}{section.2.1}% 17
+\BOOKMARK [2][-]{subsection.2.1.5}{Recent results}{section.2.1}% 18
+\BOOKMARK [1][-]{section.2.2}{Game of choice: DOOM}{chapter.2}% 19
+\BOOKMARK [2][-]{subsection.2.2.1}{Description}{section.2.2}% 20
+\BOOKMARK [2][-]{subsection.2.2.2}{Motivation}{section.2.2}% 21
+\BOOKMARK [2][-]{subsection.2.2.3}{Level Data Format}{section.2.2}% 22
+\BOOKMARK [1][-]{section.2.3}{Summary}{chapter.2}% 23
+\BOOKMARK [0][-]{chapter.3}{Dataset and Data Representation}{}% 24
+\BOOKMARK [1][-]{section.3.1}{Data Sources}{chapter.3}% 25
+\BOOKMARK [1][-]{section.3.2}{Native Data Format: WAD Files}{chapter.3}% 26
+\BOOKMARK [1][-]{section.3.3}{Feature Extraction}{chapter.3}% 27
+\BOOKMARK [1][-]{section.3.4}{Data Encoding}{chapter.3}% 28
+\BOOKMARK [1][-]{section.3.5}{Input and Output Pipelines}{chapter.3}% 29
+\BOOKMARK [1][-]{section.3.6}{Summary}{chapter.3}% 30
+\BOOKMARK [0][-]{chapter.4}{System Design and Overview}{}% 31
+\BOOKMARK [1][-]{section.4.1}{System Overview}{chapter.4}% 32
+\BOOKMARK [0][-]{chapter.5}{System Architecture}{}% 33
+\BOOKMARK [1][-]{section.5.1}{Component View}{chapter.5}% 34
+\BOOKMARK [1][-]{section.5.2}{Neural Network Architecture}{chapter.5}% 35
+\BOOKMARK [0][-]{chapter.6}{Experiment Design and Results}{}% 36
+\BOOKMARK [1][-]{section.6.1}{Parameter Tweaking and Training Phase}{chapter.6}% 37
+\BOOKMARK [2][-]{subsection.6.1.1}{Techniques and "GAN Tricks" used}{section.6.1}% 38
+\BOOKMARK [2][-]{subsection.6.1.2}{Resulting Model}{section.6.1}% 39
+\BOOKMARK [1][-]{section.6.2}{Sampling the network}{chapter.6}% 40
+\BOOKMARK [1][-]{section.6.3}{Generated Samples}{chapter.6}% 41
+\BOOKMARK [1][-]{section.6.4}{In-Game Demonstration}{chapter.6}% 42
+\BOOKMARK [1][-]{section.6.5}{Summary}{chapter.6}% 43
+\BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 44
+\BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 45
+\BOOKMARK [2][-]{subsection.7.1.1}{Evaluation metric}{section.7.1}% 46
+\BOOKMARK [2][-]{subsection.7.1.2}{Samples Evaluation}{section.7.1}% 47
+\BOOKMARK [2][-]{subsection.7.1.3}{Loss of accuracy}{section.7.1}% 48
+\BOOKMARK [1][-]{section.7.2}{Summary}{chapter.7}% 49
+\BOOKMARK [0][-]{chapter.8}{Future Work}{}% 50
+\BOOKMARK [1][-]{section.8.1}{Open Problems}{chapter.8}% 51
+\BOOKMARK [1][-]{section.8.2}{Possible Applications and future develops}{chapter.8}% 52

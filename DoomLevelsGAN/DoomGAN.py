@@ -7,6 +7,8 @@ import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
 from DoomLevelsGAN.NNHelpers import *
 import DoomLevelsGAN.inception.inception_score as inception
+from scipy.spatial import cKDTree
+
 
 
 class DoomGAN(object):
@@ -297,11 +299,12 @@ class DoomGAN(object):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def load_dataset(self):
+    def load_dataset(self, batch_size=None):
         """
         Loads a TFRecord dataset and creates batches.
         :return: An initializable Iterator for the loaded dataset
         """
+        batch_size = batch_size or self.config.batch_size
         self.dataset = DoomDataset().read_from_TFRecords(self.config.dataset_path, target_size=self.output_size)
         # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
         # for discarding the last incomplete batch)
@@ -319,15 +322,15 @@ class DoomGAN(object):
                         # We reached the end of the dataset, break the loop and start a new epoch
                         self.dataset_size = n_samples
                         break
-        remainder = np.remainder(self.dataset_size, self.config.batch_size)
+        remainder = np.remainder(self.dataset_size, batch_size)
         print(
             "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, self.dataset_size,
-                                                                                           self.config.batch_size))
+                                                                                           batch_size))
 
         self.dataset = self.dataset.shuffle(buffer_size=self.dataset_size*100)
         self.dataset = self.dataset.skip(remainder)
         self.dataset = self.dataset.shuffle(buffer_size=(self.dataset_size-remainder)*100)
-        self.dataset = self.dataset.batch(self.config.batch_size)
+        self.dataset = self.dataset.batch(batch_size)
 
         iterator = self.dataset.make_initializable_iterator()
 
@@ -350,35 +353,7 @@ class DoomGAN(object):
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
 
-    def inception_score(self):
-        scores = {mapname: list() for mapname in self.maps}
-        # Load the dataset
-        dataset_iterator = self.load_dataset()
 
-        self.session.run([dataset_iterator.initializer])
-        next_batch = dataset_iterator.get_next()
-        batch_index = 0
-        while True:
-            # Train Step
-            try:
-
-                train_batch = self.session.run(next_batch)  # Batch of true samples
-                z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32)  # Batch of noise
-                x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
-                y_batch = np.stack([train_batch[f] for f in self.features], axis=-1) if self.use_features else None
-                # Transpose from (batch, width, height, map) to (map, batch, width, height, 1)
-                x_batch = np.expand_dims(x_batch.transpose(-1,0,1,2), axis=-1)
-                # now replicate the last channel to make it rgb (inception works on rgb)
-                x_batch = np.repeat(x_batch, 3, -1)
-                for id, mapname in enumerate(self.maps):
-                    x_map = list(x_batch[id])
-                    scores[mapname] = inception.get_inception_score(x_map)
-
-
-            except tf.errors.OutOfRangeError:
-                # We reached the end of the dataset, break the loop and start a new epoch
-                break
-        print("Done")
 
 
 
@@ -499,51 +474,64 @@ class DoomGAN(object):
         self.maps = maps
         self.output_channels = len(maps)
         self.freeze_samples = True  # Used for freezing an x sample for net comparison
+        self.nearest_features_tree = None
         self.build()
 
+    def sample(self, y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False):
+        """
+        Sample the network with a given generator input. Various options are available.
+        :param y_factors: feature vector of shape (batch, features), each value in {-1; [0,1]} where -1 means
+        "average value for this feature", while [0;1] corresponds to values that go from -std to +std for that feature.
+        :param y_batch: direct batch of feature values to feed to the generator.
+        Either y_factors or y_batch must be different from None.
+        :param seed: Seed for input noise generation. If None the seed is random at each z sampling [None]
+        :param freeze_z: if True use the same input noise z for each generated sample
+        :param postprocess: If true, the generated levels are postprocessed (denoised and eventually rescaled)
+        and returned as they would be passed to the WadEditor.
+        :param save: Has no effect is postprocess is not True. [False]
+                    False: Levels are returned as numpy array and not saved anywhere
+                    'PNG': Network output is saved to the generated_samples directory
+                    'WAD': Levels are converted to .WAD and saved in the generated_samples directory along with a descriptive image of the level
+        :return:
+        """
 
-    def sample(self, seeds):
-        def generate_sample_summary(name):
-            with tf.variable_scope(name) as scope:
-                # g_encoding_error = self.encoding_error(self.G)
-                # g_denoise = d_utils.tf_from_grayscale_to_tilespace(self.G)
-                # g_rgb = d_utils.tf_from_grayscale_to_rgb(g_denoise)
-                d_layers_to_show = self.layers_D_fake[1:-1]
-                sample_index = 5
+        assert (y_factors is not None) ^ (y_batch is not None)
+        if y_factors is not None:
+            # Build a y vector from the y_factors by finding the nearest neighbors in the dataset
+            y_feature_space = DoomDataset().get_feature_sample(self.config.dataset_path, factors, features, 'std')
+            if self.nearest_features_tree is None:
+                self.initialize_and_restore()
+                loaded_features = DoomDataset().load_features(self.config.dataset_path, self.features, self.output_size)
+                self.nearest_features_tree = cKDTree(loaded_features)
 
-                # s_g_encoding_error = visualize_samples(name+'_enc_error', g_encoding_error)
-                # s_g_denoise = visualize_samples(name+'_denoised',g_denoise)
-                # s_g_rgb = visualize_samples(name+'_rgb', g_rgb)
-
-                s_g_samples = visualize_samples(name + '_samples', self.G)
-                s_g_chosen_input = visualize_samples(name + 'chosen_input',
-                                                     tf.slice(self.G, begin=[sample_index, 0, 0, 0],
-                                                              size=[1, -1, -1, -1]))
-                s_d_activations = visualize_activations(name + '_d_act_layer_', d_layers_to_show, sample_index)
-                merged_summaries = tf.summary.merge([s_g_chosen_input, s_d_activations, s_g_samples])
-            return merged_summaries
-
-        # Load and initialize the network
-        self.initialize_and_restore()
-        writer = tf.summary.FileWriter(self.config.summary_folder)
-
-        for seed in seeds:
-            summaries = generate_sample_summary('seed_{}'.format(seed))
-            np.random.seed(seed)
-            z_sample = np.random.normal(0, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32)
-            meta = DoomDataset().read_meta(self.config.dataset_path)
-            y_sample = [meta['features'][f]['avg'] for f in self.features] * np.ones((32, len(features)))
-            sample = self.session.run([summaries], feed_dict={self.z: z_sample, self.y: y_sample})
-            writer.add_summary(sample[0], global_step=0)
-
-    def generate_levels(self, y, seed=None, z=None):
-        # Load and initialize the network
-        self.initialize_and_restore()
+            y = np.zeros_like(y_feature_space)
+            for s in range(self.config.batch_size):
+                distance, nearest_index = self.nearest_features_tree.query(y_feature_space[s])
+                y[s, :] = loaded_features[nearest_index]
+        if y_batch:
+            # the y_batch is provided externally
+            y = y_batch
         if seed is not None:
             np.random.seed(seed)
-        z_sample = np.random.normal(0, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32) if z is None else z
-        samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
-        samples = DataTransform.postprocess_output(samples[0], self.maps)
+        if freeze_z:
+            z_sample = np.random.uniform(-1, 1, [1, self.config.z_dim]).astype(
+            np.float32)
+            z_batch = np.repeat(z_sample, self.config.batch_size, axis=0)
+        else:
+            z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
+                np.float32)
+        result = self.session.run([self.G_rescaled],
+                         feed_dict={self.z: z_batch, self.y: y})[0]
+        if postprocess:
+            if save is False:
+                return DataTransform.postprocess_output(result, self.maps, folder=None)
+            elif save == 'PNG':
+                return DataTransform.postprocess_output(result, self.maps)
+            elif save == 'WAD':
+                return DataTransform.build_levels(result, self.maps, self.config.batch_size)
+        return result
+
+
 
     def generate_levels_feature_interpolation(self, feature_to_interpolate, seed=None):
         # TODO: Implement this or remove it
@@ -635,6 +623,112 @@ class DoomGAN(object):
             corr[f] = np.corrcoef(Y_f[:, f], R_f[:, f])[0,1]
         for f, fname in enumerate(self.features):
             print("{}: \t {}".format(fname, corr[f]))
+
+    def inception_score(self):
+        # TODO: Inception score seems to be not so meaningful in this case
+        scores = {mapname: list() for mapname in self.maps}
+        # Load the dataset
+        dataset_iterator = self.load_dataset()
+
+        self.session.run([dataset_iterator.initializer])
+        next_batch = dataset_iterator.get_next()
+        batch_index = 0
+        while True:
+            # Train Step
+            try:
+
+                train_batch = self.session.run(next_batch)  # Batch of true samples
+                z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
+                    np.float32)  # Batch of noise
+                x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
+                y_batch = np.stack([train_batch[f] for f in self.features], axis=-1) if self.use_features else None
+                # Transpose from (batch, width, height, map) to (map, batch, width, height, 1)
+                x_batch = np.expand_dims(x_batch.transpose(-1, 0, 1, 2), axis=-1)
+                # now replicate the last channel to make it rgb (inception works on rgb)
+                x_batch = np.repeat(x_batch, 3, -1)
+                for id, mapname in enumerate(self.maps):
+                    x_map = list(x_batch[id])
+                    scores[mapname] = inception.get_inception_score(x_map)
+
+
+            except tf.errors.OutOfRangeError:
+                # We reached the end of the dataset, break the loop and start a new epoch
+                break
+        print("Done")
+
+    def nearest_neighbor_score(self, calc_entropy=False):
+        # TODO: This should be done on an held-out set
+        import sklearn.model_selection
+        from sklearn.neighbors import KNeighborsClassifier
+        # Load and initialize the network
+        self.initialize_and_restore()
+        # Go through a full epoch to load all the data and generate relative samples
+
+        # Load the dataset
+        dataset_iterator = self.load_dataset()
+
+        samples = {'x': list(), 'y':list(), 'g':list()}
+
+        self.session.run([dataset_iterator.initializer])
+        next_batch = dataset_iterator.get_next()
+        x_incep = list()
+        g_incep = list()
+        entr = {m: {'x':list(), 'g':list()} for m in self.maps}
+        while True:
+            try:
+                # Get a new batch
+                train_batch = self.session.run(next_batch)  # Batch of true samples
+                x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
+                y_batch = np.stack([train_batch[f] for f in self.features],
+                                   axis=-1)
+                # Normalizing the x_batch according to DoomGAN
+                x_batch = self.session.run([self.x_norm], feed_dict={self.x: x_batch, self.x_rotation: [0]})[0]
+                g_batch = self.sample(y_batch=y_batch)
+                g_batch = np.around(g_batch).astype(np.uint8)
+                x_batch = np.around(x_batch*255).astype(np.uint8)
+
+
+
+
+
+
+                # Mean Entropy calculation
+                if calc_entropy:
+                    from skimage.filters.rank import entropy
+                    from skimage.morphology import disk
+                    print("Entropy calculation")
+                    for m, mapname in enumerate(self.maps):
+                        for s in range(self.config.batch_size):
+                            x_entropy = np.mean(entropy(x_batch[s,:,:,m], disk(2)))
+                            g_entropy = np.mean(entropy(g_batch[s,:,:,m], disk(2)))
+                            entr[mapname]['x'].append(x_entropy)
+                            entr[mapname]['g'].append(g_entropy)
+                            print('.', end='')
+
+            except tf.errors.OutOfRangeError:
+                #  reached the end of the dataset
+                break
+        # Mean Entropy calculation
+        if calc_entropy:
+           for m, mapname in enumerate(self.maps):
+               x_entropy = np.mean(entr[mapname]['x'])
+               g_entropy = np.mean(entr[mapname]['g'])
+               print("X mean entropy: {}".format(x_entropy))
+               print("G mean entropy: {}".format(g_entropy))
+
+
+        x_test = np.repeat(np.expand_dims(x_batch[:, :, :, 1], axis=-1), 3, axis=-1)
+        g_test = np.repeat(np.expand_dims(g_batch[:, :, :, 1], axis=-1), 3, axis=-1)
+
+        x_incep.append(list(inception.get_inception_score(list(x_test))))
+        g_incep.append(list(inception.get_inception_score(list(g_test))))
+
+        x_inc_mean = np.mean(np.asarray(x_incep)[:, 0])
+        g_inc_mean = np.mean(np.asarray(g_incep)[:, 0])
+        print("Calculating inception score for x and g sets (floormap only)")
+        print("X: {} \n G: {} \n".format(x_inc_mean, g_inc_mean))
+        # all_samples = np.reshape(all_samples, [all_samples.shape[0], -1])
+        labels = np.concatenate((1*np.ones(len(samples['x'])), -1*np.ones(len(samples['g']))))
 
 
 def clean_tensorboard_cache(tensorBoardPath):
@@ -732,16 +826,14 @@ if __name__ == '__main__':
         else:
             feat_factors = [-1 for f in features]
             if FLAGS.generate:
-                factors = np.tile(-1, (FLAGS.batch_size, len(features)))
-                y=  [2.38500000e+03,   2.59300000e+03,   1.04000000e+02,   3.30504609e+04,
-                     4.05471373e+00,   6.25000000e+00,   3.25000000e+01,   1.92000000e+02,
-                     -7.20000000e+01,   7.77239680e-01,   6.04390264e-01,   7.40881026e-01,
-                     1.38456211e-03,   6.92281057e-04,   3.46140529e-04,   1.38456211e-03,
-                     6.92281057e-04,   3.11526470e-03,   1.73070270e-03,   0.00000000e+00]
-                y = np.tile (np.asarray(y), (FLAGS.batch_size, 1))
-                gan.generate_levels(y, seed=567465416)
+                #factors = np.tile(0.5, (FLAGS.batch_size, len(features)))
+                factors = np.random.normal(0.5, 0.1, size=(FLAGS.batch_size, len(features)))
+                #factors = np.repeat(np.random.uniform(0,1, (1, len(features))), FLAGS.batch_size, axis=0)
+                #y = np.tile (np.asarray(y), (FLAGS.batch_size, 1))
+                gan.sample(y_factors=factors, postprocess=True, save='PNG', seed=654654)
             if FLAGS.interpolate:
                 for feat in features:
                     gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)
             if FLAGS.test:
-                gan.test()
+                # gan.test()
+                gan.nearest_neighbor_score()

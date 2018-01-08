@@ -387,8 +387,27 @@ class DoomDataset():
             stats[f] = meta['features'][fname][stat]
         return stats
 
-    def get_normal_feature_sample(self ):
-        pass
+    def get_feature_neighbors(self, y, tf_dataset_path,  features, sample_size, k=3):
+        feature_vector = self.load_features(tf_dataset_path, features, sample_size)
+        # Building neighbour tree and caching
+
+    def load_features(self, tf_dataset_path, feautre_names, sample_size):
+        """
+        Returns an array containing all the dataset rows corresponding to the given "feature_names".
+        :param tf_dataset_path: path of the .TFRecords file
+        :param feautre_names: array containing the names of the requested features
+        :param sample_size: dimension (in pixel) of the maps, needed for decoding the dataset file
+        :return:
+        """
+        tf_dataset = self.read_from_TFRecords(tf_dataset_path, target_size=sample_size)
+        tf_dataset = tf_dataset.batch(self.get_dataset_count(tf_dataset_path))
+
+        iter = tf_dataset.make_one_shot_iterator()
+        loaded_features = None
+        with tf.Session() as sess:
+            data = sess.run([iter.get_next()])[0]
+        return np.asarray([data[f] for f in feautre_names]).transpose()
+
 
     def generate_stats(self):
         dataset = DoomDataset()

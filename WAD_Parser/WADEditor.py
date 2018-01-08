@@ -281,7 +281,7 @@ class WADWriter(object):
         if isinstance(floormap, str):
             floormap = io.imread(floormap).astype(dtype=np.bool)
         if isinstance(heightmap, str):
-            heightmap = io.imread(heightmap)
+            heightmap = io.imread(heightmap).astype(np.uint8)
         if isinstance(wallmap, str):
             wallmap = io.imread(wallmap).astype(dtype=np.bool)
         if isinstance(thingsmap, str):
@@ -297,9 +297,9 @@ class WADWriter(object):
             heightmap = np.ones_like(floormap) * 128
 
         # Pad with a frame for getting boundaries
-        floormap = np.pad(floormap, pad_width=(1, 1), mode='constant')
-        wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant')
-        heightmap = np.pad(heightmap, pad_width=(1, 1), mode='constant')
+        floormap = np.pad(floormap, pad_width=(1, 1), mode='constant').astype(np.uint8)
+        wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant').astype(np.uint8)
+        heightmap = np.pad(heightmap, pad_width=(1, 1), mode='constant').astype(np.uint8)
 
         floormap = morphology.binary_dilation(floormap)
 
