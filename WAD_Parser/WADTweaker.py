@@ -27,18 +27,19 @@ class WADTweaker():
             reconstructed = reader.extract('/home/edoardo/Desktop/doom/test.wad')['levels'][0]
 
 
-    def build_levels(self):
+    def build_levels(self, max=32):
 
         # Create a new WAD
         writer = WADWriter()
 
-        for index in range(32):
+        for index in range(max):
             print("Building level {}".format(index))
             heightmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_heightmap.png'.format(index)
+            floormap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_floormap.png'.format(index)
             wallmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_wallmap.png'.format(index)
             thingsmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_thingsmap.png'.format(index)
             writer.add_level(name='MAP{i:02d}'.format(i=index+1))
-            writer.from_images(heightmap=heightmap, floormap=None, wallmap=wallmap, thingsmap=None, debug=False)
+            writer.from_images(heightmap=None, floormap=floormap, wallmap=wallmap, thingsmap=None, debug=False)
         writer.save('/home/edoardo/Desktop/doom/test.wad')
 
     def build_test_level(self):
@@ -79,8 +80,8 @@ class WADTweaker():
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
-    WADTweaker().inspect_doom2()
-    #WADTweaker().build_levels()
+    #WADTweaker().inspect_doom2()
+    WADTweaker().build_levels(6)
     #WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
     #WADTweaker().inspect_doom2()
     #WADTweaker().build_test_level()

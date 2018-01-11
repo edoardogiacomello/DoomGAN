@@ -329,7 +329,7 @@ class WADWriter(object):
 
         if debug:
             # Display the image and plot all contours found
-            fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(8, 5), sharex=True,
+            fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(8, 5), sharex=True,
                                    sharey=True, subplot_kw={'adjustable': 'box-forced'})
         if save_debug:
             fig_show_levels = plt.subplot()

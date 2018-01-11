@@ -299,20 +299,21 @@ class DoomGAN(object):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def load_dataset(self, batch_size=None):
+    def load_dataset(self, batch_size=None, path=None):
         """
         Loads a TFRecord dataset and creates batches.
         :return: An initializable Iterator for the loaded dataset
         """
         batch_size = batch_size or self.config.batch_size
-        self.dataset = DoomDataset().read_from_TFRecords(self.config.dataset_path, target_size=self.output_size)
+        path = path or self.config.dataset_path
+        dataset = DoomDataset().read_from_TFRecords(path, target_size=self.output_size)
         # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
         # for discarding the last incomplete batch)
         try:
-            self.dataset_size = DoomDataset().get_dataset_count(self.config.dataset_path)
+            dataset_size = DoomDataset().get_dataset_count(path)
         except:
-            if self.dataset_size is None:
-                counter_iter = self.dataset.batch(1).make_one_shot_iterator().get_next()
+            if dataset_size is None:
+                counter_iter = dataset.batch(1).make_one_shot_iterator().get_next()
                 n_samples = 0
                 while True:
                     try:
@@ -320,19 +321,19 @@ class DoomGAN(object):
                         n_samples += 1
                     except tf.errors.OutOfRangeError:
                         # We reached the end of the dataset, break the loop and start a new epoch
-                        self.dataset_size = n_samples
+                        dataset_size = n_samples
                         break
-        remainder = np.remainder(self.dataset_size, batch_size)
+        remainder = np.remainder(dataset_size, batch_size)
         print(
-            "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, self.dataset_size,
+            "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, dataset_size,
                                                                                            batch_size))
 
-        self.dataset = self.dataset.shuffle(buffer_size=self.dataset_size*100)
-        self.dataset = self.dataset.skip(remainder)
-        self.dataset = self.dataset.shuffle(buffer_size=(self.dataset_size-remainder)*100)
-        self.dataset = self.dataset.batch(batch_size)
+        dataset = dataset.shuffle(buffer_size=dataset_size*100)
+        dataset = dataset.skip(remainder)
+        dataset = dataset.shuffle(buffer_size=(dataset_size-remainder)*100)
+        dataset = dataset.batch(batch_size)
 
-        iterator = self.dataset.make_initializable_iterator()
+        iterator = dataset.make_initializable_iterator()
 
         return iterator
 
@@ -480,25 +481,22 @@ class DoomGAN(object):
     def sample(self, y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False):
         """
         Sample the network with a given generator input. Various options are available.
-        :param y_factors: feature vector of shape (batch, features), each value in {-1; [0,1]} where -1 means
-        "average value for this feature", while [0;1] corresponds to values that go from -std to +std for that feature.
-        :param y_batch: direct batch of feature values to feed to the generator.
-        Either y_factors or y_batch must be different from None.
+
+        :param y_factors: feature vector of shape (batch, features), each value in {-1; [0,1]} where -1 means "average value for this feature", while [0;1] corresponds to values that go from -std to +std for that feature.
+        :param y_batch: direct batch of feature values to feed to the generator. Either y_factors or y_batch must be different from None.
         :param seed: Seed for input noise generation. If None the seed is random at each z sampling [None]
         :param freeze_z: if True use the same input noise z for each generated sample
-        :param postprocess: If true, the generated levels are postprocessed (denoised and eventually rescaled)
-        and returned as they would be passed to the WadEditor.
+        :param postprocess: If true, the generated levels are postprocessed (denoised and eventually rescaled) and returned as they would be passed to the WadEditor.
         :param save: Has no effect is postprocess is not True. [False]
-                    False: Levels are returned as numpy array and not saved anywhere
-                    'PNG': Network output is saved to the generated_samples directory
-                    'WAD': Levels are converted to .WAD and saved in the generated_samples directory along with a descriptive image of the level
-        :return:
+                    - False: Levels are returned as numpy array and not saved anywhere
+                    - 'PNG': Network output is saved to the generated_samples directory
+                    - 'WAD': Levels are converted to .WAD and saved in the generated_samples directory along with a descriptive image of the level
         """
 
         assert (y_factors is not None) ^ (y_batch is not None)
         if y_factors is not None:
             # Build a y vector from the y_factors by finding the nearest neighbors in the dataset
-            y_feature_space = DoomDataset().get_feature_sample(self.config.dataset_path, factors, features, 'std')
+            y_feature_space = DoomDataset().get_feature_sample(self.config.dataset_path, y_factors, features, 'std')
             if self.nearest_features_tree is None:
                 self.initialize_and_restore()
                 loaded_features = DoomDataset().load_features(self.config.dataset_path, self.features, self.output_size)
@@ -532,6 +530,28 @@ class DoomGAN(object):
         return result
 
 
+    def evaluate(self):
+        # TODO: Dummy code for function testing
+        from scipy.stats import entropy
+        from skimage.measure import shannon_entropy, compare_ssim
+        y_factors = np.ones(shape=[self.config.batch_size, len(self.features)])
+        out = self.sample(y_factors=y_factors, seed=10322182)
+        # Computing color-based histogram
+        hist = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
+        entropies = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+        s_entropies = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+        ssim = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+        for m, mname in enumerate(self.maps):
+            for s in range(self.config.batch_size):
+                h = np.histogram(out[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
+                e = entropy(h)
+                hist[s, m, :] = h
+                entropies[s, m, :] = e
+                s_entropies[s, m, :] = shannon_entropy(out[s,:,:,m])
+                ssim[s, m, :] = shannon_entropy(out[s,:,:,m])
+                # TODO: SSIM must be computed between a generated sample and a test one. Generate a test set and continue
+                # TODO: Add encoding errors
+        pass
 
     def generate_levels_feature_interpolation(self, feature_to_interpolate, seed=None):
         # TODO: Implement this or remove it
@@ -573,8 +593,6 @@ class DoomGAN(object):
         samples = DataTransform.postprocess_output(samples[0], self.maps, folder=None)
         DataTransform.build_levels(samples, self.maps, self.config.batch_size, call_node_builder=False,
                                    level_images_path='./interpolated_features/{}/'.format(feature_to_interpolate))
-
-
 
     def test(self, n_samples_for_feature=11):
         # Given a set of features Fn = An (ie an y vector), calculate the distribution of the network output for each feature
@@ -835,5 +853,5 @@ if __name__ == '__main__':
                 for feat in features:
                     gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)
             if FLAGS.test:
-                # gan.test()
-                gan.nearest_neighbor_score()
+                gan.evaluate()
+                #gan.nearest_neighbor_score()

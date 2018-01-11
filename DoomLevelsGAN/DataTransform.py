@@ -65,18 +65,18 @@ def postprocess_output(g, maps, folder = './generated_samples/'):
     :param folder:
     :return:
     """
-
     processed_output = g.copy()
     for s_id, sample in enumerate(g):
         for m, mapname in enumerate(maps):
             feature_map = sample[:,:,m]
             if mapname == 'heightmap':
                 feature_map = ((feature_map-feature_map.min())*255.0)/(feature_map.max()-feature_map.min())
-            feature_map = np.around(feature_map)
             if mapname == 'floormap':
                 feature_map = (feature_map > 0.5)*255
             if mapname == 'wallmap':
                 feature_map = (feature_map > 255/2)*255
+            feature_map = np.around(feature_map)
+
             # Saving
             processed_output[s_id,:,:,m] = feature_map
             if folder is not None:
