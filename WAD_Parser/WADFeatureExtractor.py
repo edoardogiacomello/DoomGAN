@@ -224,7 +224,8 @@ class WADFeatureExtractor(object):
         #tag_map is an intermediate map needed to build the trigger map
         self.level['maps']['wallmap'], self.level['maps']['heightmap'], self.level['maps']['triggermap'] = self.draw_sector_maps()
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
-        self.level['maps']['floormap'], self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
+        enumerated_floors, self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
+        self.level['maps']['floormap'] = ((enumerated_floors > 0)*255).astype(np.uint8)
 
         self.level['text'] = self.draw_textmap()
 
