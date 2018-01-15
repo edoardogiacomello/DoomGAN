@@ -7,6 +7,8 @@ import skimage.io as io
 import tensorflow as tf
 from collections import defaultdict
 import scipy.stats as stats
+from sklearn.model_selection import train_test_split
+
 
 class DoomDataset():
     """
@@ -87,15 +89,19 @@ class DoomDataset():
         with open(self.root+database_name, 'w') as jout:
             json.dump(database, jout)
 
-    def read_meta(self, tfrecord_path):
-        meta_path = tfrecord_path + '.meta'
+    def read_meta(self, meta_path):
         assert os.path.isfile(meta_path), \
-            ".meta file database not found at {}. No dataset statistics for normalizing the data".format(meta_path)
+            ".meta file database not found at {}.".format(meta_path)
         with open(meta_path, 'r') as meta_in:
             return json.load(meta_in)
 
-    def get_dataset_count(self, tfrecord_path):
-        return self.read_meta(tfrecord_path)['count']
+    def get_dataset_count(self, dataset_path):
+        """
+        Returns the training and validation sample count
+        :param dataset_path:
+        :return:
+        """
+        return self.read_meta(dataset_path)['t_count'], self.read_meta(dataset_path)['v_count']
 
     def recompute_features(self, root, old_json_db, new_json_db):
         """
@@ -298,21 +304,30 @@ class DoomDataset():
             parsed_features[Features.map_paths[m]] = parsed_img
         return parsed_features
 
-    def to_TFRecords(self, json_db, output_path, target_size=(128,128), constraints_lambdas=list()):
+    def to_TFRecords(self, json_db, output_path, validation_size, target_size=(128,128), constraints_lambdas=list()):
         """
-        Pack the whole image dataset into the TFRecord standardized format and saves it at the specified output path.
+        Pack the whole image dataset into the TFRecord standardized format and saves it at:
+         <output_path>-train.TFRecord for the training set
+         <output_path>-validation.TFRecord for the validation set
+        Saves additional information about the data in a separated .meta file.
         Pads each sample to the target size, DISCARDING the samples that are larger.
-        Also save meta information in a separated file.
 
         :param json_db: the .json database file to read features from
-        :param output_path: full path for the .TFRecords file
-        :param target_size: tuple for the largest selected sample (smaller will be padded, largest discarded)
+        :param output_path: path for the .TFRecords file
+        :param validation_size: [0,1] relative portion of samples belonging to the validation set
+        :param target_size: size (tuple) for the largest selected sample (smaller ones will be padded, largest are discarded)
         :param constraints_lambdas: list of lambdas defining constraint on data, EG. [lambda x: x['floors']==1]
         :return: None. Saves a .TFRecords file at the given output_path and a .meta json file at <output_path>.meta
         """
+        # Reading the json dataset
         record_list = self.read_from_json(json_db)
-
         print("{} levels loaded.".format(len(record_list)))
+
+        # Creating paths
+        train_path = output_path+'-train.TFRecord'
+        validation_path = output_path+'-validation.TFRecord'
+
+        # Filtering data
         constraints_lambdas.append(lambda x: x["width"] <= 32*target_size[0])
         constraints_lambdas.append(lambda x: x["height"] <= 32*target_size[1])
         record_list = self.filter_data(record_list, constraints_lambdas)
@@ -320,28 +335,41 @@ class DoomDataset():
         # Calculating meta for the scalar features
         meta = self._feature_meta(record_list)
 
-        with tf.python_io.TFRecordWriter(output_path) as writer:
-            saved_levels = 0
-            for counter, level in enumerate(record_list):
-                # Reading the maps
-                for path in Features.map_paths:
-                    map_img = io.imread(self.root + level[path], mode='L')
-                    padded = self._pad_image(map_img, target_size=target_size)
-                    level[Features.map_paths[path]] = padded
-                # Adding map meta to global meta (cannot load all the dataset in memory for computing stats)
-                meta = self._add_maps_meta(meta, level)
-                sample = self._sample_to_TFRecord(level)
-                writer.write(sample.SerializeToString())
-                saved_levels += 1
+        # Splitting into train and validation
+        train_list, validation_list = train_test_split(record_list, test_size=validation_size)
 
-                if counter % (len(record_list) // 100) == 0:
-                    print("{}% completed.".format(round(counter / len(record_list) * 100)))
-            print("{} levels Saved.".format(saved_levels))
+        # Updating meta with train and validation count
+        meta['t_count'] = len(train_list)
+        meta['v_count'] = len(validation_list)
+
+        with tf.python_io.TFRecordWriter(train_path) as train_writer:
+            with tf.python_io.TFRecordWriter(validation_path) as validation_writer:
+                saved_levels = 0
+                for current_set in train_list, validation_list:
+                    for level in current_set:
+                        # Reading the maps
+                        for path in Features.map_paths:
+                            map_img = io.imread(self.root + level[path], mode='L')
+                            padded = self._pad_image(map_img, target_size=target_size)
+                            level[Features.map_paths[path]] = padded
+                        # Adding map meta to global meta (cannot load all the dataset in memory for computing stats)
+                        meta = self._add_maps_meta(meta, level)
+                        sample = self._sample_to_TFRecord(level)
+                        if current_set is train_list:
+                            train_writer.write(sample.SerializeToString())
+                        else:
+                            validation_writer.write(sample.SerializeToString())
+                        saved_levels += 1
+
+                        if saved_levels % (len(record_list) // 100) == 0:
+                            print("{}% completed.".format(round(saved_levels / len(record_list) * 100)))
+                print("{} levels saved.".format(saved_levels))
         meta_path = output_path + '.meta'
         with open(meta_path, 'w') as meta_out:
             # Saving metadata
             json.dump(meta, meta_out)
             print("Metadata saved to {}".format(meta_path))
+        print("Done")
 
     def get_feature_sample(self, tf_dataset_path, factors, features, extremes='minmax'):
         """

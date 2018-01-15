@@ -220,6 +220,9 @@ class DoomGAN(object):
         # Define the loss function
         self.loss_d, self.loss_g = self.loss_function()
 
+        # Define summaries for loss visualization and sample evaluation
+        self.summary_metrics = self.define_metrics_summary()
+
         # Collect the trainable variables for the optimizer
         vars = tf.trainable_variables()
         self.vars_d = [var for var in vars if 'd_' in var.name]
@@ -227,24 +230,23 @@ class DoomGAN(object):
 
     def generate_summary(self):
         if self.config.use_wgan:
-            s_loss_d = tf.summary.scalar('c_loss', tf.reduce_mean(self.loss_d))
+            s_loss_d = tf.summary.scalar('c_loss', -tf.reduce_mean(self.loss_d))
             s_loss_g = tf.summary.scalar('g_loss', tf.reduce_mean(self.loss_g_wgan))
-            # s_loss_enc = tf.summary.scalar('g_loss_enc', self.loss_enc)
             s_z_distrib = tf.summary.histogram('z_distribution', self.z)
-            s_y_distrib = tf.summary.histogram('y_distribution', self.y_norm)
+
+
+
         else:
             s_loss_d_real = tf.summary.scalar('d_loss_real_inputs', self.loss_d_real)
             s_loss_d_fake = tf.summary.scalar('d_loss_fake_inputs', self.loss_d_fake)
             s_loss_d = tf.summary.scalar('d_loss', self.loss_d)
             s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
-            s_loss_balance = tf.summary.scalar('balance', self.balance)
-            # s_loss_enc = tf.summary.scalar('g_loss_enc', self.loss_enc)
             s_z_distrib = tf.summary.histogram('z_distribution', self.z)
 
         # Pick a random sample from G and x and shows D activations
         s_sample = visualize_samples('generated_samples', self.G)
 
-        # For avoiding to slow the training we only show generated samples
+        # To avoid slowing the training we only show generated samples
         sample_index = 5
         # d_layers_to_show_g = self.layers_D_fake[1:-1]
         # d_layers_to_show_x = self.layers_D_real[1:-1]
@@ -258,11 +260,11 @@ class DoomGAN(object):
         #                                          sample_index)
 
         if self.config.use_wgan:
-            s_d = tf.summary.merge([s_loss_d, s_y_distrib, s_x_chosen_input])
+            s_d = tf.summary.merge([s_loss_d, s_x_chosen_input])
             s_g = tf.summary.merge([s_loss_g, s_z_distrib, s_g_chosen_input])
             s_samples = tf.summary.merge([s_sample])
         else:
-            s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d, s_loss_balance])
+            s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
             s_g = tf.summary.merge([s_loss_g, s_z_distrib])
             s_samples = tf.summary.merge(
                 [s_sample, s_g_chosen_input, s_x_chosen_input])
@@ -270,6 +272,25 @@ class DoomGAN(object):
         summary_writer = tf.summary.FileWriter(self.config.summary_folder)
 
         return s_d, s_g, s_samples, summary_writer
+
+    def define_metrics_summary(self):
+        # Creating placeholders to feed numpy-evaluated metrics into tensorboard
+        self.metrics = dict()
+        for mapname in self.maps:
+            self.metrics["entropy_mae_{}".format(mapname)] = tf.placeholder(tf.float32,shape=1)
+            self.metrics["similarity_mae_{}".format(mapname)] = tf.placeholder(tf.float32,shape=1)
+        self.metrics["entropy_mae"] = tf.placeholder(tf.float32,shape=1)
+        self.metrics["similarity_mae"] = tf.placeholder(tf.float32,shape=1)
+
+        # Creating summaries for the metrics
+        summaries = list()
+        for met in self.metrics.keys():
+            summaries.append(tf.summary.scalar(met, self.metrics[met]))
+        return tf.summary.merge_all(summaries)
+
+
+
+
 
     def save(self, checkpoint_dir):
         # Code from https://github.com/carpedm20/DCGAN-tensorflow
@@ -299,43 +320,50 @@ class DoomGAN(object):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def load_dataset(self, batch_size=None, path=None):
+    def load_dataset(self, batch_size=None):
         """
-        Loads a TFRecord dataset and creates batches.
-        :return: An initializable Iterator for the loaded dataset
+        Loads both training and validation .TFRecords datasets from self.config.dataset_path pointing to a .meta file.
+        :return: A tuple of dataset iterators (Training, Validation)
         """
+        # Building paths
+        assert os.path.isfile(self.config.dataset_path), "Dataset .meta not found at {}".format(self.config.dataset_path)
+        train_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'train.TFRecord'
+        validation_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'validation.TFRecord'
+        assert os.path.isfile(train_path), "Dataset not found at {}. Check your file paths and try again".format(train_path)
+
         batch_size = batch_size or self.config.batch_size
-        path = path or self.config.dataset_path
-        dataset = DoomDataset().read_from_TFRecords(path, target_size=self.output_size)
-        # If the dataset size is unknown, it must be retrieved (tfrecords doesn't hold metadata and the size is needed
-        # for discarding the last incomplete batch)
-        try:
-            dataset_size = DoomDataset().get_dataset_count(path)
-        except:
-            if dataset_size is None:
-                counter_iter = dataset.batch(1).make_one_shot_iterator().get_next()
-                n_samples = 0
-                while True:
-                    try:
-                        self.session.run([counter_iter])
-                        n_samples += 1
-                    except tf.errors.OutOfRangeError:
-                        # We reached the end of the dataset, break the loop and start a new epoch
-                        dataset_size = n_samples
-                        break
-        remainder = np.remainder(dataset_size, batch_size)
+
+        train_set = DoomDataset().read_from_TFRecords(train_path, target_size=self.output_size)
+        train_set_size, validation_set_size = DoomDataset().get_dataset_count(self.config.dataset_path)
+        
+        train_remainder = np.remainder(train_set_size, batch_size)
         print(
-            "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(remainder, dataset_size,
+            "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(train_remainder, train_set_size,
                                                                                            batch_size))
+        train_set = train_set.shuffle(buffer_size=train_set_size*100)
+        train_set = train_set.skip(train_remainder)
+        train_set = train_set.shuffle(buffer_size=(train_set_size-train_remainder)*100)
+        train_set = train_set.batch(batch_size)
+        train_iter = train_set.make_initializable_iterator()
 
-        dataset = dataset.shuffle(buffer_size=dataset_size*100)
-        dataset = dataset.skip(remainder)
-        dataset = dataset.shuffle(buffer_size=(dataset_size-remainder)*100)
-        dataset = dataset.batch(batch_size)
+        if os.path.isfile(validation_path):
+            validation_set = DoomDataset().read_from_TFRecords(validation_path, target_size=self.output_size)
+            validation_remainder = np.remainder(validation_set_size, batch_size)
+            print(
+                "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(validation_remainder,
+                                                                                               validation_set_size,
+                                                                                               batch_size))
+            validation_set = validation_set.shuffle(buffer_size=validation_set_size * 100)
+            validation_set = validation_set.skip(validation_remainder)
+            validation_set = validation_set.shuffle(buffer_size=(validation_set_size - validation_remainder) * 100)
+            validation_set = validation_set.batch(batch_size)
+            validation_iter = validation_set.make_initializable_iterator()
 
-        iterator = dataset.make_initializable_iterator()
+            return train_iter, validation_iter
 
-        return iterator
+        else:
+            print("Validation dataset not found.")
+            return train_iter
 
     def initialize_and_restore(self):
         # Initialize all the variables
@@ -353,10 +381,6 @@ class DoomGAN(object):
         else:
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
-
-
-
-
 
     def train(self, config):
 
@@ -395,19 +419,20 @@ class DoomGAN(object):
         self.initialize_and_restore()
 
         # Load the dataset
-        dataset_iterator = self.load_dataset()
+        train_set_iter, valid_set_iter = self.load_dataset()
 
-        # Define how many times g and d has to be trained
+        # Define how many times to train d for each g step
         if self.config.use_wgan:
             d_iters = 5
         else:
             d_iters = 1
 
         for i_epoch in range(1, config.epoch + 1):
-            self.session.run([dataset_iterator.initializer])
-            next_batch = dataset_iterator.get_next()
-            batch_index = 0
-            # Rotate the whole dataset for each epoch
+            self.session.run([train_set_iter.initializer])
+            next_train_batch = train_set_iter.get_next()
+
+
+            # Rotate the input for each epoch
             for rotation in [0, 90, 180, 270]:
                 while True:
                     # Train Step
@@ -416,13 +441,13 @@ class DoomGAN(object):
                         # Train D
                         for i in range(d_iters):
                             # Get a new batch
-                            train_batch = self.session.run(next_batch)  # Batch of true samples
+                            train_batch = self.session.run(next_train_batch)  # Batch of true samples
                             z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
                                 np.float32)  # Batch of noise
                             x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
                             y_batch = np.stack([train_batch[f] for f in self.features],
                                                axis=-1) if self.use_features else None
-                            #Train D
+                            # Train D
                             d, sum_d = self.session.run([d_optim, summary_d],
                                                         feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
                                                                    self.x_rotation: [math.radians(rotation)]})
@@ -431,18 +456,32 @@ class DoomGAN(object):
                                 _, sum_g = self.session.run([g_optim, summary_g],
                                                             feed_dict={self.y: y_batch, self.z: z_batch})
 
-
-                        # Write the summaries and increment the counter
-                        writer.add_summary(sum_d, global_step=self.checkpoint_counter)
-                        writer.add_summary(sum_g, global_step=self.checkpoint_counter)
-
-                        batch_index += d_iters
-                        self.checkpoint_counter += 1
-                        print("Iteration: {}".format(self.checkpoint_counter))
-
                         # Check if the net should be saved
-                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 5:
+                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 1 and self.checkpoint_counter > 50:
                             self.save(config.checkpoint_dir)
+
+                            # Validation step
+                            self.session.run([valid_set_iter.initializer])
+                            next_valid_batch = valid_set_iter.get_next()
+
+                            validation_batch = self.session.run(next_valid_batch)
+                            y_val_batch = np.stack([validation_batch[f] for f in self.features],
+                                               axis=-1) if self.use_features else None
+                            # "True" levels to evaluate against
+                            x_val_batch = np.stack([validation_batch[m] for m in maps], axis=-1)
+                            z_val_batch = np.random.uniform(-1, 1,
+                                                        [self.config.batch_size, self.config.z_dim]).astype(
+                                np.float32)  # Batch of noise
+                            g_val_batch = self.session.run([self.G_rescaled],
+                                                      feed_dict={self.z: z_val_batch, self.y: y_val_batch})[0]
+
+                            metric_results = self.evaluate(g_val_batch, x_val_batch)
+
+
+                            val_feed_dict = {self.metrics[metric]: metric_results for metric in self.metrics.keys()}
+                            self.session.run([self.summary_metrics], feed_dict=val_feed_dict)
+                            # TODO: Calculate the validation loss and check the sample generation
+
                             if self.freeze_samples:
                                 # Pick one x, y and z sample and keep it always the same for comparison
                                 from copy import copy
@@ -458,11 +497,18 @@ class DoomGAN(object):
                                                                   self.y: self.y_sample})
 
                             writer.add_summary(samples[0], global_step=self.checkpoint_counter)
+                        # Write the summaries and increment the counter
+                        writer.add_summary(sum_d, global_step=self.checkpoint_counter)
+                        writer.add_summary(sum_g, global_step=self.checkpoint_counter)
+
+                        self.checkpoint_counter += 1
+                        print("Iteration: {}".format(self.checkpoint_counter))
 
                     except tf.errors.OutOfRangeError:
                         # We reached the end of the dataset, break the loop and start a new epoch
-                        i_epoch += 1
                         break
+            i_epoch += 1
+
 
     def __init__(self, session, config, features, maps, d_layers, g_layers):
         self.session = session
@@ -530,28 +576,41 @@ class DoomGAN(object):
         return result
 
 
-    def evaluate(self):
+    def evaluate(self, s_gen, s_true):
+        """
+        Compute several metrics between a batch of generated sample and true sample corresponding on the same y vector.
+        :param s_gen: the batch of generated samples
+        :param s_true: the batch of true samples
+        :return:
+        """
         # TODO: Dummy code for function testing
+        # TODO: Complete this function
         from scipy.stats import entropy
-        from skimage.measure import shannon_entropy, compare_ssim
-        y_factors = np.ones(shape=[self.config.batch_size, len(self.features)])
-        out = self.sample(y_factors=y_factors, seed=10322182)
+        from skimage.measure import compare_ssim
+
+        metrics = {}
         # Computing color-based histogram
-        hist = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
+        hist_gen = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
+        hist_tru = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
         entropies = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
-        s_entropies = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
         ssim = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+
         for m, mname in enumerate(self.maps):
             for s in range(self.config.batch_size):
-                h = np.histogram(out[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
-                e = entropy(h)
-                hist[s, m, :] = h
+                h_gen = np.histogram(s_gen[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
+                h_tru = np.histogram(s_true[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
+                e = entropy(h_gen)-entropy(h_tru)
+                hist_gen[s, m, :] = h_gen
+                hist_tru[s, m, :] = h_tru
                 entropies[s, m, :] = e
-                s_entropies[s, m, :] = shannon_entropy(out[s,:,:,m])
-                ssim[s, m, :] = shannon_entropy(out[s,:,:,m])
-                # TODO: SSIM must be computed between a generated sample and a test one. Generate a test set and continue
+                ssim[s, m, :] = compare_ssim(s_gen[s, :, :, m], s_true[s, :, :, m])
                 # TODO: Add encoding errors
-        pass
+            metrics["entropy_mae_{}".format(mname)] = np.mean(entropies[:,m,:])
+            metrics["similarity_mae_{}".format(mname)] = np.mean(ssim[:,m,:])
+        metrics["entropy_mae"] = np.mean(entropies[:, m, :])
+        metrics["similarity_mae"] = np.mean(ssim[:, m, :])
+
+        return metrics
 
     def generate_levels_feature_interpolation(self, feature_to_interpolate, seed=None):
         # TODO: Implement this or remove it
@@ -594,53 +653,8 @@ class DoomGAN(object):
         DataTransform.build_levels(samples, self.maps, self.config.batch_size, call_node_builder=False,
                                    level_images_path='./interpolated_features/{}/'.format(feature_to_interpolate))
 
-    def test(self, n_samples_for_feature=11):
-        # Given a set of features Fn = An (ie an y vector), calculate the distribution of the network output for each feature
-        # Load and initialize the network
-        self.initialize_and_restore()
-        # TODO: For now a linear sampling is used for checking the correlation between a requested feature and the returned one, but it could be useful to random sample since this correlation may change near the mean value
-        corr = np.zeros(shape=[len(self.features)])
-        for f, fname in enumerate(self.features):
-            print("Evaluating network response for {}.. ".format(fname))
-            # Define a test y vector an an input noise
-            feat_factors = [-1 for f in features]
-            factor_changes = np.linspace(0, 1, num=n_samples_for_feature)
-            # for each feature f and sampling j in (0..n_samples_for_feature), let's call:
-            # Y_fj the requested features
-            # R_fj = extract_features(wad(net(z, Y_fi)) the features obtained from the generated output
-            Y_f = list()
-            R_f = list()
-            for j in range(n_samples_for_feature):
-                print("Sampling with feature coefficient {}={}  ({}/{})...".format(fname, factor_changes[j], j+1, n_samples_for_feature))
-                feat_factors[f] = factor_changes[j]
-                y = DoomDataset().get_feature_sample(FLAGS.dataset_path, np.tile(feat_factors, (self.config.batch_size, 1)), features)
-                # Now building R by launching the newtork
 
-                retry_counter = 3
-                success = False
-                while retry_counter > 0 and not success:
-                    try:
-                            # Using a fixed seed each time
-                            np.random.seed(42)
-                            z_sample = np.random.normal(0, 1, [self.config.batch_size, self.config.z_dim]).astype(np.float32)
-                            net_output = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})[0]
-                            output_features = DataTransform.extract_features_from_net_output(net_output, self.features, self.maps,
-                                                                                     self.config.batch_size)
-                    except:
-                        # TODO: if there's an exception it means that the output is too noisy to be converted to a level. We might have chosen a "bad" input noise or y.
-                        if retry_counter <= 0:
-                            continue
-                        else:
-                            retry_counter -= 1
-                    success = True
-                Y_f.append(y[0])
-                R_f.append(output_features.mean(axis=0))
-                print("Done")
-            Y_f = np.asarray(Y_f)
-            R_f = np.asarray(R_f)
-            corr[f] = np.corrcoef(Y_f[:, f], R_f[:, f])[0,1]
-        for f, fname in enumerate(self.features):
-            print("{}: \t {}".format(fname, corr[f]))
+
 
     def inception_score(self):
         # TODO: Inception score seems to be not so meaningful in this case
@@ -769,18 +783,19 @@ if __name__ == '__main__':
     flags.DEFINE_float("wgangp_lr", 2e-4, "Learning rate for WGAN-GP adam [2e-4]")
     flags.DEFINE_float("wgangp_beta1", 0., "beta1 for WGAN-GP adam [0.]")
     flags.DEFINE_float("wgangp_beta2", 0.9, "beta2 for WGAN-GP adam [0.9]")
-
+    flags.DEFINE_integer("lambda_gradient_penalty", 10, "Gradient penalty lambda hyperparameter [10]")
 
 
     flags.DEFINE_float("lr_wgangp", 5e-5, "Learning rate of for WGAN RMSProp [5e-5]")
 
     flags.DEFINE_float("beta1_wgan", 0, "Momentum term of adam [0.5]")
-    flags.DEFINE_string("dataset_path", None, "Path to the .TfRecords file containing the dataset")
+    flags.DEFINE_string("dataset_path", None, "Path to the .meta file of the corresponding .TFRecord datasets")
     flags.DEFINE_integer("height", 128, "Target sample height")
     flags.DEFINE_integer("width", 128, "Target sample width")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 64, "Batch size")
-    flags.DEFINE_integer("save_net_every", 20, "Number of train batches after which the next is saved")
+    flags.DEFINE_integer("save_net_every", 50, "Number of train batches after which the next is saved")
+    flags.DEFINE_integer("validation_step_every", 50, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("train", True, "enable training if true")
     flags.DEFINE_boolean("generate", False, "If true, generate some levels with a fixed y value and seed and save them into ./generated_samples")
     flags.DEFINE_boolean("interpolate", False, "If true, generate levels by interpolating the feature vector along each dimension")
@@ -789,7 +804,7 @@ if __name__ == '__main__':
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
     flags.DEFINE_boolean("use_gradient_penalty", True, "Whether to use the gradient penalty from WGAN_GP architecture or the WGAN weight clipping")
-    flags.DEFINE_integer("lambda_gradient_penalty", 10, "Gradient penalty lambda hyperparameter")
+
     flags.DEFINE_string("checkpoint_dir", "./checkpoint/", "Directory name to save the checkpoints [checkpoint]")
     flags.DEFINE_string("summary_folder", "/tmp/tflow/",
                         "Directory name to save the temporary files for visualization [/tmp/tflow/]")
@@ -816,6 +831,8 @@ if __name__ == '__main__':
                    'obstacles_per_walkable_area',
                    'decorations_per_walkable_area']
         maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap', 'triggermap']
+
+
 
         # Generator network
         g_layers = [
