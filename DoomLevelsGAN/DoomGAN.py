@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import tensorflow.contrib as contrib
-
+import pickle
 import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
 from DoomLevelsGAN.NNHelpers import *
@@ -164,7 +164,7 @@ class DoomGAN(object):
                 gradients = tf.gradients(d_logit_interp, [interpolates])[0]
                 slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1,2,3]))
                 gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
-            self.loss_d += self.config.lambda_gradient_penalty * gradient_penalty
+                self.loss_d += self.config.lambda_gradient_penalty * gradient_penalty
 
             return self.loss_d, self.loss_g_wgan
         else:
@@ -220,73 +220,59 @@ class DoomGAN(object):
         # Define the loss function
         self.loss_d, self.loss_g = self.loss_function()
 
-        # Define summaries for loss visualization and sample evaluation
-        self.summary_metrics = self.define_metrics_summary()
-
         # Collect the trainable variables for the optimizer
         vars = tf.trainable_variables()
         self.vars_d = [var for var in vars if 'd_' in var.name]
         self.vars_g = [var for var in vars if 'g_' in var.name]
 
     def generate_summary(self):
+        # Pick a random sample from G and x and shows D activations
+        s_g = visualize_samples('generator_output_rescaled', self.G_rescaled)
+        s_x_norm = visualize_samples('true_input', self.x_norm)
+
         if self.config.use_wgan:
-            s_loss_d = tf.summary.scalar('c_loss', -tf.reduce_mean(self.loss_d))
-            s_loss_g = tf.summary.scalar('g_loss', tf.reduce_mean(self.loss_g_wgan))
-            s_z_distrib = tf.summary.histogram('z_distribution', self.z)
+            s_loss_d = tf.summary.scalar('critic_loss', -tf.reduce_mean(self.loss_d))
+            s_loss_g = tf.summary.scalar('generator_loss', tf.reduce_mean(self.loss_g_wgan))
 
-
-
+            summary_d = tf.summary.merge([s_loss_d])
+            summary_g = tf.summary.merge([s_loss_g])
+            summary_out = tf.summary.merge([s_g, s_x_norm])
+            return summary_d, summary_g, summary_out
         else:
             s_loss_d_real = tf.summary.scalar('d_loss_real_inputs', self.loss_d_real)
             s_loss_d_fake = tf.summary.scalar('d_loss_fake_inputs', self.loss_d_fake)
             s_loss_d = tf.summary.scalar('d_loss', self.loss_d)
             s_loss_g = tf.summary.scalar('g_loss', self.loss_g)
-            s_z_distrib = tf.summary.histogram('z_distribution', self.z)
 
-        # Pick a random sample from G and x and shows D activations
-        s_sample = visualize_samples('generated_samples', self.G)
+            s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
+            s_g = tf.summary.merge([s_loss_g])
+            s_samples = tf.summary.merge([s_g])
+            return s_d, s_g, s_samples
 
-        # To avoid slowing the training we only show generated samples
-        sample_index = 5
+        # Code for showing one particular sample and activations
+        # sample_index = 5
         # d_layers_to_show_g = self.layers_D_fake[1:-1]
         # d_layers_to_show_x = self.layers_D_real[1:-1]
-        s_g_chosen_input = visualize_samples('g_sample_{}'.format(sample_index),
-                                             tf.slice(self.G, begin=[sample_index, 0, 0, 0], size=[1, -1, -1, -1]))
+        # s_g_chosen_input = visualize_samples('g_sample_{}'.format(sample_index), tf.slice(self.G, begin=[sample_index, 0, 0, 0], size=[1, -1, -1, -1]))
         # s_d_activations_g = visualize_activations('g_sample_{}_d_layer_'.format(sample_index), d_layers_to_show_g, sample_index)
-        s_x_chosen_input = visualize_samples('x_sample_{}'.format(sample_index),
-                                             tf.slice(self.x_norm, begin=[sample_index, 0, 0, 0],
-                                                      size=[1, -1, -1, -1]))
-        # s_d_activations_x = visualize_activations('x_sample_{}_d_layer_'.format(sample_index), d_layers_to_show_x,
-        #                                          sample_index)
+        # s_x_chosen_input = visualize_samples('x_sample_{}'.format(sample_index), tf.slice(self.x_norm, begin=[sample_index, 0, 0, 0], size=[1, -1, -1, -1]))
+        # s_d_activations_x = visualize_activations('x_sample_{}_d_layer_'.format(sample_index), d_layers_to_show_x, sample_index)
 
-        if self.config.use_wgan:
-            s_d = tf.summary.merge([s_loss_d, s_x_chosen_input])
-            s_g = tf.summary.merge([s_loss_g, s_z_distrib, s_g_chosen_input])
-            s_samples = tf.summary.merge([s_sample])
-        else:
-            s_d = tf.summary.merge([s_loss_d_real, s_loss_d_fake, s_loss_d])
-            s_g = tf.summary.merge([s_loss_g, s_z_distrib])
-            s_samples = tf.summary.merge(
-                [s_sample, s_g_chosen_input, s_x_chosen_input])
 
-        summary_writer = tf.summary.FileWriter(self.config.summary_folder)
-
-        return s_d, s_g, s_samples, summary_writer
-
-    def define_metrics_summary(self):
+    def generate_metrics_summary(self):
         # Creating placeholders to feed numpy-evaluated metrics into tensorboard
         self.metrics = dict()
         for mapname in self.maps:
-            self.metrics["entropy_mae_{}".format(mapname)] = tf.placeholder(tf.float32,shape=1)
-            self.metrics["similarity_mae_{}".format(mapname)] = tf.placeholder(tf.float32,shape=1)
-        self.metrics["entropy_mae"] = tf.placeholder(tf.float32,shape=1)
-        self.metrics["similarity_mae"] = tf.placeholder(tf.float32,shape=1)
+            self.metrics["entropy_mae_{}".format(mapname)] = tf.placeholder(tf.float32)
+            self.metrics["similarity_mae_{}".format(mapname)] = tf.placeholder(tf.float32)
+        self.metrics["entropy_mae"] = tf.placeholder(tf.float32)
+        self.metrics["similarity_mae"] = tf.placeholder(tf.float32)
 
         # Creating summaries for the metrics
-        summaries = list()
+        summaries = []
         for met in self.metrics.keys():
             summaries.append(tf.summary.scalar(met, self.metrics[met]))
-        return tf.summary.merge_all(summaries)
+        return tf.summary.merge(summaries)
 
 
 
@@ -327,8 +313,8 @@ class DoomGAN(object):
         """
         # Building paths
         assert os.path.isfile(self.config.dataset_path), "Dataset .meta not found at {}".format(self.config.dataset_path)
-        train_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'train.TFRecord'
-        validation_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'validation.TFRecord'
+        train_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'-train.TFRecord'
+        validation_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'-validation.TFRecord'
         assert os.path.isfile(train_path), "Dataset not found at {}. Check your file paths and try again".format(train_path)
 
         batch_size = batch_size or self.config.batch_size
@@ -384,6 +370,7 @@ class DoomGAN(object):
 
     def train(self, config):
 
+        # OPTIMIZER DEFINITION
         if self.config.use_wgan:
 
             if not self.config.use_gradient_penalty:
@@ -412,8 +399,17 @@ class DoomGAN(object):
             g_optim = tf.train.AdamOptimizer(config.dcgan_lr, beta1=config.dcgan_beta1).minimize(self.loss_g,
                                                                                                 var_list=self.vars_g)
 
-        # Generate the summaries
-        summary_d, summary_g, summary_samples, writer = self.generate_summary()
+        # SUMMARY GENERATION FOR TENSORBOARD VISUALIZATION
+        # Summary for discriminator/critic loss, generator loss, generator output
+        summary_d, summary_g, summary_samples = self.generate_summary()
+        # Summary for validation metrics visualization
+        summary_metrics = self.generate_metrics_summary()
+        # Defining a writer for each run we are performing
+        writer_train = tf.summary.FileWriter(self.config.summary_folder + 'train/')
+        writer_valid = tf.summary.FileWriter(self.config.summary_folder + 'validation/')
+        writer_ref = tf.summary.FileWriter(self.config.summary_folder + 'reference_sample/')
+
+
 
         # Load and initialize the network
         self.initialize_and_restore()
@@ -431,7 +427,6 @@ class DoomGAN(object):
             self.session.run([train_set_iter.initializer])
             next_train_batch = train_set_iter.get_next()
 
-
             # Rotate the input for each epoch
             for rotation in [0, 90, 180, 270]:
                 while True:
@@ -448,17 +443,20 @@ class DoomGAN(object):
                             y_batch = np.stack([train_batch[f] for f in self.features],
                                                axis=-1) if self.use_features else None
                             # Train D
-                            d, sum_d = self.session.run([d_optim, summary_d],
-                                                        feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
+                            self.session.run([d_optim], feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
                                                                    self.x_rotation: [math.radians(rotation)]})
-                            # Train G (one time every d_iters)
+                            # Train G
                             if i == 0:
-                                _, sum_g = self.session.run([g_optim, summary_g],
-                                                            feed_dict={self.y: y_batch, self.z: z_batch})
+                                self.session.run([g_optim], feed_dict={self.y: y_batch, self.z: z_batch})
 
                         # Check if the net should be saved
-                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 1 and self.checkpoint_counter > 50:
+                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 1 and self.checkpoint_counter > 100:
                             self.save(config.checkpoint_dir)
+
+                            # Calculating training loss
+                            sum_d_train, sum_g_train = self.session.run([summary_d, summary_g],
+                                                            feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
+                                                                       self.x_rotation: [math.radians(rotation)]})
 
                             # Validation step
                             self.session.run([valid_set_iter.initializer])
@@ -471,36 +469,44 @@ class DoomGAN(object):
                             x_val_batch = np.stack([validation_batch[m] for m in maps], axis=-1)
                             z_val_batch = np.random.uniform(-1, 1,
                                                         [self.config.batch_size, self.config.z_dim]).astype(
-                                np.float32)  # Batch of noise
+                                np.float32)
                             g_val_batch = self.session.run([self.G_rescaled],
                                                       feed_dict={self.z: z_val_batch, self.y: y_val_batch})[0]
 
+                            # Calculating validation loss for critic and generator
+                            sum_d_valid, sum_g_valid, sum_out_valid = self.session.run([summary_d, summary_g, summary_samples],
+                                             feed_dict={self.x: x_val_batch, self.y: y_val_batch, self.z: z_val_batch,
+                                                        self.x_rotation: [math.radians(0)]})
+
+                            # "offline" metrics calculation (using numpy, then sending the results to tensorboard)
                             metric_results = self.evaluate(g_val_batch, x_val_batch)
+                            val_feed_dict = {self.metrics[metric]: metric_results[metric] for metric in self.metrics.keys()}
+                            sum_metrics_valid = self.session.run([summary_metrics], feed_dict=val_feed_dict)[0]
 
+                            # REFERENCE SAMPLE PLOTTING
+                            # A reference sample is kept frozen and shown at each validation step to visually understand
+                            # how the training is proceeding
+                            x_ref, y_ref, z_ref = self.get_reference_sample(x_val_batch, y_val_batch, z_val_batch)
+                            sum_out_ref, g_ref = self.session.run(
+                                [summary_samples, self.G_rescaled],
+                                feed_dict={self.x: x_ref, self.y: y_ref, self.z: z_ref,
+                                           self.x_rotation: [math.radians(0)]})[0]
+                            ref_metric_results = self.evaluate(g_ref, x_ref)
+                            ref_feed_dict = {self.metrics[metric]: ref_metric_results[metric] for metric in self.metrics.keys()}
+                            sum_metrics_ref = self.session.run([summary_metrics], feed_dict=ref_feed_dict)[0]
 
-                            val_feed_dict = {self.metrics[metric]: metric_results for metric in self.metrics.keys()}
-                            self.session.run([self.summary_metrics], feed_dict=val_feed_dict)
-                            # TODO: Calculate the validation loss and check the sample generation
+                            # Writing the summary for the validation run
+                            writer_valid.add_summary(sum_d_valid, global_step=self.checkpoint_counter)
+                            writer_valid.add_summary(sum_g_valid, global_step=self.checkpoint_counter)
+                            writer_valid.add_summary(sum_out_valid, global_step=self.checkpoint_counter)
+                            writer_valid.add_summary(sum_metrics_valid, global_step=self.checkpoint_counter)
+                            writer_ref.add_summary(sum_out_ref, global_step=self.checkpoint_counter)
+                            writer_ref.add_summary(sum_metrics_ref, global_step=self.checkpoint_counter)
+                            # Writing the summary for the train run
+                            writer_train.add_summary(sum_d_train, global_step=self.checkpoint_counter)
+                            writer_train.add_summary(sum_g_train, global_step=self.checkpoint_counter)
 
-                            if self.freeze_samples:
-                                # Pick one x, y and z sample and keep it always the same for comparison
-                                from copy import copy
-                                self.x_sample = copy(x_batch)
-                                self.y_sample = copy(y_batch)
-                                # Sample the network
-                                # Sample in a sphere
-                                np.random.seed(42)
-                                self.z_sample = np.random.normal(0, 1, [config.batch_size, self.config.z_dim]).astype(np.float32)
-                                self.freeze_samples = False
-                            samples = self.session.run([summary_samples],
-                                                       feed_dict={self.x: self.x_sample, self.z: self.z_sample,
-                                                                  self.y: self.y_sample})
-
-                            writer.add_summary(samples[0], global_step=self.checkpoint_counter)
-                        # Write the summaries and increment the counter
-                        writer.add_summary(sum_d, global_step=self.checkpoint_counter)
-                        writer.add_summary(sum_g, global_step=self.checkpoint_counter)
-
+                        # incrementing the iteration counter
                         self.checkpoint_counter += 1
                         print("Iteration: {}".format(self.checkpoint_counter))
 
@@ -508,6 +514,34 @@ class DoomGAN(object):
                         # We reached the end of the dataset, break the loop and start a new epoch
                         break
             i_epoch += 1
+
+    def get_reference_sample(self, current_x, current_y, current_z):
+        """
+        Loads a saved reference batch used to visualize how the learning phase proceed on the same generated sample
+        If no samples are found in the corresponding file, then the provided batches will be saved as reference sample
+        :param current_x:
+        :param current_y:
+        :param current_z:
+        :return: a tuple of x, y, z reference batches
+        """
+        if all([inp is not None for inp in self.reference_sample.values()]):
+            return self.reference_sample['x'], self.reference_sample['y'], self.reference_sample['z']
+        # Try loading the samples from file
+        paths = ["reference_sample_{}.npy".format(inp) for inp in [self.reference_sample.keys()]]
+        is_file = [os.path.isfile(p) for p in paths]
+        if not all(is_file):
+            # Save a new reference batch
+            np.save("reference_sample_x.npy", current_x)
+            np.save("reference_sample_y.npy", current_y)
+            np.save("reference_sample_z.npy", current_z)
+            self.reference_sample['x'] = current_x.copy()
+            self.reference_sample['y'] = current_y.copy()
+            self.reference_sample['z'] = current_z.copy()
+        else:
+            self.reference_sample['x'] = np.load("reference_sample_x.npy")
+            self.reference_sample['y'] = np.load("reference_sample_y.npy")
+            self.reference_sample['z'] = np.load("reference_sample_z.npy")
+        return self.reference_sample['x'], self.reference_sample['y'], self.reference_sample['z']
 
 
     def __init__(self, session, config, features, maps, d_layers, g_layers):
@@ -520,8 +554,8 @@ class DoomGAN(object):
         self.use_features = len(self.features) > 0
         self.maps = maps
         self.output_channels = len(maps)
-        self.freeze_samples = True  # Used for freezing an x sample for net comparison
         self.nearest_features_tree = None
+        self.reference_sample = {'x': None, 'y': None, 'z':None}
         self.build()
 
     def sample(self, y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False):
@@ -583,7 +617,7 @@ class DoomGAN(object):
         :param s_true: the batch of true samples
         :return:
         """
-        # TODO: Dummy code for function testing
+        s_gen = s_gen.astype(np.uint8)
         # TODO: Complete this function
         from scipy.stats import entropy
         from skimage.measure import compare_ssim
@@ -794,8 +828,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer("width", 128, "Target sample width")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 64, "Batch size")
-    flags.DEFINE_integer("save_net_every", 50, "Number of train batches after which the next is saved")
-    flags.DEFINE_integer("validation_step_every", 50, "Number of train batches after which the next is saved")
+    flags.DEFINE_integer("save_net_every", 100, "Number of train batches after which the next is saved")
     flags.DEFINE_boolean("train", True, "enable training if true")
     flags.DEFINE_boolean("generate", False, "If true, generate some levels with a fixed y value and seed and save them into ./generated_samples")
     flags.DEFINE_boolean("interpolate", False, "If true, generate levels by interpolating the feature vector along each dimension")
@@ -812,7 +845,7 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
 
     with tf.Session() as s:
-        clean_tensorboard_cache('/tmp/tflow')
+        #clean_tensorboard_cache('/tmp/tflow')
         # Define here which features to use
         features = ['height', 'width',
                    'number_of_sectors',
