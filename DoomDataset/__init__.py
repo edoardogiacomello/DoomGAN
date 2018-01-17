@@ -436,7 +436,6 @@ class DoomDataset():
             data = sess.run([iter.get_next()])[0]
         return np.asarray([data[f] for f in feautre_names]).transpose()
 
-
     def generate_stats(self):
         dataset = DoomDataset()
         # TODO: Remove this absolute path

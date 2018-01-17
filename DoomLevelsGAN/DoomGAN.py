@@ -265,8 +265,13 @@ class DoomGAN(object):
         for mapname in self.maps:
             self.metrics["entropy_mae_{}".format(mapname)] = tf.placeholder(tf.float32)
             self.metrics["similarity_mae_{}".format(mapname)] = tf.placeholder(tf.float32)
+            self.metrics["encoding_error_{}".format(mapname)] = tf.placeholder(tf.float32)
         self.metrics["entropy_mae"] = tf.placeholder(tf.float32)
         self.metrics["similarity_mae"] = tf.placeholder(tf.float32)
+        self.metrics["encoding_error"] = tf.placeholder(tf.float32)
+        self.metrics["floor_corner_error"] = tf.placeholder(tf.float32)
+        self.metrics["walls_corner_error"] = tf.placeholder(tf.float32)
+
 
         # Creating summaries for the metrics
         summaries = []
@@ -450,8 +455,8 @@ class DoomGAN(object):
                                 self.session.run([g_optim], feed_dict={self.y: y_batch, self.z: z_batch})
 
                         # Check if the net should be saved
-                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 1 and self.checkpoint_counter > 100:
-                            self.save(config.checkpoint_dir)
+                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0 and self.checkpoint_counter > 100:
+                            #self.save(config.checkpoint_dir)
 
                             # Calculating training loss
                             sum_d_train, sum_g_train = self.session.run([summary_d, summary_g],
@@ -490,7 +495,7 @@ class DoomGAN(object):
                             sum_out_ref, g_ref = self.session.run(
                                 [summary_samples, self.G_rescaled],
                                 feed_dict={self.x: x_ref, self.y: y_ref, self.z: z_ref,
-                                           self.x_rotation: [math.radians(0)]})[0]
+                                           self.x_rotation: [math.radians(0)]})
                             ref_metric_results = self.evaluate(g_ref, x_ref)
                             ref_feed_dict = {self.metrics[metric]: ref_metric_results[metric] for metric in self.metrics.keys()}
                             sum_metrics_ref = self.session.run([summary_metrics], feed_dict=ref_feed_dict)[0]
@@ -621,6 +626,9 @@ class DoomGAN(object):
         # TODO: Complete this function
         from scipy.stats import entropy
         from skimage.measure import compare_ssim
+        from DoomLevelsGAN.OutputEvaluation import encoding_error
+        from skimage.feature import corner_harris, corner_peaks
+        corner_error = lambda x, y: np.power((np.power(x - y, 2) / (x * y)), 0.5)
 
         metrics = {}
         # Computing color-based histogram
@@ -628,6 +636,10 @@ class DoomGAN(object):
         hist_tru = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
         entropies = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
         ssim = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+        enc_error = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+        floor_corner_error = np.zeros(shape=(self.config.batch_size, 1))
+        walls_corner_error = np.zeros(shape=(self.config.batch_size, 1))
+
 
         for m, mname in enumerate(self.maps):
             for s in range(self.config.batch_size):
@@ -638,11 +650,29 @@ class DoomGAN(object):
                 hist_tru[s, m, :] = h_tru
                 entropies[s, m, :] = e
                 ssim[s, m, :] = compare_ssim(s_gen[s, :, :, m], s_true[s, :, :, m])
+
                 # TODO: Add encoding errors
+                if mname in ['floormap','wallmap']:
+                    enc_error[s,m,:] = np.mean(encoding_error(s_gen[s,:,:,m], 255))
+                elif mname in ['heightmap', 'thingsmap', 'triggermap']:
+                    enc_error[s,m,:] = np.mean(encoding_error(s_gen[s, :, :, m], 1))
+                if mname == 'floormap':
+                    corners_floor_true = len(corner_peaks(corner_harris(s_true[s, :,:,m])))
+                    corners_floor_gen = len(corner_peaks(corner_harris(s_gen[s, :,:,m])))
+                    floor_corner_error[s,:] = corner_error(corners_floor_true, corners_floor_gen)
+                if mname == 'wallmap':
+                    corners_walls_true = len(corner_peaks(corner_harris(s_true[s, :,:,m])))
+                    corners_walls_gen = len(corner_peaks(corner_harris(s_gen[s, :,:,m])))
+                    walls_corner_error[s,:] = corner_error(corners_walls_true, corners_walls_gen)
+
             metrics["entropy_mae_{}".format(mname)] = np.mean(entropies[:,m,:])
             metrics["similarity_mae_{}".format(mname)] = np.mean(ssim[:,m,:])
-        metrics["entropy_mae"] = np.mean(entropies[:, m, :])
-        metrics["similarity_mae"] = np.mean(ssim[:, m, :])
+            metrics["encoding_error_{}".format(mname)] = np.mean(enc_error[:,m,:])
+        metrics["entropy_mae"] = np.mean(entropies)
+        metrics["similarity_mae"] = np.mean(ssim)
+        metrics["encoding_error"] = np.mean(enc_error)
+        metrics["floor_corner_error"] = np.mean(floor_corner_error)
+        metrics["walls_corner_error"] =  np.mean(walls_corner_error)
 
         return metrics
 
