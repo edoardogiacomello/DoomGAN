@@ -6,6 +6,11 @@ import numpy as np
 import tensorflow as tf
 import warnings
 
+from skimage.morphology import watershed, closing
+from skimage.feature import peak_local_max
+
+from scipy import ndimage as ndi
+
 def encoding_error(x, interval):
     """
     Returns the encoding error for the value x, considering a given encoding interval.
@@ -36,4 +41,28 @@ def encoding_error(x, interval):
     if np.greater(np.abs(x), 10*interval).any():
         warnings.warn("Encoding error might not be accurate due to approximations", Warning)
     return (sawtooth(2 * np.pi * x / interval, 0.5) + 1) / 2
+
+def find_rooms(floormap,dist, min_dist=3):
+    local_max = peak_local_max(dist, min_distance=min_dist, indices=False, labels=floormap)
+    markers = ndi.label(local_max)[0]
+    return watershed(-dist, markers, mask=floormap)
+
+def topological_features(sample):
+    from skimage.io import imshow
+    import matplotlib.pyplot as p
+
+
+
+    for s in range(sample.shape[0]):
+        floor = sample[s,:,:,0]
+        wall = sample[s,:,:,2]
+        combined = np.logical_and(floor, np.logical_not(wall))
+        from skimage.morphology import medial_axis
+        axis, dist = medial_axis(floor, return_distance=True)
+        rooms = find_rooms(floor, dist)
+        closed_axis = closing(axis*dist, selem=np.ones((3,3)))
+
+
+        print("k")
+    pass
 

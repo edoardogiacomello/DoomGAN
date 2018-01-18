@@ -455,7 +455,7 @@ class DoomGAN(object):
                                 self.session.run([g_optim], feed_dict={self.y: y_batch, self.z: z_batch})
 
                         # Check if the net should be saved
-                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0 and self.checkpoint_counter > 100:
+                        if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0:
                             #self.save(config.checkpoint_dir)
 
                             # Calculating training loss
@@ -470,7 +470,7 @@ class DoomGAN(object):
                             validation_batch = self.session.run(next_valid_batch)
                             y_val_batch = np.stack([validation_batch[f] for f in self.features],
                                                axis=-1) if self.use_features else None
-                            # "True" levels to evaluate against
+                            # "True" levels to compute_metrics against
                             x_val_batch = np.stack([validation_batch[m] for m in maps], axis=-1)
                             z_val_batch = np.random.uniform(-1, 1,
                                                         [self.config.batch_size, self.config.z_dim]).astype(
@@ -484,7 +484,7 @@ class DoomGAN(object):
                                                         self.x_rotation: [math.radians(0)]})
 
                             # "offline" metrics calculation (using numpy, then sending the results to tensorboard)
-                            metric_results = self.evaluate(g_val_batch, x_val_batch)
+                            metric_results = self.compute_metrics(g_val_batch, x_val_batch)
                             val_feed_dict = {self.metrics[metric]: metric_results[metric] for metric in self.metrics.keys()}
                             sum_metrics_valid = self.session.run([summary_metrics], feed_dict=val_feed_dict)[0]
 
@@ -496,7 +496,7 @@ class DoomGAN(object):
                                 [summary_samples, self.G_rescaled],
                                 feed_dict={self.x: x_ref, self.y: y_ref, self.z: z_ref,
                                            self.x_rotation: [math.radians(0)]})
-                            ref_metric_results = self.evaluate(g_ref, x_ref)
+                            ref_metric_results = self.compute_metrics(g_ref, x_ref)
                             ref_feed_dict = {self.metrics[metric]: ref_metric_results[metric] for metric in self.metrics.keys()}
                             sum_metrics_ref = self.session.run([summary_metrics], feed_dict=ref_feed_dict)[0]
 
@@ -615,7 +615,7 @@ class DoomGAN(object):
         return result
 
 
-    def evaluate(self, s_gen, s_true):
+    def compute_metrics(self, s_gen, s_true):
         """
         Compute several metrics between a batch of generated sample and true sample corresponding on the same y vector.
         :param s_gen: the batch of generated samples
@@ -640,7 +640,8 @@ class DoomGAN(object):
         floor_corner_error = np.zeros(shape=(self.config.batch_size, 1))
         walls_corner_error = np.zeros(shape=(self.config.batch_size, 1))
 
-
+        from DoomLevelsGAN.OutputEvaluation import topological_features
+        topological_features(s_true)
         for m, mname in enumerate(self.maps):
             for s in range(self.config.batch_size):
                 h_gen = np.histogram(s_gen[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
@@ -651,7 +652,6 @@ class DoomGAN(object):
                 entropies[s, m, :] = e
                 ssim[s, m, :] = compare_ssim(s_gen[s, :, :, m], s_true[s, :, :, m])
 
-                # TODO: Add encoding errors
                 if mname in ['floormap','wallmap']:
                     enc_error[s,m,:] = np.mean(encoding_error(s_gen[s,:,:,m], 255))
                 elif mname in ['heightmap', 'thingsmap', 'triggermap']:
@@ -933,5 +933,5 @@ if __name__ == '__main__':
                 for feat in features:
                     gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)
             if FLAGS.test:
-                gan.evaluate()
+                gan.compute_metrics()
                 #gan.nearest_neighbor_score()
