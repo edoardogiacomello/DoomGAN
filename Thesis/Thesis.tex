@@ -8,29 +8,32 @@
 \usepackage[twoside=true]{geometry}
 
 %For printing with the weird format
-\geometry{
-	paperwidth=17cm,
-	paperheight=24cm,
-	margin=2cm,
-	top=2.3cm,
-	bindingoffset=0.4cm
-}
-% For printing in a4
-%\geometry{a4paper,
-%  margin=3cm,
-%  top=3.8cm,
-%  bindingoffset=0.4cm
+%\geometry{
+%	paperwidth=17cm,
+%	paperheight=24cm,
+%	margin=2cm,
+%	top=2.3cm,
+%	bindingoffset=0.4cm
 %}
+% For printing in a4
+\geometry{a4paper,
+  margin=3cm,
+  top=3.8cm,
+  bindingoffset=0.4cm
+}
+
+
+
 
 %Uncomment this for final prints: this just enables printing on a4 paper
 \usepackage[cam,center,a4,pdflatex,axes]{crop}
 % See https://en.wikibooks.org/wiki/LaTeX/Internationalization
 \usepackage[english, italian]{babel}
 
-
-
+\selectlanguage{english}
 \title{First Person Shooter level generation using Generative Adversarial Networks}
 \author{Edoardo Giacomello}
+
 
 \usepackage{hyperref}
 \hypersetup{
@@ -39,41 +42,57 @@
 	linkcolor=black,  %choose some color if you want links to stand out
 }
 
+\usepackage{fancyhdr}
+
+\fancyhf{}
+\fancyhead[LE]{\nouppercase{\makebox[0pt][r]{\thepage\hspace{.1in}}~\leftmark}}
+\fancyhead[RO]{\nouppercase{\rightmark~\makebox[0pt][l]{\hspace{.1in}\thepage}}}
+% redefine cleardoublepage so it won't insert an header
+\makeatletter
+\renewcommand*{\cleardoublepage}{\clearpage\if@twoside \ifodd\c@page\else
+	\hbox{}%
+	\thispagestyle{empty}%
+	\newpage%
+	\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
 \begin{document}
-	\selectlanguage{english}
+	
 	
 	\maketitle
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
+	\pagestyle{fancy} 
+	\normalfont
 	\include{abstract}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{dedication}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{acknowledgments}
-	\thispagestyle{empty} \normalfont \cleardoublepage	
+	\cleardoublepage
 	\include{Content}
-	\thispagestyle{empty} \normalfont \cleardoublepage	
+	\cleardoublepage
 	\include{introduction}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{LearnBasedlevelgeneration}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{DatasetandDataRepresentation}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{SystemOverview}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{SystemArchitecture}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{ExperimentDesignandResults}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{ResultsEvaluationandConclusions}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{FutureWork}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{Appendix}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{Glossary}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	\include{Bibliography}
-	\thispagestyle{empty} \normalfont \cleardoublepage
+	\cleardoublepage
 	
 	
 \end{document}

@@ -241,7 +241,7 @@ class WADFeatureExtractor(object):
         self.main_features()
         self.compute_maps()
         # topological features rely on computed maps
-        self.topological_features()
+        self.image_features()
         # Convert every feature to scalar
         self._features_to_scalar()
         return self.level['features'], self.level['maps'], self.level['text']
@@ -346,12 +346,12 @@ class WADFeatureExtractor(object):
 
 
 
-    def topological_features(self):
+    def image_features(self):
         # Creating auxiliary feature maps
         nonempty_map = self.level['maps']['floormap'].astype(np.bool).astype(np.uint8)
         floormap = self.level['maps']['floormap']
         walkablemap = np.logical_and(nonempty_map, np.logical_not(self.level['maps']['wallmap'])).astype(np.uint8)
-        # Computing a bunch of features from
+        # Computing features
         features = regionprops(nonempty_map)
         features_floors = regionprops(floormap)
         feature_walkablemap = regionprops(walkablemap)
@@ -417,3 +417,4 @@ class WADFeatureExtractor(object):
             self.level['features']['number_of_obstacles'] / self.level['features']['walkable_area'])
         self.level['features']['decorations_per_walkable_area'] = float(
             self.level['features']['number_of_decorations'] / self.level['features']['walkable_area'])
+

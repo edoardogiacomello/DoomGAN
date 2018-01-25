@@ -39,7 +39,8 @@ class WADTweaker():
             wallmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_wallmap.png'.format(index)
             thingsmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_thingsmap.png'.format(index)
             writer.add_level(name='MAP{i:02d}'.format(i=index+1))
-            writer.from_images(heightmap=None, floormap=floormap, wallmap=wallmap, thingsmap=None, debug=False)
+            writer.from_images_v2(floormap, heightmap, wallmap, thingsmap)
+            #writer.from_images(heightmap=None, floormap=floormap, wallmap=wallmap, thingsmap=None, debug=False)
         writer.save('/home/edoardo/Desktop/doom/test.wad')
 
     def build_test_level(self):
@@ -58,7 +59,7 @@ class WADTweaker():
                                        floor_height=32,
                                        kw_sidedef={'upper_texture':'BRONZE1', 'lower_texture':'BRONZE1', 'middle_texture':'-'},
                                        kw_linedef={'type':0, 'trigger':0, 'flags':4},
-                                       sorrounding_sector_id=big_room)
+                                       surrounding_sector_id=big_room)
         # set the starting position for the player 1
         writer.set_start(-700, -700)
         # Let's add a Cacodemon to make things more interesting
@@ -81,7 +82,7 @@ if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
     #WADTweaker().inspect_doom2()
-    WADTweaker().build_levels(6)
+    WADTweaker().build_levels()
     #WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
     #WADTweaker().inspect_doom2()
     #WADTweaker().build_test_level()

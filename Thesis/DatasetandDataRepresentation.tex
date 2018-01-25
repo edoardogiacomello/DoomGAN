@@ -1,7 +1,21 @@
 \chapter{Dataset and Data Representation}
+\paragraph{Overview}
+This chapter aims to be an overview of the processes that led to the creation of the dataset the model is trained and evaluated with.
+In section~\ref{sec:Sources} a reference to the data sources is given, then the focus of section~\ref{sec:WAD} will be on how data is natively encoded for the game engine in order to give some hints on what are the difficulties to face in converting to and from that format in an automatic way. Section~\ref{sec:TargetFormat} will describe in detail what data is provided  the dataset, that is how levels are converted from the native format and what features are extracted in order to provide an input for the neural network. Lastly, section~\ref{sec:I/O} will give a brief overview of data formats used and transformation steps that have been done in order to give the possibility to replicate the dataset generation.
+ 
 \section{Data Sources}
+\label{sec:Sources}
 \section{Native Data Format: WAD Files}
-\section{Feature Extraction}
-\section{Data Encoding}
+\label{sec:WAD}
+\section{Target Data Format: Feature Maps and Vectors}
+\label{sec:TargetFormat}
+\subsection{Overview and Motivation}
+%TODO: Perché le immagini? Come mai divise così? Come mai l'encoding in questo modo?
+\subsection{Feature Maps}
+%TODO: Describe the maps and data encoding
+\subsection{Graph Representation}
+\subsection{Scalar Features}
+\subsection{Data Encoding}
 \section{Input and Output Pipelines}
+\label{sec:I/O}
 \section{Summary}

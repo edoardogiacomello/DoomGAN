@@ -5,13 +5,18 @@ from WAD_Parser.WADFeatureExtractor import WADFeatureExtractor
 import re, os
 from skimage import io
 from skimage.measure import find_contours
+from skimage.measure import label
 import subprocess
 import json
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import morphology
 from WAD_Parser.Dictionaries.ThingTypes import *
+from WAD_Parser.RoomTopology import topological_features
+from WAD_Parser.flags import linedef_flags_to_int
+import networkx as nx
 
+from doomutils import vertices_to_segment_list
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
 # Implementation by Edoardo Giacomello Nov - 2017
 
@@ -275,6 +280,116 @@ class WADWriter(object):
         x, y = xy[0], xy[1]
         return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
 
+    def _rescale_coords(self, v, scale_factor=64):
+        return tuple(int(a * scale_factor) for a in v)
+
+    def from_images_v2(self, floormap, heightmap, wallmap, thingsmap):
+        from skimage.io import imshow
+        if isinstance(floormap, str):
+            floormap = io.imread(floormap).astype(dtype=np.bool)
+        if isinstance(heightmap, str):
+            heightmap = io.imread(heightmap).astype(np.uint8)
+        if isinstance(wallmap, str):
+            wallmap = io.imread(wallmap).astype(dtype=np.bool)
+        if isinstance(thingsmap, str):
+            thingsmap = io.imread(thingsmap).astype(np.uint8)
+
+        walkable = np.logical_and(floormap, np.logical_not(wallmap)) if wallmap is not None else floormap
+
+        walkable = morphology.remove_small_objects(walkable)
+        walkable = morphology.remove_small_holes(walkable)
+
+        roommap, graph = topological_features(walkable, prepare_for_doom=True)
+
+        self.from_graph(graph)
+
+        # Set the start somewhere in room 1
+        # TODO: Enhance this
+        for n in graph.nodes():
+            if n == 0:
+                continue
+            spot = tuple(np.floor(graph.node[n]["centroid"]).astype(np.int))
+            if roommap[spot] != 0:
+                x,y = self._rescale_coords(spot)
+                self.set_start(x,y)
+                break
+
+
+
+    def from_graph(self, graph):
+        """
+        Builds a level exploiting information stored in the room adjacency graph. Treat each room as a different sector.
+        :param graph:
+        :return:
+        """
+        edge_attr_sidedef = dict()  # Dictionary for updating edge attributes
+        node_attr_sectors = dict()  # Dictionary for updating edge attributes
+        # Creating a sector for each room
+        for n in graph.nodes():
+            if n == 0:
+                continue
+            # Create a sector
+            node_attr_sectors[n] = self.lumps['SECTORS'].add_sector(floor_height=0, ceiling_height=128, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=255,
+                                                         special_sector=0, tag=int(n))
+        nx.set_node_attributes(graph, 'sector_id', node_attr_sectors)
+
+        # Creating two sidedefs for each edge and the corresponding linedef
+        for i, j in graph.edges():
+            if i == 0:
+                # linedef flag is impassable and the right sidedef is j
+                j_walls = graph.node[j]["walls"]
+                walls = [w for w in j_walls if w[1] == i or w[1] is None] # TODO: Check this if there's any problem in the corners
+                for wall_piece in walls:
+                    start = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][0]))
+                    end = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][1]))
+                    # - Right sidedef is j
+                    right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
+                                                                      upper_texture='-',
+                                                                      lower_texture='-',
+                                                                      middle_texture='BRONZE1',
+                                                                      sector=graph.node[j]["sector_id"])
+                    # - Make a linedef
+                    linedef = self.lumps['LINEDEFS'].add_linedef(start, end, flags=linedef_flags_to_int(impassable=True), types=0,
+                                               trigger=0, right_sidedef_index=right_sidedef)
+                    # Save the linedef into the edge
+                    if (i,j) not in edge_attr_sidedef:
+                        edge_attr_sidedef[(i,j)] = list()
+                    edge_attr_sidedef[(i, j)].append(right_sidedef)
+            else:
+                i_walls = graph.node[i]["walls"]
+                # linedef is invisible
+                # Get the boundaries from i to j
+                walls_ij = [w for w in i_walls if w[1] == j]
+                for wall_piece in walls_ij:
+                    start = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][0]))
+                    end = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][1]))
+                    # - Right sidedef is i
+                    right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
+                                                                      upper_texture='-',
+                                                                      lower_texture='-',
+                                                                      middle_texture='-',
+                                                                      sector=graph.node[i]["sector_id"])
+                    # - Left sidedef is j (in j list there's the reversed linedef)
+                    left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
+                                                                      upper_texture='-',
+                                                                      lower_texture='-',
+                                                                      middle_texture='-',
+                                                                      sector=graph.node[j]["sector_id"])
+                    # - Make a linedef
+                    linedef = self.lumps['LINEDEFS'].add_linedef(start, end, flags=linedef_flags_to_int(twosided=True), types=0,
+                                               trigger=0, right_sidedef_index=right_sidedef,
+                                               left_sidedef_index=left_sidedef)
+                    # Save the linedef into the edge
+                    if (i, j) not in edge_attr_sidedef:
+                        edge_attr_sidedef[(i, j)] = list()
+                    edge_attr_sidedef[(i, j)].append(right_sidedef)
+                    edge_attr_sidedef[(i, j)].append(left_sidedef)
+            # Actually update edge attribnutes
+            nx.set_edge_attributes(graph, 'sidedef', edge_attr_sidedef)
+
+
+
+
     def from_images(self, heightmap, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, save_debug = './generated_levels_debug/', generate_teleporters=True, flat_levels=False):
         assert heightmap is not None or floormap is not None, "heightmap and floormap cannot be both None"
 
@@ -363,7 +478,7 @@ class WADWriter(object):
                     #    sector_id = self.add_sector([(0,0),(0,level_height),(level_width,level_height),(level_width, 0)], floor_height=-255*level_coord_scale, ceiling_height=255*level_coord_scale, tag=floor_id)
                     #    print("Added a bounding box because the first sector has been specified as counter-clockwise")
                     # The contour defines a hole in the level: Surrounding sector must be defined explicitly
-                    self.add_sector(vertices, ceiling_height=128, tag=floor_id, sorrounding_sector_id=sector_id, hollow=True)
+                    self.add_sector(vertices, ceiling_height=128, tag=floor_id, surrounding_sector_id=sector_id, hollow=True)
                     # sector_id is not changed because we don't want to place anything inside a hole, hopefully.
             if not flat_levels:
                 # Placing inner sectors (heightmap)
@@ -381,7 +496,7 @@ class WADWriter(object):
                         # Drawing the sector with invisible walls
                         self.add_sector(vertices, floor_height=int(sector_height*level_coord_scale), ceiling_height=int(sector_height*level_coord_scale)+256,
                                         kw_sidedef={'upper_texture':'BRONZE1', 'lower_texture':'BRONZE1', 'middle_texture':'-'},
-                                        sorrounding_sector_id=sector_id,
+                                        surrounding_sector_id=sector_id,
                                         kw_linedef={'type': 0, 'trigger': 0, 'flags': 4})
 
             # Placing teleporters
@@ -452,7 +567,7 @@ class WADWriter(object):
         to_sector=int(to_sector)
         halfsize=size//2
         vertices = list(reversed([(x-halfsize, y+halfsize),(x+halfsize, y+halfsize),(x+halfsize, y-halfsize),(x-halfsize, y-halfsize)]))
-        self.add_sector(vertices, floor_flat='GATE1', kw_sidedef={'upper_texture':'-', 'lower_texture':'-', 'middle_texture':'-'}, kw_linedef={'flags':4, 'type':97, 'trigger': to_sector}, sorrounding_sector_id=inside)
+        self.add_sector(vertices, floor_flat='GATE1', kw_sidedef={'upper_texture':'-', 'lower_texture':'-', 'middle_texture':'-'}, kw_linedef={'flags':4, 'type':97, 'trigger': to_sector}, surrounding_sector_id=inside)
 
 
 
@@ -475,15 +590,15 @@ class WADWriter(object):
         height = self.lumps['SECTORS'][parent_sector]['floor_height']
         type = 1 if not remote else 0
         tag = len(self.lumps['SECTORS']) if tag is None else tag
-        return self.add_sector(vertices_coords, ceiling_height=height, kw_sidedef={'upper_texture':texture, 'lower_texture':texture, 'middle_texture':'-'}, kw_linedef={'type':type, 'flags':4, 'trigger':0}, tag=tag, sorrounding_sector_id=parent_sector, hollow=False)
+        return self.add_sector(vertices_coords, ceiling_height=height, kw_sidedef={'upper_texture':texture, 'lower_texture':texture, 'middle_texture':'-'}, kw_linedef={'type':type, 'flags':4, 'trigger':0}, tag=tag, surrounding_sector_id=parent_sector, hollow=False)
 
     def add_trigger(self, vertices_coords, parent_sector, trigger_type, trigger_tag, texture='SW1CMT'):
         return self.add_sector(vertices_coords,
                                kw_sidedef={'upper_texture': 'BRONZE1', 'lower_texture': 'BRONZE1', 'middle_texture': texture},
                                kw_linedef={'type': trigger_type, 'flags': 1, 'trigger': trigger_tag}, tag=0,
-                               sorrounding_sector_id=parent_sector, hollow=False)
+                               surrounding_sector_id=parent_sector, hollow=False)
 
-    def add_sector(self, vertices_coords, floor_height=0, ceiling_height=128, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=256, special=0, tag=0, sorrounding_sector_id=None, hollow=False, kw_sidedef=None, kw_linedef=None):
+    def add_sector(self, vertices_coords, floor_height=0, ceiling_height=128, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=256, special=0, tag=0, surrounding_sector_id=None, hollow=False, kw_sidedef=None, kw_linedef=None):
         """
          Adds a sector with given vertices coordinates, creating all the necessary linedefs and sidedefs and return the relative
         sector id for passing the reference to other sectors or objects if needed
@@ -501,12 +616,9 @@ class WADWriter(object):
         :param special:
         :param tag:
         :param wall_texture:
-        :param sorrounding_sector_id: sector id (returned by this function itself) for the sector that sorrounds the one you are creating.
-        Can be None only if the vertices are specified in clockwise order, since a linedef must have a sector on its right side.
-        :param hollow: Has effect only for counter-clockwise specified sectors.
-        Determines if the sector you are creating does actually contains a sector (like for doors) or it's just a
-        hole sorrounded by walls/linedefs, like the column or other static structures. Default to False.
-        :param kw_linedef: A parameter dictionary for the linedefs. Must have the indices: 'type', 'trigger' and 'flags'
+        :param surrounding_sector_id: sector id (returned by this function itself) for the sector that surrounds the one you are creating. Can be None only if the vertices are specified in clockwise order, since a linedef must have a sector on its right side.
+        :param hollow: Has effect only for counter-clockwise specified sectors. Determines if the sector you are creating does actually contains a sector (like for doors) or it's just a hole surrounded by walls/linedefs, like the column or other static structures. Default to False.
+        :param kw_linedef: (Optional) A list of dictionaries containing the parameters for each linedef, or a single dictionary if all linedefs share the same parameters. Must have the indices: 'type', 'trigger' and 'flags'. Default: {'type':0, 'flags':17, 'trigger':0}
         :return:
         """
         # In order to add a sector one must add:
@@ -529,24 +641,24 @@ class WADWriter(object):
         # Adding the first element at the end for closing the polygon
         startiter, enditer = itertools.tee(vertices_id+[vertices_id[0]], 2)
         next(enditer, None)  # shift the end iterator by one
-        for start, end in zip(startiter, enditer):
+        for segcounter, (start, end) in enumerate(zip(startiter, enditer)):
             if kw_sidedef is None:
                 kw_sidedef = {'upper_texture':'-', 'lower_texture':'-', 'middle_texture':'BRONZE1'}
             if clockwise:
-                # The room has the right sidedef facing sorrounding_sector_id, toward the new sector
+                # The room has the right sidedef facing surrounding_sector_id, toward the new sector
                 right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture=kw_sidedef['upper_texture'], lower_texture=kw_sidedef['lower_texture'],
                                                    middle_texture=kw_sidedef['middle_texture'], sector=sector_id)
-                if sorrounding_sector_id is not None:
-                    left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture=kw_sidedef['upper_texture'], lower_texture=kw_sidedef['lower_texture'], middle_texture=kw_sidedef['middle_texture'], sector=sorrounding_sector_id)
+                if surrounding_sector_id is not None:
+                    left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0, upper_texture=kw_sidedef['upper_texture'], lower_texture=kw_sidedef['lower_texture'], middle_texture=kw_sidedef['middle_texture'], sector=surrounding_sector_id)
                 else:
                     left_sidedef=-1
             else:
-                # The room has the right sidedef facing outside, toward the sorrounding sector
+                # The room has the right sidedef facing outside, towards the sorrounding sector
                 right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
                                                                    upper_texture=kw_sidedef['upper_texture'],
                                                                    lower_texture=kw_sidedef['lower_texture'],
                                                                    middle_texture=kw_sidedef['middle_texture'],
-                                                                   sector=sorrounding_sector_id)
+                                                                   sector=surrounding_sector_id)
                 if not hollow:
                     left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
                                                                       upper_texture=kw_sidedef['upper_texture'],
@@ -555,10 +667,17 @@ class WADWriter(object):
                                                                       sector=sector_id)
                 else:
                     left_sidedef = -1
+
             # Linedef creation/Lookup
             if kw_linedef is None:
-                kw_linedef = {'type':0, 'flags':17, 'trigger':0}
-            self.lumps['LINEDEFS'].add_linedef(start, end, flags=kw_linedef['flags'], types=kw_linedef['type'], trigger=kw_linedef['trigger'], right_sidedef_index=right_sidedef, left_sidedef_index=left_sidedef)
+                linedef_params = {'type':0, 'flags':17, 'trigger':0}
+            elif isinstance(kw_linedef, dict):
+                linedef_params = kw_linedef
+            elif isinstance(kw_linedef, list):
+                linedef_params = kw_linedef[segcounter]
+            else:
+                raise ValueError("kw_linedef can only be None, a Dict or a list of Dict.")
+            self.lumps['LINEDEFS'].add_linedef(start, end, flags=linedef_params['flags'], types=linedef_params['type'], trigger=linedef_params['trigger'], right_sidedef_index=right_sidedef, left_sidedef_index=left_sidedef)
         return sector_id
 
     def _commit_level(self):

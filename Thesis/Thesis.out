@@ -9,7 +9,7 @@
 \BOOKMARK [1][-]{section.1.3}{Scope}{chapter.1}% 9
 \BOOKMARK [1][-]{section.1.4}{Thesis Structure}{chapter.1}% 10
 \BOOKMARK [1][-]{section.1.5}{Summary}{chapter.1}% 11
-\BOOKMARK [0][-]{chapter.2}{Toward learn-based level generation}{}% 12
+\BOOKMARK [0][-]{chapter.2}{Towards learn-based level generation}{}% 12
 \BOOKMARK [1][-]{section.2.1}{Generative Adversarial Networks}{chapter.2}% 13
 \BOOKMARK [2][-]{subsection.2.1.1}{Overview}{section.2.1}% 14
 \BOOKMARK [2][-]{subsection.2.1.2}{Deep Convolutional GAN}{section.2.1}% 15
@@ -24,29 +24,33 @@
 \BOOKMARK [0][-]{chapter.3}{Dataset and Data Representation}{}% 24
 \BOOKMARK [1][-]{section.3.1}{Data Sources}{chapter.3}% 25
 \BOOKMARK [1][-]{section.3.2}{Native Data Format: WAD Files}{chapter.3}% 26
-\BOOKMARK [1][-]{section.3.3}{Feature Extraction}{chapter.3}% 27
-\BOOKMARK [1][-]{section.3.4}{Data Encoding}{chapter.3}% 28
-\BOOKMARK [1][-]{section.3.5}{Input and Output Pipelines}{chapter.3}% 29
-\BOOKMARK [1][-]{section.3.6}{Summary}{chapter.3}% 30
-\BOOKMARK [0][-]{chapter.4}{System Design and Overview}{}% 31
-\BOOKMARK [1][-]{section.4.1}{System Overview}{chapter.4}% 32
-\BOOKMARK [0][-]{chapter.5}{System Architecture}{}% 33
-\BOOKMARK [1][-]{section.5.1}{Component View}{chapter.5}% 34
-\BOOKMARK [1][-]{section.5.2}{Neural Network Architecture}{chapter.5}% 35
-\BOOKMARK [0][-]{chapter.6}{Experiment Design and Results}{}% 36
-\BOOKMARK [1][-]{section.6.1}{Parameter Tweaking and Training Phase}{chapter.6}% 37
-\BOOKMARK [2][-]{subsection.6.1.1}{Techniques and "GAN Tricks" used}{section.6.1}% 38
-\BOOKMARK [2][-]{subsection.6.1.2}{Resulting Model}{section.6.1}% 39
-\BOOKMARK [1][-]{section.6.2}{Sampling the network}{chapter.6}% 40
-\BOOKMARK [1][-]{section.6.3}{Generated Samples}{chapter.6}% 41
-\BOOKMARK [1][-]{section.6.4}{In-Game Demonstration}{chapter.6}% 42
-\BOOKMARK [1][-]{section.6.5}{Summary}{chapter.6}% 43
-\BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 44
-\BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 45
-\BOOKMARK [2][-]{subsection.7.1.1}{Evaluation metric}{section.7.1}% 46
-\BOOKMARK [2][-]{subsection.7.1.2}{Samples Evaluation}{section.7.1}% 47
-\BOOKMARK [2][-]{subsection.7.1.3}{Loss of accuracy}{section.7.1}% 48
-\BOOKMARK [1][-]{section.7.2}{Summary}{chapter.7}% 49
-\BOOKMARK [0][-]{chapter.8}{Future Work}{}% 50
-\BOOKMARK [1][-]{section.8.1}{Open Problems}{chapter.8}% 51
-\BOOKMARK [1][-]{section.8.2}{Possible Applications and future develops}{chapter.8}% 52
+\BOOKMARK [1][-]{section.3.3}{Target Data Format: Feature Maps and Vectors}{chapter.3}% 27
+\BOOKMARK [2][-]{subsection.3.3.1}{Overview and Motivation}{section.3.3}% 28
+\BOOKMARK [2][-]{subsection.3.3.2}{Feature Maps}{section.3.3}% 29
+\BOOKMARK [2][-]{subsection.3.3.3}{Graph Representation}{section.3.3}% 30
+\BOOKMARK [2][-]{subsection.3.3.4}{Scalar Features}{section.3.3}% 31
+\BOOKMARK [2][-]{subsection.3.3.5}{Data Encoding}{section.3.3}% 32
+\BOOKMARK [1][-]{section.3.4}{Input and Output Pipelines}{chapter.3}% 33
+\BOOKMARK [1][-]{section.3.5}{Summary}{chapter.3}% 34
+\BOOKMARK [0][-]{chapter.4}{System Design and Overview}{}% 35
+\BOOKMARK [1][-]{section.4.1}{System Overview}{chapter.4}% 36
+\BOOKMARK [0][-]{chapter.5}{System Architecture}{}% 37
+\BOOKMARK [1][-]{section.5.1}{Component View}{chapter.5}% 38
+\BOOKMARK [1][-]{section.5.2}{Neural Network Architecture}{chapter.5}% 39
+\BOOKMARK [0][-]{chapter.6}{Experiment Design and Results}{}% 40
+\BOOKMARK [1][-]{section.6.1}{Parameter Tweaking and Training Phase}{chapter.6}% 41
+\BOOKMARK [2][-]{subsection.6.1.1}{Techniques and "GAN Tricks" used}{section.6.1}% 42
+\BOOKMARK [2][-]{subsection.6.1.2}{Resulting Model}{section.6.1}% 43
+\BOOKMARK [1][-]{section.6.2}{Sampling the network}{chapter.6}% 44
+\BOOKMARK [1][-]{section.6.3}{Generated Samples}{chapter.6}% 45
+\BOOKMARK [1][-]{section.6.4}{In-Game Demonstration}{chapter.6}% 46
+\BOOKMARK [1][-]{section.6.5}{Summary}{chapter.6}% 47
+\BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 48
+\BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 49
+\BOOKMARK [2][-]{subsection.7.1.1}{Evaluation metric}{section.7.1}% 50
+\BOOKMARK [2][-]{subsection.7.1.2}{Samples Evaluation}{section.7.1}% 51
+\BOOKMARK [2][-]{subsection.7.1.3}{Loss of accuracy}{section.7.1}% 52
+\BOOKMARK [1][-]{section.7.2}{Summary}{chapter.7}% 53
+\BOOKMARK [0][-]{chapter.8}{Future Work}{}% 54
+\BOOKMARK [1][-]{section.8.1}{Open Problems}{chapter.8}% 55
+\BOOKMARK [1][-]{section.8.2}{Possible Applications and future develops}{chapter.8}% 56
