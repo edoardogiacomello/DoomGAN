@@ -644,8 +644,9 @@ class DoomGAN(object):
 
         for s in range(self.config.batch_size):
             # TODO: compute design metrics and errors
-            topological_features(s_gen[s, :, :, 0])
+
             topological_features(s_true[s, :, :, 0])
+            topological_features(s_gen[s, :, :, 0])
 
             for m, mname in enumerate(self.maps):
                 h_gen = np.histogram(s_gen[s, :, :, m], bins=255, range=(0, 255), density=True)[0]

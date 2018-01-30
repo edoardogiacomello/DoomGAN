@@ -64,10 +64,26 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
     :param room_coordinates: If true, each graph node will contain the room vertices and information about the walls
     :return: (Roommap, Graph) if return_dist is False, else (Roommap, Graph, dist)
     """
+    # Ensuring that floormap is always a boolean array
+    floormap = floormap.astype(np.bool)
+
     dist = ndi.distance_transform_edt(floormap)
-    local_max = peak_local_max(dist, min_distance=3, indices=False, labels=floormap)
+    threshold = int(dist.max())
+    optimal_threshold = 0
+    number_of_centers = 0
+    # Finding room center and finding the optimal threshold (the one that maximizes the number of rooms)
+    for i in range(int(dist.max()), int(dist.min())-1,-1):
+       local_max = peak_local_max(dist, threshold_abs=threshold-i, indices=False, labels=floormap, min_distance=3)
+       markers = ndi.label(local_max)[0]
+       if markers.max() > number_of_centers:
+          optimal_threshold = threshold-i
+          number_of_centers = markers.max()
+
+    # Computing roommap with the optimal threshold
+    local_max = peak_local_max(dist, min_distance=3, indices=False, labels=floormap, threshold_abs=optimal_threshold)
     markers = ndi.label(local_max)[0]
     roommap = watershed(-dist, markers, mask=floormap)
+
     room_RAG_boundaries = skg.rag_boundary(roommap, filters.sobel(color.rgb2gray(roommap)))
 
     if room_coordinates:

@@ -72,9 +72,9 @@ def postprocess_output(g, maps, folder = './generated_samples/'):
             if mapname == 'heightmap':
                 feature_map = ((feature_map-feature_map.min())*255.0)/(feature_map.max()-feature_map.min())
             if mapname == 'floormap':
-                feature_map = (feature_map > 0.5)*255
+                feature_map = (feature_map >= 255/2)*255
             if mapname == 'wallmap':
-                feature_map = (feature_map > 255/2)*255
+                feature_map = (feature_map >= 255/2)*255
             feature_map = np.around(feature_map)
 
             # Saving
