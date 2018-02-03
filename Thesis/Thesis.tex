@@ -56,6 +56,10 @@
 	\if@twocolumn\hbox{}\newpage\fi\fi\fi}
 \makeatother
 
+\usepackage[citestyle=authoryear, backend=bibtex]{biblatex}
+\addbibresource{bibliography.bib}
+
+
 \begin{document}
 	
 	
@@ -91,7 +95,7 @@
 	\cleardoublepage
 	\include{Glossary}
 	\cleardoublepage
-	\include{Bibliography}
+	\printbibliography
 	\cleardoublepage
 	
 	

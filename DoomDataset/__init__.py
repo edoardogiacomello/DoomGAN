@@ -185,7 +185,6 @@ class DoomDataset():
             from sklearn.cluster import DBSCAN
             Y = DBSCAN(eps=0.3, min_samples=300).fit_predict(X)
             X = np.concatenate((X, np.expand_dims(Y, axis=-1)), axis=-1)
-            # TODO: go on clustering
             # Plotting
             pd_dataset = pd.DataFrame(X, columns=features+['label'])
             g = sb.pairplot(pd_dataset, hue='label', plot_kws={"s": 10})
@@ -243,6 +242,9 @@ class DoomDataset():
                 meta['features'][f]['var'] = s.variance
                 meta['features'][f]['skewness'] = s.skewness
                 meta['features'][f]['kurtosis'] = s.kurtosis
+                meta['features'][f]['Q1'] = np.percentile(values, 25)
+                meta['features'][f]['Q2'] = np.percentile(values, 50)
+                meta['features'][f]['Q3'] = np.percentile(values, 75)
                 # Saving every value as a scalar so it can be serialized by json
                 for statname in meta['features'][f]:
                     meta['features'][f][statname] = np.asscalar(np.asarray(meta['features'][f][statname]))
@@ -431,7 +433,6 @@ class DoomDataset():
         tf_dataset = tf_dataset.batch(self.get_dataset_count(tf_dataset_path))
 
         iter = tf_dataset.make_one_shot_iterator()
-        loaded_features = None
         with tf.Session() as sess:
             data = sess.run([iter.get_next()])[0]
         return np.asarray([data[f] for f in feautre_names]).transpose()

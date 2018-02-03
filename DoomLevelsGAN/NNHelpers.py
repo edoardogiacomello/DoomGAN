@@ -1,6 +1,7 @@
 import tensorflow as tf
 import math
 import itertools
+import numpy as np
 
 def show_all_variables():
   model_vars = tf.trainable_variables()
@@ -189,4 +190,5 @@ def visualize_samples(name, samples):
     # If the input sample has 2 or more than 3 channels, display each channel separately
     tensor = tf.squeeze(tf.stack([tf.expand_dims(channel, axis=-1) for channel in tf.unstack(tensor, axis=-1)]), axis=1)
     return tf.summary.image(name, tensor, max_outputs=channels)
+
 

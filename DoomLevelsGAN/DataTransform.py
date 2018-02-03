@@ -132,3 +132,35 @@ def extract_features_from_net_output(rescaled_g, features, maps, batch_size, tmp
         for f, feature in enumerate(features):
             extracted_features[l,f] = level['features'][feature]
     return extracted_features
+
+def slerp(val, low, high):
+    """Spherical interpolation. val has a range of 0 to 1.
+    Code from: https://github.com/dribnet/plat
+    """
+    if val <= 0:
+        return low
+    elif val >= 1:
+        return high
+    elif np.allclose(low, high):
+        return low
+
+    dot = np.dot(low / np.linalg.norm(low), high / np.linalg.norm(high))
+    omega = np.arccos(dot)
+    so = np.sin(omega)
+    return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+
+def get_interpolated_y_batch(start, end, batch_size):
+    """
+    Return a sferical interpolated sample of size (batch, features) for which
+     result[0] is "start"
+     result[batch_size] is "end"
+     middle values are feature space vectors interpolated at step 1/batch_size
+    :param start: the starting feature vector
+    :param end: the ending feature vector
+    :param batch_size: first dimension of returned vector, also determines the interpolation step
+    :return: ndarray of size (batch_size, start.shape()[-1] == end.shape()[-1])
+    """
+    result = np.zeros(shape=(batch_size, start.shape[-1]))
+    for s, step in enumerate(np.linspace(0, 1, num=batch_size)):
+        result[s] = slerp(step, start, end)
+    return result

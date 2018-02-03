@@ -147,6 +147,37 @@ features = {
     'name': 'string',
     'slot': 'string',
     'path_json': 'string',
+    'nodes': 'int',
+    'avg-path-length': 'float',
+    'diameter-mean': 'float',
+    'art-points': 'int',
+    'assortativity-mean': 'float',
+    'betw-cen-min': 'float',
+    'betw-cen-max': 'float',
+    'betw-cen-mean': 'float',
+    'betw-cen-var': 'float',
+    'betw-cen-skew': 'float',
+    'betw-cen-kurt': 'float',
+    'betw-cen-Q1': 'float',
+    'betw-cen-Q2': 'float',
+    'betw-cen-Q3': 'float',
+    'closn-cen-min': 'float',
+    'closn-cen-max': 'float',
+    'closn-cen-mean': 'float',
+    'closn-cen-var': 'float',
+    'closn-cen-skew': 'float',
+    'closn-cen-kurt': 'float',
+    'closn-cen-Q1': 'float',
+    'closn-cen-Q2': 'float',
+    'closn-cen-Q3': 'float',
+    'distmap-max': 'float',
+    'distmap-mean': 'float',
+    'distmap-var': 'float',
+    'distmap-skew': 'float',
+    'distmap-kurt': 'float',
+    'distmap-Q1': 'float',
+    'distmap-Q2': 'float',
+    'distmap-Q3': 'float'
 }
 
 map_paths = {
@@ -154,8 +185,9 @@ map_paths = {
     'path_wallmap': 'wallmap',
     'path_thingsmap': 'thingsmap',
     'path_floormap': 'floormap',
-    'path_triggermap': 'triggermap'
-}
+    'path_triggermap': 'triggermap',
+    'path_roommap': 'roommap'
+    }
 
 wad_features = {'title': 'string',
     'author': 'string',

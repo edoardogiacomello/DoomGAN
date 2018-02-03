@@ -6,6 +6,7 @@ import pickle
 import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
 from DoomLevelsGAN.NNHelpers import *
+from WAD_Parser.RoomTopology import *
 import DoomLevelsGAN.inception.inception_score as inception
 from scipy.spatial import cKDTree
 
@@ -456,6 +457,7 @@ class DoomGAN(object):
 
                         # Check if the net should be saved
                         if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0:
+                            # TODO: Turn this on
                             #self.save(config.checkpoint_dir)
 
                             # Calculating training loss
@@ -591,7 +593,7 @@ class DoomGAN(object):
             for s in range(self.config.batch_size):
                 distance, nearest_index = self.nearest_features_tree.query(y_feature_space[s])
                 y[s, :] = loaded_features[nearest_index]
-        if y_batch:
+        if y_batch is not None:
             # the y_batch is provided externally
             y = y_batch
         if seed is not None:
@@ -603,6 +605,7 @@ class DoomGAN(object):
         else:
             z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
                 np.float32)
+        np.random.seed()
         result = self.session.run([self.G_rescaled],
                          feed_dict={self.z: z_batch, self.y: y})[0]
         if postprocess:
@@ -623,213 +626,40 @@ class DoomGAN(object):
         :return:
         """
         s_gen = s_gen.astype(np.uint8)
-        # TODO: Complete this function
-        from scipy.stats import entropy
         from skimage.measure import compare_ssim
-        from DoomLevelsGAN.OutputEvaluation import encoding_error
-        from skimage.feature import corner_harris, corner_peaks
         corner_error = lambda x, y: np.power((np.power(x - y, 2) / (x * y)), 0.5)
 
         metrics = {}
-        # Computing color-based histogram
-        hist_gen = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
-        hist_tru = np.zeros(shape=(self.config.batch_size, len(self.maps), 255))
-        entropies = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
+        entropy_diff = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
         ssim = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
         enc_error = np.zeros(shape=(self.config.batch_size, len(self.maps), 1))
         floor_corner_error = np.zeros(shape=(self.config.batch_size, 1))
         walls_corner_error = np.zeros(shape=(self.config.batch_size, 1))
 
-        from WAD_Parser.RoomTopology import topological_features
-
         for s in range(self.config.batch_size):
-            # TODO: compute design metrics and errors
-
-            topological_features(s_true[s, :, :, 0])
-            topological_features(s_gen[s, :, :, 0])
+            # TODO: Add topological features here if makes any sense
+            metrics_true = quality_metrics(s_true[s,:,:,:], self.maps)
+            metrics_gen = quality_metrics(s_gen[s,:,:,:], self.maps)
 
             for m, mname in enumerate(self.maps):
-                h_gen = np.histogram(s_gen[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
-                h_tru = np.histogram(s_true[s, :, :, m], bins=255, range=(0, 255), density=True)[0]
-                e = entropy(h_gen)-entropy(h_tru)
-                hist_gen[s, m, :] = h_gen
-                hist_tru[s, m, :] = h_tru
-                entropies[s, m, :] = e
                 ssim[s, m, :] = compare_ssim(s_gen[s, :, :, m], s_true[s, :, :, m])
-
-                if mname in ['floormap','wallmap']:
-                    enc_error[s,m,:] = np.mean(encoding_error(s_gen[s,:,:,m], 255))
-                elif mname in ['heightmap', 'thingsmap', 'triggermap']:
-                    enc_error[s,m,:] = np.mean(encoding_error(s_gen[s, :, :, m], 1))
+                entropy_diff[s, m, :] = metrics_gen['entropy_{}'.format(mname)] - metrics_true['entropy_{}'.format(mname)]
+                # Encoding error should be > 0 only for generated samples
+                enc_error[s, m, :] = metrics_gen['encoding_error_{}'.format(mname)]
                 if mname == 'floormap':
-                    corners_floor_true = len(corner_peaks(corner_harris(s_true[s, :,:,m])))
-                    corners_floor_gen = len(corner_peaks(corner_harris(s_gen[s, :,:,m])))
-                    floor_corner_error[s,:] = corner_error(corners_floor_true, corners_floor_gen)
+                    floor_corner_error[s,:] = corner_error(metrics_true['corners_{}'.format(mname)], metrics_gen['corners_{}'.format(mname)])
                 if mname == 'wallmap':
-                    corners_walls_true = len(corner_peaks(corner_harris(s_true[s, :,:,m])))
-                    corners_walls_gen = len(corner_peaks(corner_harris(s_gen[s, :,:,m])))
-                    walls_corner_error[s,:] = corner_error(corners_walls_true, corners_walls_gen)
+                    walls_corner_error[s,:] = corner_error(metrics_true['corners_{}'.format(mname)], metrics_gen['corners_{}'.format(mname)])
 
-            metrics["entropy_mae_{}".format(mname)] = np.mean(entropies[:,m,:])
+            metrics["entropy_mae_{}".format(mname)] = np.mean(entropy_diff[:,m,:])
             metrics["similarity_{}".format(mname)] = np.mean(ssim[:,m,:])
             metrics["encoding_error_{}".format(mname)] = np.mean(enc_error[:,m,:])
-        metrics["entropy_mae"] = np.mean(entropies)
+        metrics["entropy_mae"] = np.mean(entropy_diff)
         metrics["similarity"] = np.mean(ssim)
         metrics["encoding_error"] = np.mean(enc_error)
         metrics["floor_corner_error"] = np.mean(floor_corner_error)
-        metrics["walls_corner_error"] =  np.mean(walls_corner_error)
-
+        metrics["walls_corner_error"] = np.mean(walls_corner_error)
         return metrics
-
-    def generate_levels_feature_interpolation(self, feature_to_interpolate, seed=None):
-        # TODO: Implement this or remove it
-        def slerp(val, low, high):
-            """Spherical interpolation. val has a range of 0 to 1.
-            Code from: https://github.com/dribnet/plat
-            """
-            if val <= 0:
-                return low
-            elif val >= 1:
-                return high
-            elif np.allclose(low, high):
-                return low
-
-            dot = np.dot(low / np.linalg.norm(low), high / np.linalg.norm(high))
-            omega = np.arccos(dot)
-            so = np.sin(omega)
-            return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
-
-        # Load and initialize the network
-        self.initialize_and_restore()
-        # Fix a sample so the change gets more visible
-        if seed is not None:
-            np.random.seed(seed)
-        z_sample = np.random.normal(0, 1, [self.config.z_dim]).astype(np.float32)
-        # Replicate the same noise vector for each sample (each level should be the same except for the controlled feature)
-        z_sample = np.tile(z_sample, (self.config.batch_size, 1))
-        feat_factors = np.ones(shape=(self.config.batch_size, len(self.features)))*-1
-        # building a matrix factors of size (batch_size, len(features)).
-        # The factors will all be -1 (so we get the mean value for every feature) except the column
-        # corresponding to the feature that has to be interpolated, which will range from min to max.
-        for f, fname in enumerate(self.features):
-            if fname == feature_to_interpolate:
-                # TODO: Still using linear interpolation, spherical may lead to better results (between which starting points?)
-                feat_factors[:, f] = np.linspace(0,1,num=self.config.batch_size)
-        y = DoomDataset().get_feature_sample(self.config.dataset_path, feat_factors, features=self.features, extremes='minmax')
-        # Constructing a y vector with a different y for each sample in the batch
-        samples = self.session.run([self.G_rescaled], feed_dict={self.z: z_sample, self.y: y})
-        samples = DataTransform.postprocess_output(samples[0], self.maps, folder=None)
-        DataTransform.build_levels(samples, self.maps, self.config.batch_size, call_node_builder=False,
-                                   level_images_path='./interpolated_features/{}/'.format(feature_to_interpolate))
-
-
-
-
-    def inception_score(self):
-        # TODO: Inception score seems to be not so meaningful in this case
-        scores = {mapname: list() for mapname in self.maps}
-        # Load the dataset
-        dataset_iterator = self.load_dataset()
-
-        self.session.run([dataset_iterator.initializer])
-        next_batch = dataset_iterator.get_next()
-        batch_index = 0
-        while True:
-            # Train Step
-            try:
-
-                train_batch = self.session.run(next_batch)  # Batch of true samples
-                z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
-                    np.float32)  # Batch of noise
-                x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
-                y_batch = np.stack([train_batch[f] for f in self.features], axis=-1) if self.use_features else None
-                # Transpose from (batch, width, height, map) to (map, batch, width, height, 1)
-                x_batch = np.expand_dims(x_batch.transpose(-1, 0, 1, 2), axis=-1)
-                # now replicate the last channel to make it rgb (inception works on rgb)
-                x_batch = np.repeat(x_batch, 3, -1)
-                for id, mapname in enumerate(self.maps):
-                    x_map = list(x_batch[id])
-                    scores[mapname] = inception.get_inception_score(x_map)
-
-
-            except tf.errors.OutOfRangeError:
-                # We reached the end of the dataset, break the loop and start a new epoch
-                break
-        print("Done")
-
-    def nearest_neighbor_score(self, calc_entropy=False):
-        # TODO: This should be done on an held-out set
-        import sklearn.model_selection
-        from sklearn.neighbors import KNeighborsClassifier
-        # Load and initialize the network
-        self.initialize_and_restore()
-        # Go through a full epoch to load all the data and generate relative samples
-
-        # Load the dataset
-        dataset_iterator = self.load_dataset()
-
-        samples = {'x': list(), 'y':list(), 'g':list()}
-
-        self.session.run([dataset_iterator.initializer])
-        next_batch = dataset_iterator.get_next()
-        x_incep = list()
-        g_incep = list()
-        entr = {m: {'x':list(), 'g':list()} for m in self.maps}
-        while True:
-            try:
-                # Get a new batch
-                train_batch = self.session.run(next_batch)  # Batch of true samples
-                x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
-                y_batch = np.stack([train_batch[f] for f in self.features],
-                                   axis=-1)
-                # Normalizing the x_batch according to DoomGAN
-                x_batch = self.session.run([self.x_norm], feed_dict={self.x: x_batch, self.x_rotation: [0]})[0]
-                g_batch = self.sample(y_batch=y_batch)
-                g_batch = np.around(g_batch).astype(np.uint8)
-                x_batch = np.around(x_batch*255).astype(np.uint8)
-
-
-
-
-
-
-                # Mean Entropy calculation
-                if calc_entropy:
-                    from skimage.filters.rank import entropy
-                    from skimage.morphology import disk
-                    print("Entropy calculation")
-                    for m, mapname in enumerate(self.maps):
-                        for s in range(self.config.batch_size):
-                            x_entropy = np.mean(entropy(x_batch[s,:,:,m], disk(2)))
-                            g_entropy = np.mean(entropy(g_batch[s,:,:,m], disk(2)))
-                            entr[mapname]['x'].append(x_entropy)
-                            entr[mapname]['g'].append(g_entropy)
-                            print('.', end='')
-
-            except tf.errors.OutOfRangeError:
-                #  reached the end of the dataset
-                break
-        # Mean Entropy calculation
-        if calc_entropy:
-           for m, mapname in enumerate(self.maps):
-               x_entropy = np.mean(entr[mapname]['x'])
-               g_entropy = np.mean(entr[mapname]['g'])
-               print("X mean entropy: {}".format(x_entropy))
-               print("G mean entropy: {}".format(g_entropy))
-
-
-        x_test = np.repeat(np.expand_dims(x_batch[:, :, :, 1], axis=-1), 3, axis=-1)
-        g_test = np.repeat(np.expand_dims(g_batch[:, :, :, 1], axis=-1), 3, axis=-1)
-
-        x_incep.append(list(inception.get_inception_score(list(x_test))))
-        g_incep.append(list(inception.get_inception_score(list(g_test))))
-
-        x_inc_mean = np.mean(np.asarray(x_incep)[:, 0])
-        g_inc_mean = np.mean(np.asarray(g_incep)[:, 0])
-        print("Calculating inception score for x and g sets (floormap only)")
-        print("X: {} \n G: {} \n".format(x_inc_mean, g_inc_mean))
-        # all_samples = np.reshape(all_samples, [all_samples.shape[0], -1])
-        labels = np.concatenate((1*np.ones(len(samples['x'])), -1*np.ones(len(samples['g']))))
 
 
 def clean_tensorboard_cache(tensorBoardPath):

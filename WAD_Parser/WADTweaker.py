@@ -64,7 +64,7 @@ class WADTweaker():
         writer.set_start(-700, -700)
         # Let's add a Cacodemon to make things more interesting
         #writer.add_thing(x=500, y=500, thing_type=3005, options=7)
-        # Save the wad file. "bsp" command should work in your shell for this.
+        # Save the wad file. "bsp" command should work in your shell for this to work.
         wad_mine = writer.save('/home/edoardo/Desktop/doom/test.wad')
 
 
@@ -81,8 +81,8 @@ class WADTweaker():
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
 
-    #WADTweaker().inspect_doom2()
-    WADTweaker().build_levels()
+    WADTweaker().inspect_doom2()
+    #WADTweaker().build_levels()
     #WADReader().extract('/run/media/edoardo/BACKUP/Datasets/DoomDataset/Original/3ways_3WAYS.WAD')
     #WADTweaker().inspect_doom2()
     #WADTweaker().build_test_level()

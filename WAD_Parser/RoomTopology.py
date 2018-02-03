@@ -8,10 +8,14 @@ from scipy import ndimage as ndi
 from skimage.morphology import watershed
 from skimage.measure import label
 from skimage.measure import find_contours
-from skimage.segmentation import find_boundaries
 import networkx as nx
 import numpy as np
 from doomutils import vertices_to_segment_list
+from scipy.stats import entropy, describe
+from DoomLevelsGAN.OutputEvaluation import encoding_error
+from skimage.feature import corner_harris, corner_peaks
+import warnings
+
 
 def _plot_room(rooms, node):
     from skimage.draw import line
@@ -85,7 +89,6 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
     roommap = watershed(-dist, markers, mask=floormap)
 
     room_RAG_boundaries = skg.rag_boundary(roommap, filters.sobel(color.rgb2gray(roommap)))
-
     if room_coordinates:
         # For each floor...
         floors = label(floormap)
@@ -149,6 +152,12 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
     return roommap, room_RAG_boundaries
 
 def topological_features(floormap, prepare_for_doom=False):
+    """
+    Create the level graph from the floormap and compute some topological features on the graph.
+    :param floormap:
+    :param prepare_for_doom: (Default:False) If true each node will also contain vertices and walls information for converting the level to a WAD file.
+    :return: (room map, room_graph, dict of metrics)
+    """
     roommap, room_graph, dist = create_graph(floormap, return_dist=True, room_coordinates=prepare_for_doom)
     room_props = regionprops(roommap)
     for r in range(1, roommap.max() + 1):
@@ -157,19 +166,11 @@ def topological_features(floormap, prepare_for_doom=False):
         room_graph.node[r]["perimeter"] = room_props[r - 1]["perimeter"]
         mask = (roommap == r)
         max_dist = np.max(mask * dist)
-        centroid_shape = (dist * mask) == max_dist
-        room_graph.node[r]["relative_eccentricity"] = np.count_nonzero(centroid_shape)
-        room_graph.node[r]["relative_radius"] = max_dist
-        room_graph.node[r]["form_factor"] = room_graph.node[r]["relative_eccentricity"] / (
-            room_graph.node[r]["relative_radius"] ** 2)
+        room_graph.node[r]["max_dist"] = max_dist
         room_graph.node[r]["centroid"] = room_props[r - 1]["centroid"]
 
-        if room_graph.node[r]["form_factor"] >= 1:
-            room_graph.node[r]["type"] = "corridor"
-        else:
-            room_graph.node[r]["type"] = "room"
-                # TODO: Merge as many info as possible into the graph, as distance, enemies, etc.
 
+        # TODO: Add information about other maps, such as enemies, etc.
 
     centroid_distance = dict()
     for i, j in room_graph.edges():
@@ -178,4 +179,89 @@ def topological_features(floormap, prepare_for_doom=False):
             continue
         centroid_distance[(i,j)] = np.linalg.norm(np.asarray(room_graph.node[i]["centroid"])-np.asarray(room_graph.node[j]["centroid"])).item()
     nx.set_edge_attributes(room_graph, 'centroid_distance', centroid_distance)
-    return roommap, room_graph
+
+
+    # To compute correct metrics we need to remove node 0, which is the background
+    graph_no_background = room_graph.copy()
+    graph_no_background.remove_node(0)
+    metrics = dict()
+    # Computing metrics from "Predicting the Global Structure of Indoor Environments: A costructive Machine Learning Approach", (Luperto, Amigoni, 2018)
+    #####
+    metrics["nodes"] = len(nx.nodes(graph_no_background))
+    pl_list = list()
+    diam_list = list()
+    assort_list = list()
+    for cc in nx.connected_component_subgraphs(graph_no_background):
+        if len(cc.edges()) > 0:
+            pl_list += [nx.average_shortest_path_length(cc)]
+            diam_list += [nx.diameter(cc)]
+            assort_list += [nx.degree_assortativity_coefficient(graph_no_background)]
+
+
+    metrics["avg-path-length"] = np.mean(pl_list) if len(pl_list) > 0 else 0
+    metrics["diameter-mean"] = np.mean(diam_list) if len(diam_list) > 0 else 0
+    metrics["art-points"] = len(list(nx.articulation_points(graph_no_background)))
+    metrics["assortativity-mean"] = nx.degree_assortativity_coefficient(graph_no_background) if len(cc.edges()) > 0 else 0
+    try:
+        # Centrality measures
+        metrics["betw-cen"] = nx.betweenness_centrality(graph_no_background)
+        metrics["closn-cen"] = nx.closeness_centrality(graph_no_background)
+        # These metrics may throw exceptions
+        # metrics["eig-cen"] = nx.eigenvector_centrality_numpy(graph_no_background)
+        # metrics["katz-cen"] = nx.katz_centrality_numpy(graph_no_background)
+
+        # Describing node stat distributions and removing them from the dict
+        for met in ['betw-cen', 'closn-cen']:
+            values = list(metrics['{}'.format(met)].values())
+            st = describe(values)
+
+            metrics["{}-min".format(met)] = st.minmax[0]
+            metrics["{}-max".format(met)] = st.minmax[1]
+            metrics["{}-mean".format(met)] = st.mean
+            metrics["{}-var".format(met)] = st.variance
+            metrics["{}-skew".format(met)] = st.skewness
+            metrics["{}-kurt".format(met)] = st.kurtosis
+            # Quartiles
+            metrics["{}-Q1".format(met)] = np.percentile(values, 25)
+            metrics["{}-Q2".format(met)] = np.percentile(values, 50)
+            metrics["{}-Q3".format(met)] = np.percentile(values, 75)
+            del metrics[met]
+    except:
+        warnings.warn("Unable to compute centrality for this level")
+        metrics["betw-cen"] = np.nan
+        metrics["closn-cen"] = np.nan
+    #####
+
+    # Metrics on distance map. Ignoring black space surrounding the level
+    cleandist = np.where(dist == 0, np.nan, dist)
+    dstat = describe(cleandist, axis=None, nan_policy='omit')
+    metrics["distmap-max".format(met)] = dstat.minmax[1]
+    metrics["distmap-mean".format(met)] = dstat.mean
+    metrics["distmap-var".format(met)] = dstat.variance
+    metrics["distmap-skew".format(met)] = dstat.skewness
+    metrics["distmap-kurt".format(met)] = dstat.kurtosis
+    # Quartiles
+    metrics["distmap-Q1".format(met)] = np.percentile(values, 25)
+    metrics["distmap-Q2".format(met)] = np.percentile(values, 50)
+    metrics["distmap-Q3".format(met)] = np.percentile(values, 75)
+
+    return roommap, room_graph, metrics
+
+def quality_metrics(sample, maps):
+    """
+    Compute map quality metrics (entropy, encoding error, number of corners) for the provided sample.
+    :param sample: array of shape (width, height, len(maps))
+    :param maps: Array of map names, eg. ['floormap', 'wallmap', ...]. The position must correspond to the third sample dimension
+    :return: a dictionary of metrics
+    """
+    metrics = dict()
+    for m, mname in enumerate(maps):
+        hist = np.histogram(sample[:, :, m], bins=255, range=(0, 255), density=True)[0]
+        metrics['entropy_{}'.format(mname)] = entropy(hist)
+        if mname in ['floormap', 'wallmap']:
+            metrics['encoding_error_{}'.format(mname)] = np.mean(encoding_error(sample[:,:,m], 255))
+            metrics['corners_{}'.format(mname)] = len(corner_peaks(corner_harris(sample[:,:,m])))
+
+        elif mname in ['heightmap', 'thingsmap', 'triggermap']:
+            metrics['encoding_error_{}'.format(mname)] = encoding_error(sample[:, :, m], 1)
+    return metrics

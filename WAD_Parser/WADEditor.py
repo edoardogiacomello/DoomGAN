@@ -15,6 +15,7 @@ from WAD_Parser.Dictionaries.ThingTypes import *
 from WAD_Parser.RoomTopology import topological_features
 from WAD_Parser.flags import linedef_flags_to_int
 import networkx as nx
+import warnings
 
 from doomutils import vertices_to_segment_list
 # Data specification taken from http://www.gamers.org/dhs/helpdocs/dmsp1666.html
@@ -284,6 +285,7 @@ class WADWriter(object):
         return tuple(int(a * scale_factor) for a in v)
 
     def from_images_v2(self, floormap, heightmap, wallmap, thingsmap):
+        # TODO: Finalize this
         from skimage.io import imshow
         if isinstance(floormap, str):
             floormap = io.imread(floormap).astype(dtype=np.bool)
@@ -299,7 +301,7 @@ class WADWriter(object):
         walkable = morphology.remove_small_objects(walkable)
         walkable = morphology.remove_small_holes(walkable)
 
-        roommap, graph = topological_features(walkable, prepare_for_doom=True)
+        roommap, graph, metrics = topological_features(walkable, prepare_for_doom=True)
 
         self.from_graph(graph)
 
@@ -338,7 +340,7 @@ class WADWriter(object):
             if i == 0:
                 # linedef flag is impassable and the right sidedef is j
                 j_walls = graph.node[j]["walls"]
-                walls = [w for w in j_walls if w[1] == i or w[1] is None] # TODO: Check this if there's any problem in the corners
+                walls = [w for w in j_walls if w[1] == i or w[1] is None] # Check this if there's any problem in the corners
                 for wall_piece in walls:
                     start = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][0]))
                     end = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][1]))
@@ -770,7 +772,9 @@ class WADReader(object):
             # Saving the text representation
             with open(base_filename + '.txt', 'wb') as txtout:
                 txtout.writelines([bytes(row + [10]) for row in level['text']])
-
+            # Saving the graph
+            if 'graph' in level:
+                nx.write_gpickle(level['graph'], base_filename + '.networkx')
 
 
     def extract(self, wad_fp, save_to=None, root_path=None, update_record=None):
@@ -791,9 +795,12 @@ class WADReader(object):
                 return None
         parsed_wad['levels'] = list()
         for level in parsed_wad['wad'].levels:
-            extractor = WADFeatureExtractor(level)
-            features, maps, txt = extractor.extract_features()
-            parsed_wad['levels'] += [{'name': level['name'], 'features': features, 'maps':maps, 'text':txt}]
+            try:
+                extractor = WADFeatureExtractor(level)
+                features, maps, txt, graph = extractor.extract_features()
+                parsed_wad['levels'] += [{'name': level['name'], 'features': features, 'maps':maps, 'text':txt, 'graph':graph}]
+            except:
+                warnings.warn("Failed to extract data for level {}".format(level['name']))
         if save_to is not None:
             self.save_sample(parsed_wad, save_to, root_path, update_record)
         return parsed_wad

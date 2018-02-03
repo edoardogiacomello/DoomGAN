@@ -1,11 +1,11 @@
-import numpy as np
 import skimage.draw as draw
 from skimage import io
-from scipy.ndimage.measurements import label
+from skimage.morphology import label
 import scipy as sp
 from skimage.measure import regionprops
 import WAD_Parser.Dictionaries.ThingTypes as ThingTypes
 import WAD_Parser.Dictionaries.LinedefTypes as LinedefTypes
+from WAD_Parser.RoomTopology import *
 
 class WADFeatureExtractor(object):
     def __init__(self, level_dict):
@@ -224,8 +224,8 @@ class WADFeatureExtractor(object):
         #tag_map is an intermediate map needed to build the trigger map
         self.level['maps']['wallmap'], self.level['maps']['heightmap'], self.level['maps']['triggermap'] = self.draw_sector_maps()
         self.level['maps']['thingsmap'] = self.draw_thingsmap()
-        enumerated_floors, self.level['features']['floors'] = label(self.level['maps']['heightmap'], structure=np.ones((3,3)))
-        self.level['maps']['floormap'] = ((enumerated_floors > 0)*255).astype(np.uint8)
+        enumerated_floors, self.level['features']['floors'] = label(self.level['maps']['heightmap']>0, connectivity=2, return_num=True)
+        self.level['maps']['floormap'] = enumerated_floors.astype(np.uint8)
 
         self.level['text'] = self.draw_textmap()
 
@@ -242,9 +242,14 @@ class WADFeatureExtractor(object):
         self.compute_maps()
         # topological features rely on computed maps
         self.image_features()
+        # "Flattening" the floormap to a binary image
+        self.level['maps']['floormap'] = ((self.level['maps']['floormap'] > 0) * 255).astype(np.uint8)
+        # Computing topological features and maps
+        self.level['maps']['roommap'], self.level['graph'], metrics = topological_features(self.level['maps']['floormap'], prepare_for_doom=False)
+        self.level['features'].update(metrics)
         # Convert every feature to scalar
         self._features_to_scalar()
-        return self.level['features'], self.level['maps'], self.level['text']
+        return self.level['features'], self.level['maps'], self.level['text'], self.level['graph']
 
     def _find_thing_category(self, category):
         found_things = np.in1d(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category(category)).reshape(self.level['maps']['thingsmap'].shape)
@@ -395,7 +400,7 @@ class WADFeatureExtractor(object):
         start_location = self._find_thing_category('start')
         if not len(start_location[0]) or not len(start_location[1]):
             start_x, start_y = -1, -1
-            print("This level has no explicit start location")
+            #print("This level has no explicit start location")
         else:
             start_x, start_y = start_location[0][0], start_location[1][0]
         self.level['features']['start_location_x_px'] = int(start_x)
