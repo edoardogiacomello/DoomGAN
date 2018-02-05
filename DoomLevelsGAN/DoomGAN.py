@@ -374,6 +374,27 @@ class DoomGAN(object):
             self.checkpoint_counter = 0
             print(" No checkpoints found. Starting a new net")
 
+    def inspect_data(self):
+        import WAD_Parser.Dictionaries.Features as all_feature_list
+        """ Loads the dataset for data inspection/visualization """
+        # Load the dataset
+        train_set_iter, valid_set_iter = self.load_dataset()
+        self.session.run([train_set_iter.initializer])
+        next_train_batch = train_set_iter.get_next()
+        train_batch = self.session.run(next_train_batch)
+        x_batch = np.stack([train_batch[m] for m in maps], axis=-1)
+        all_feats = np.stack([train_batch[f] for f in all_feature_list.features], axis=-1)
+        DoomDataset().show_sample_batch(x_batch,0)
+        sel = [4, 6, 10, 11, 31]
+        selected_samples = dict()
+        for k in train_batch:
+            selected_samples[k] = np.take(train_batch[k], sel, axis=0)
+
+
+        DoomDataset().compare_features(selected_samples)
+        print("Stop")
+
+
     def train(self, config):
 
         # OPTIMIZER DEFINITION
@@ -458,7 +479,7 @@ class DoomGAN(object):
                         # Check if the net should be saved
                         if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0:
                             # TODO: Turn this on
-                            #self.save(config.checkpoint_dir)
+                            self.save(config.checkpoint_dir)
 
                             # Calculating training loss
                             sum_d_train, sum_g_train = self.session.run([summary_d, summary_g],
@@ -768,5 +789,6 @@ if __name__ == '__main__':
                 for feat in features:
                     gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)
             if FLAGS.test:
-                gan.compute_quality_metrics()
+                #gan.compute_quality_metrics()
                 #gan.nearest_neighbor_score()
+                gan.inspect_data()

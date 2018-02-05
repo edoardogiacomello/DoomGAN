@@ -3,6 +3,7 @@ import DoomDataset as dd
 import numpy as np
 import skimage.io
 from WAD_Parser.WADEditor import WADWriter, WADReader
+import matplotlib.pyplot as plt
 
 def scaling_maps(x, map_names, dataset_path, use_sigmoid=True):
     """
@@ -164,3 +165,4 @@ def get_interpolated_y_batch(start, end, batch_size):
     for s, step in enumerate(np.linspace(0, 1, num=batch_size)):
         result[s] = slerp(step, start, end)
     return result
+

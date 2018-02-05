@@ -8,6 +8,7 @@ import tensorflow as tf
 from collections import defaultdict
 import scipy.stats as stats
 from sklearn.model_selection import train_test_split
+import seaborn as sns
 
 
 class DoomDataset():
@@ -455,3 +456,37 @@ class DoomDataset():
         dataset.plot_joint_feature_distributions(data, features=level_features).savefig('./../dataset/statistics/128_level_features_no_outliers')
         dataset.plot_joint_feature_distributions(data, features=floor_features).savefig('./../dataset/statistics/128_floor_features_no_outliers')
 
+    def compare_features(self, data):
+        import WAD_Parser.Dictionaries.Features as F
+        import pandas as pd
+
+        numerical_features = [f for f in F.features if f not in F.wad_features and F.features[f] != 'string']
+        toplot = {k: data[k] for k in ["title"] + numerical_features}
+        toplot["id"] = range(len(toplot["title"]))
+        pdata = pd.DataFrame(toplot)
+        sns.set(style="whitegrid")
+        for feat in numerical_features:
+            # Make the PairGrid
+            g = sns.PairGrid(pdata.head(),
+                             y_vars=feat, x_vars=["id"])
+
+            # Draw a dot plot using the stripplot function
+            g.map(sns.stripplot, palette="Reds_r", edgecolor="gray", orient="v")
+
+            g.set(xlim=(-0.25, 6.5), xlabel="Sample")
+            for ax in g.axes.flat:
+                # Make the grid horizontal instead of vertical
+                ax.xaxis.grid(False)
+                ax.yaxis.grid(True)
+            sns.despine(left=True, bottom=True)
+            g.savefig('feature_comparison/feature_comparison_{}.png'.format(feat))
+        print("show")
+
+    def show_sample_batch(self, batch, channel, rows=6, cols=6, sample_size=128):
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(8, 8))
+        for i in range(1, cols * rows + 1):
+            img = batch[i - 1, :, :, channel]
+            fig.add_subplot(rows, cols, i)
+            plt.imshow(img)
+        plt.show()
