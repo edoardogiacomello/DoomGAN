@@ -4,6 +4,7 @@ import numpy as np
 import skimage.io
 from WAD_Parser.WADEditor import WADWriter, WADReader
 import matplotlib.pyplot as plt
+import os
 
 def scaling_maps(x, map_names, dataset_path, use_sigmoid=True):
     """
@@ -57,14 +58,16 @@ def scaling_maps_inverse(g, map_names, dataset_path, used_sigmoid=True):
     min = tf.constant([meta['maps'][m]['min'] for m in map_names], dtype=tf.float32) * tf.ones(g.get_shape())
     return min + ((g-a)*(max-min))/(b-a)
 
-def postprocess_output(g, maps, folder = './generated_samples/'):
+def postprocess_output(g, maps, folder = './artifacts/generated_samples/', true_samples = None, feature_vector = None):
     """
     This function takes care of denoising network output and other steps, in order to prepare the maps to be processed
     by the WADEditor. If "folder" is set to none, output is not saved but returned in a ndarray instead
-    :param g:
-    :param maps:
-    :param folder:
-    :return:
+    :param g: Batch of generated maps to be rescaled or postprocessed, size (batch, width, height, m)
+    :param maps: list of map names of len(maps) = m
+    :param folder: String or None. If not none, then the samples are saved in that folder
+    :param true_samples: (Optional) The true samples to be saved along the generated one for visual comparison
+    :param feature_vector: (Optional) The feature vector that generated the samples to be saved in a .txt file
+    :return: The processed batch
     """
     processed_output = g.copy()
     for s_id, sample in enumerate(g):
@@ -77,11 +80,16 @@ def postprocess_output(g, maps, folder = './generated_samples/'):
             if mapname == 'wallmap':
                 feature_map = (feature_map >= 255/2)*255
             feature_map = np.around(feature_map)
+            processed_output[s_id, :, :, m] = feature_map
 
             # Saving
-            processed_output[s_id,:,:,m] = feature_map
             if folder is not None:
-                skimage.io.imsave(folder + 'level{}_map_{}.png'.format(s_id, mapname), feature_map.astype(np.uint))
+                os.makedirs(folder, exist_ok=True)
+                skimage.io.imsave(folder + 'sample{}_map_{}_generated.png'.format(s_id, mapname), processed_output[s_id, :, :, m].astype(np.uint))
+                if true_samples is not None:
+                    skimage.io.imsave(folder + 'sample{}_map_{}_true.png'.format(s_id, mapname), true_samples[s_id, :, :, m].astype(np.uint))
+        if (folder is not None) and (feature_vector is not None):
+            np.savetxt(folder + "sample{}_y_features.txt".format(s_id), feature_vector[s_id])
     return processed_output
 
 def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = True, level_images_path='./generated_samples/'):
@@ -107,7 +115,6 @@ def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', cal
             floormap = rescaled_g[index,:,:,m] if map == 'floormap' else floormap
         writer.add_level(name='MAP{i:02d}'.format(i=index + 1))
         writer.from_images(heightmap, floormap=floormap, wallmap=wallmap, thingsmap=thingsmap, save_debug=level_images_path, level_coord_scale=32)
-    import os
     os.makedirs(tmp_folder, exist_ok=True)
     wad_path = tmp_folder+'generated_wad.wad'
     writer.save(wad_path, call_node_builder=call_node_builder)

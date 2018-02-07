@@ -1,13 +1,10 @@
 import os
-
-import numpy as np
+import DoomLevelsGAN.network_architecture as architecture
 import tensorflow.contrib as contrib
-import pickle
 import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
 from DoomLevelsGAN.NNHelpers import *
 from WAD_Parser.RoomTopology import *
-import DoomLevelsGAN.inception.inception_score as inception
 from scipy.spatial import cKDTree
 
 
@@ -287,7 +284,7 @@ class DoomGAN(object):
     def save(self, checkpoint_dir):
         # Code from https://github.com/carpedm20/DCGAN-tensorflow
         model_name = "DOOMGAN.model"
-        checkpoint_dir = os.path.join(checkpoint_dir, self.config.checkpoint_dir)
+        #checkpoint_dir = os.path.join(checkpoint_dir, self.config.checkpoint_dir)
 
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
@@ -301,10 +298,10 @@ class DoomGAN(object):
         import re
         print(" [*] Reading checkpoints...")
 
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir+'checkpoint')
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.session, os.path.join(checkpoint_dir+'checkpoint', ckpt_name))
+            self.saver.restore(self.session, os.path.join(checkpoint_dir, ckpt_name))
             counter = int(next(re.finditer("(\d+)(?!.*\d)", ckpt_name)).group(0))
             print(" [*] Success to read {}".format(ckpt_name))
             return True, counter
@@ -319,8 +316,8 @@ class DoomGAN(object):
         """
         # Building paths
         assert os.path.isfile(self.config.dataset_path), "Dataset .meta not found at {}".format(self.config.dataset_path)
-        train_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'-train.TFRecord'
-        validation_path = ''.join(self.config.dataset_path.split('.meta')[:-1])+'-validation.TFRecord'
+        train_path = DoomDataset().get_dataset_path(self.config.dataset_path, 'train')
+        validation_path = DoomDataset().get_dataset_path(self.config.dataset_path, 'validation')
         assert os.path.isfile(train_path), "Dataset not found at {}. Check your file paths and try again".format(train_path)
 
         batch_size = batch_size or self.config.batch_size
@@ -441,7 +438,7 @@ class DoomGAN(object):
         # Load and initialize the network
         self.initialize_and_restore()
 
-        # Load the dataset
+        # Load the datasets
         train_set_iter, valid_set_iter = self.load_dataset()
 
         # Define how many times to train d for each g step
@@ -478,7 +475,6 @@ class DoomGAN(object):
 
                         # Check if the net should be saved
                         if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0:
-                            # TODO: Turn this on
                             self.save(config.checkpoint_dir)
 
                             # Calculating training loss
@@ -542,6 +538,7 @@ class DoomGAN(object):
                         # We reached the end of the dataset, break the loop and start a new epoch
                         break
             i_epoch += 1
+        print("Training complete after {} epochs corresponding to {} iterations".format(i_epoch, self.checkpoint_counter))
 
     def get_reference_sample(self, current_x, current_y, current_z):
         """
@@ -586,37 +583,70 @@ class DoomGAN(object):
         self.reference_sample = {'x': None, 'y': None, 'z':None}
         self.build()
 
-    def sample(self, y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False):
+    def sample(self, mode, sample_from_dataset='validation', y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False, folder=None):
         """
-        Sample the network with a given generator input. Various options are available.
+        Samples the network with a given generator input. Various options for selecting the feature vector (y) and the noise vector (z) are possible.
+        Y-Sampling has three main modes of operation for sampling the y vector, defined by the 'mode' parameter.
+        1) 'dataset' means that the y vector is taken from random samples belonging to either the training or validation set (controlled by sample_from_dataset)
+        2) 'factors' means that the y vector is controlled by the 'y_factors' input vector, for which each value can be '-1', corresponding to the average dataset value or in [0,1], meaning [-std, +std] of the corresponding feature.
+        3) 'nearest' means that the y vector is sampled like in factors, but it's not used directly as it. It is instead used to find the nearest neighbour in the dataset and that value is used for sampling
+        4) 'direct' means that the y vector is taken directly in input as the parameter y_batch and the sampling is made externally. This may lead to poor results if you don't sample the y vector in a meaningful way.
 
-        :param y_factors: feature vector of shape (batch, features), each value in {-1; [0,1]} where -1 means "average value for this feature", while [0;1] corresponds to values that go from -std to +std for that feature.
-        :param y_batch: direct batch of feature values to feed to the generator. Either y_factors or y_batch must be different from None.
+
+        :param sample_from_dataset: If 'validation' (default) or 'train', then y is randomly taken from samples belonging to the corresponding dataset
+        :param y_factors: feature vector of shape (batch, features), each value in {-1; [0,1]} where -1 means "average value for this feature", while [0;1] corresponds to values that go from -std to +std for that feature. The nearest neighbour among the training data is picked as y input
+        :param y_batch: direct batch of feature values to feed to the generator. Either y_factors or y_batch must be different from None if sample_for_dataset is None.
         :param seed: Seed for input noise generation. If None the seed is random at each z sampling [None]
-        :param freeze_z: if True use the same input noise z for each generated sample
+        :param freeze_z: if True use the same input noise z for each generated sample in the batch
         :param postprocess: If true, the generated levels are postprocessed (denoised and eventually rescaled) and returned as they would be passed to the WadEditor.
         :param save: Has no effect is postprocess is not True. [False]
                     - False: Levels are returned as numpy array and not saved anywhere
                     - 'PNG': Network output is saved to the generated_samples directory
                     - 'WAD': Levels are converted to .WAD and saved in the generated_samples directory along with a descriptive image of the level
+        :param folder: Where to folder generated samples
         """
+        self.initialize_and_restore()
+        x_true_batch = None # This is set only if Y is picked in 'dataset' mode and it's saved along with the generated samples
+        # Y Sampling
+        assert mode in ['dataset', 'factors', 'direct', 'nearest'], "Mode can only be 'dataset', 'factors' or 'direct'"
+        if mode == 'dataset':
+            assert sample_from_dataset in ['train', 'validation'], "If mode is 'dataset' then 'sample_from_dataset' must be either 'train' or 'validation'"
+            # Load the datasets
+            # Load the dataset
+            train_set_iter, valid_set_iter = self.load_dataset()
+            chosen_iter = train_set_iter if sample_from_dataset == 'train' else valid_set_iter
+            self.session.run([chosen_iter.initializer])
+            next_batch = chosen_iter.get_next()
+            batch = self.session.run(next_batch)
+            x_true_batch = np.stack([batch[m] for m in self.maps], axis=-1)
+            y = np.stack([batch[f] for f in self.features], axis=-1)
 
-        assert (y_factors is not None) ^ (y_batch is not None)
-        if y_factors is not None:
-            # Build a y vector from the y_factors by finding the nearest neighbors in the dataset
+
+        elif mode =='factors' or mode == 'nearest':
+            assert y_factors is not None, "y_factors cannot be 'None' if mode is 'factor'"
+            # Build a y vector from the y_factors by interpolating the dataset statistics
             y_feature_space = DoomDataset().get_feature_sample(self.config.dataset_path, y_factors, features, 'std')
-            if self.nearest_features_tree is None:
-                self.initialize_and_restore()
-                loaded_features = DoomDataset().load_features(self.config.dataset_path, self.features, self.output_size)
-                self.nearest_features_tree = cKDTree(loaded_features)
+            if mode == 'nearest':
+                assert sample_from_dataset in ['train',
+                                               'validation'], "If mode is 'nearest' then 'sample_from_dataset' must be either 'train' or 'validation'"
+                # Use nearest neighbour
+                if self.nearest_features_tree is None:
+                    loaded_features = DoomDataset().load_features(self.config.dataset_path, sample_from_dataset, self.features, self.output_size)
+                    self.nearest_features_tree = cKDTree(loaded_features)
 
-            y = np.zeros_like(y_feature_space)
-            for s in range(self.config.batch_size):
-                distance, nearest_index = self.nearest_features_tree.query(y_feature_space[s])
-                y[s, :] = loaded_features[nearest_index]
-        if y_batch is not None:
+                y = np.zeros_like(y_feature_space)
+                for s in range(self.config.batch_size):
+                    distance, nearest_index = self.nearest_features_tree.query(y_feature_space[s])
+                    y[s, :] = loaded_features[nearest_index]
+            else:
+                # Don't use a dataset point
+                y = y_feature_space
+        elif mode == 'direct':
+            assert y_batch is not None, "y_batch cannot be 'None' if mode is 'direct'"
             # the y_batch is provided externally
             y = y_batch
+
+        # Z Sampling
         if seed is not None:
             np.random.seed(seed)
         if freeze_z:
@@ -627,13 +657,20 @@ class DoomGAN(object):
             z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
                 np.float32)
         np.random.seed()
+        # Sample Generation
         result = self.session.run([self.G_rescaled],
                          feed_dict={self.z: z_batch, self.y: y})[0]
+        # Postprocessing and saving
         if postprocess:
             if save is False:
                 return DataTransform.postprocess_output(result, self.maps, folder=None)
             elif save == 'PNG':
-                return DataTransform.postprocess_output(result, self.maps)
+                if folder is None:
+                    # Use default folder
+                    return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch,
+                                                            feature_vector=y)
+                else:
+                    return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch, feature_vector=y, folder=folder)
             elif save == 'WAD':
                 return DataTransform.build_levels(result, self.maps, self.config.batch_size)
         return result
@@ -672,9 +709,9 @@ class DoomGAN(object):
                 if mname == 'wallmap':
                     walls_corner_error[s,:] = corner_error(metrics_true['corners_{}'.format(mname)], metrics_gen['corners_{}'.format(mname)])
 
-            metrics["entropy_mae_{}".format(mname)] = np.mean(entropy_diff[:,m,:])
-            metrics["similarity_{}".format(mname)] = np.mean(ssim[:,m,:])
-            metrics["encoding_error_{}".format(mname)] = np.mean(enc_error[:,m,:])
+                metrics["entropy_mae_{}".format(mname)] = np.mean(entropy_diff[:,m,:])
+                metrics["similarity_{}".format(mname)] = np.mean(ssim[:,m,:])
+                metrics["encoding_error_{}".format(mname)] = np.mean(enc_error[:,m,:])
         metrics["entropy_mae"] = np.mean(entropy_diff)
         metrics["similarity"] = np.mean(ssim)
         metrics["encoding_error"] = np.mean(enc_error)
@@ -692,7 +729,7 @@ def clean_tensorboard_cache(tensorBoardPath):
 
 if __name__ == '__main__':
     flags = tf.app.flags
-    flags.DEFINE_integer("epoch", 400, "Epoch to train [400]")
+    flags.DEFINE_integer("epoch", 10000, "Epoch to train [10000]")
     # HYPERPARAMETERS
     # DCGAN
     flags.DEFINE_float("dcgan_lr", 2e-4, "Learning rate for DCGAN adam [2e-4]")
@@ -709,66 +746,33 @@ if __name__ == '__main__':
     flags.DEFINE_float("lr_wgangp", 5e-5, "Learning rate of for WGAN RMSProp [5e-5]")
 
     flags.DEFINE_float("beta1_wgan", 0, "Momentum term of adam [0.5]")
-    flags.DEFINE_string("dataset_path", None, "Path to the .meta file of the corresponding .TFRecord datasets")
+    flags.DEFINE_string("dataset_path", "./dataset/128-one-floor.meta", "Path to the .meta file of the corresponding .TFRecord datasets")
     flags.DEFINE_integer("height", 128, "Target sample height")
     flags.DEFINE_integer("width", 128, "Target sample width")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
-    flags.DEFINE_integer("batch_size", 64, "Batch size")
-    flags.DEFINE_integer("save_net_every", 100, "Number of train batches after which the next is saved")
-    flags.DEFINE_boolean("train", True, "enable training if true")
+    flags.DEFINE_integer("batch_size", 32, "Batch size")
+    flags.DEFINE_integer("save_net_every", 100, "Number of training iterations after which the next is saved")
+    flags.DEFINE_integer("seed", None, "Seed for generating samples. If None random noise is applied to the generator input [None]")
+    flags.DEFINE_boolean("train", False, "enable training if true")
     flags.DEFINE_boolean("generate", False, "If true, generate some levels with a fixed y value and seed and save them into ./generated_samples")
-    flags.DEFINE_boolean("interpolate", False, "If true, generate levels by interpolating the feature vector along each dimension")
-    flags.DEFINE_boolean("test", False, "If true, compute evaluation metrics over produced samples")
     flags.DEFINE_boolean("use_sigmoid", True,
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
     flags.DEFINE_boolean("use_gradient_penalty", True, "Whether to use the gradient penalty from WGAN_GP architecture or the WGAN weight clipping")
-
-    flags.DEFINE_string("checkpoint_dir", "./checkpoint/", "Directory name to save the checkpoints [checkpoint]")
-    flags.DEFINE_string("summary_folder", "/tmp/tflow/",
-                        "Directory name to save the temporary files for visualization [/tmp/tflow/]")
+    flags.DEFINE_string("checkpoint_dir", "./artifacts/checkpoint/", "Directory name to save the checkpoints [./artifacts/checkpoint/]")
+    flags.DEFINE_string("summary_folder", "./artifacts/tensorboard_results/",
+                        "Directory name to save the temporary files for visualization [./artifacts/tensorboard_results/]")
+    flags.DEFINE_string("generated_folder", "./artifacts/generated_samples/",
+                        "Directory name to save the generated samples [./artifacts/generated_samples/]")
 
     FLAGS = flags.FLAGS
 
     with tf.Session() as s:
-        #clean_tensorboard_cache('/tmp/tflow')
-        # Define here which features to use
-        features = ['height', 'width',
-                   'number_of_sectors',
-                   'sector_area_avg',
-                   'sector_aspect_ratio_avg',
-                   'lines_per_sector_avg',
-                   'walkable_percentage',
-                   'level_extent',
-                   'level_solidity',
-                   'artifacts_per_walkable_area',
-                   'powerups_per_walkable_area',
-                   'weapons_per_walkable_area',
-                   'ammunitions_per_walkable_area',
-                   'keys_per_walkable_area',
-                   'monsters_per_walkable_area',
-                   'obstacles_per_walkable_area',
-                   'decorations_per_walkable_area']
-        maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap', 'triggermap']
-
-
-
-        # Generator network
-        g_layers = [
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 2, 'remove_artifacts': False},
-        ]
-
-        d_layers = [
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 2, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 4, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
-            {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
-        ]
-
-
+        # Layers and inputs are defined in netowk_architecture.py
+        features = architecture.features
+        maps = architecture.maps
+        g_layers = architecture.g_layers
+        d_layers = architecture.d_layers
 
         gan = DoomGAN(session=s,
                       config=FLAGS, features=features, maps=maps,
@@ -780,15 +784,6 @@ if __name__ == '__main__':
         else:
             feat_factors = [-1 for f in features]
             if FLAGS.generate:
-                #factors = np.tile(0.5, (FLAGS.batch_size, len(features)))
                 factors = np.random.normal(0.5, 0.1, size=(FLAGS.batch_size, len(features)))
-                #factors = np.repeat(np.random.uniform(0,1, (1, len(features))), FLAGS.batch_size, axis=0)
-                #y = np.tile (np.asarray(y), (FLAGS.batch_size, 1))
-                gan.sample(y_factors=factors, postprocess=True, save='PNG', seed=654654)
-            if FLAGS.interpolate:
-                for feat in features:
-                    gan.generate_levels_feature_interpolation(feature_to_interpolate=feat, seed=123456789)
-            if FLAGS.test:
-                #gan.compute_quality_metrics()
-                #gan.nearest_neighbor_score()
-                gan.inspect_data()
+                gan.sample(mode='dataset', y_factors=factors, postprocess=True, save='PNG', seed=FLAGS.seed, folder=FLAGS.generated_folder)
+

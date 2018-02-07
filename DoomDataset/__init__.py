@@ -1,6 +1,8 @@
 import json
 import os
 import csv
+from sys import meta_path
+
 import WAD_Parser.Dictionaries.Features as Features
 import numpy as np
 import skimage.io as io
@@ -418,30 +420,37 @@ class DoomDataset():
             stats[f] = meta['features'][fname][stat]
         return stats
 
-    def get_feature_neighbors(self, y, tf_dataset_path,  features, sample_size, k=3):
-        feature_vector = self.load_features(tf_dataset_path, features, sample_size)
-        # Building neighbour tree and caching
+    def get_dataset_path(self, meta_path, type):
+        assert type in ['train', 'validation'], "Dataset type must be 'train' or 'validation'"
+        dataset_path = meta_path.replace('.meta', '-{}.TFRecord'.format(type))
+        assert os.path.isfile(dataset_path), "{} dataset not found at {}. Make sure you the file is accessible and it hasn't been renamed".format(type, dataset_path)
+        return dataset_path
 
-    def load_features(self, tf_dataset_path, feautre_names, sample_size):
+
+
+    def load_features(self, dataset_meta_path, dataset_type, feautre_names, sample_size):
         """
         Returns an array containing all the dataset rows corresponding to the given "feature_names".
-        :param tf_dataset_path: path of the .TFRecords file
+        :param dataset_meta_path: path of the dataset .meta file
+        :param dataset_type: Either 'train' or 'validation', needed for true dataset path lookup
         :param feautre_names: array containing the names of the requested features
         :param sample_size: dimension (in pixel) of the maps, needed for decoding the dataset file
         :return:
         """
-        tf_dataset = self.read_from_TFRecords(tf_dataset_path, target_size=sample_size)
-        tf_dataset = tf_dataset.batch(self.get_dataset_count(tf_dataset_path))
+        dataset_path = self.get_dataset_path(dataset_meta_path, dataset_type)
+        train_count, validation_count = self.get_dataset_count(dataset_meta_path)
+        count = train_count if dataset_type == 'train' else validation_count
+        tf_dataset = self.read_from_TFRecords(dataset_path, target_size=sample_size)
+        tf_dataset = tf_dataset.batch(count)
 
         iter = tf_dataset.make_one_shot_iterator()
         with tf.Session() as sess:
             data = sess.run([iter.get_next()])[0]
         return np.asarray([data[f] for f in feautre_names]).transpose()
 
-    def generate_stats(self):
+    def generate_stats(self, dataset_path):
         dataset = DoomDataset()
-        # TODO: Remove this absolute path
-        data = dataset.read_from_json('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
+        data = dataset.read_from_json(dataset_path)
         size_filter = lambda l: l['height']/32 <= 128 and l['width']/32 <= 128
         bound_things_number = lambda l: l['number_of_things'] < 1000 # Remove a few sample with a huge number of items
         bound_lines_per_sector = lambda l: l['lines_per_sector_avg'] < 150  # Removes a few samples with too many lines per sector

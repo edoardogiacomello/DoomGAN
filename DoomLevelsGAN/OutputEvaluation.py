@@ -40,7 +40,7 @@ def encoding_error(x, interval):
     :param interval: the interval between two values for which (error = 0)
     :return:
     """
-    if np.greater(np.abs(x), 10*interval).any():
-        warnings.warn("Encoding error might not be accurate due to approximations", Warning)
+    #if np.greater(np.abs(x), 10*interval).any():
+    #    warnings.warn("Encoding error might not be accurate due to approximations", Warning)
     return (sawtooth(2 * np.pi * x / interval, 0.5) + 1) / 2
 

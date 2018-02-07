@@ -263,5 +263,5 @@ def quality_metrics(sample, maps):
             metrics['corners_{}'.format(mname)] = len(corner_peaks(corner_harris(sample[:,:,m])))
 
         elif mname in ['heightmap', 'thingsmap', 'triggermap']:
-            metrics['encoding_error_{}'.format(mname)] = encoding_error(sample[:, :, m], 1)
+            metrics['encoding_error_{}'.format(mname)] = np.mean(encoding_error(sample[:, :, m], 1))
     return metrics

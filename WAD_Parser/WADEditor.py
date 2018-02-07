@@ -712,7 +712,7 @@ class WADWriter(object):
             out.write(wad_bytes)
         if call_node_builder:
             # Calling ZenNode to build subsectors and other lumps needed to play the level on doom
-            print('Calling ZenNode...')
+            print('Calling bsp...')
             subprocess.check_call(["bsp", fp, '-o', fp] )
 
 
@@ -774,7 +774,8 @@ class WADReader(object):
                 txtout.writelines([bytes(row + [10]) for row in level['text']])
             # Saving the graph
             if 'graph' in level:
-                nx.write_gpickle(level['graph'], base_filename + '.networkx')
+                with open(base_filename + '.networkx', 'wb') as graphout:
+                    nx.write_gpickle(level['graph'], graphout)
 
 
     def extract(self, wad_fp, save_to=None, root_path=None, update_record=None):

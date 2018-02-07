@@ -10,23 +10,6 @@ class WADTweaker():
         reconstruction error.
         """
 
-    def test_reconstruction(self, database_json):
-        # Open the database
-        dataset = DoomDataset()
-        levels = dataset.read_from_json(database_json)
-        for l in levels:
-            # Fetch a feature map
-            floormap = dataset.get_path_of(l['path_floormap'])
-            wallmap = dataset.get_path_of(l['path_wallmap'])
-            thingsmap = dataset.get_path_of(l['path_thingsmap'])
-            # Create a new WAD
-            writer = WADWriter()
-            writer.from_images(floormap, wallmap, thingsmap, debug=True)
-            writer.save('/home/edoardo/Desktop/doom/test.wad')
-            reader = WADReader()
-            reconstructed = reader.extract('/home/edoardo/Desktop/doom/test.wad')['levels'][0]
-
-
     def build_levels(self, max=32):
 
         # Create a new WAD
@@ -34,14 +17,14 @@ class WADTweaker():
 
         for index in range(max):
             print("Building level {}".format(index))
-            heightmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_heightmap.png'.format(index)
-            floormap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_floormap.png'.format(index)
-            wallmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_wallmap.png'.format(index)
-            thingsmap = '/home/edoardo/Projects/DoomPCGML/DoomLevelsGAN/generated_samples/level{}_map_thingsmap.png'.format(index)
+            heightmap = './generated_samples/level{}_map_heightmap.png'.format(index)
+            floormap = './generated_samples/level{}_map_floormap.png'.format(index)
+            wallmap = './generated_samples/level{}_map_wallmap.png'.format(index)
+            thingsmap = './generated_samples/level{}_map_thingsmap.png'.format(index)
             writer.add_level(name='MAP{i:02d}'.format(i=index+1))
             writer.from_images_v2(floormap, heightmap, wallmap, thingsmap)
             #writer.from_images(heightmap=None, floormap=floormap, wallmap=wallmap, thingsmap=None, debug=False)
-        writer.save('/home/edoardo/Desktop/doom/test.wad')
+        writer.save('./test.wad')
 
     def build_test_level(self):
         # Let's create a new WAD
@@ -65,18 +48,18 @@ class WADTweaker():
         # Let's add a Cacodemon to make things more interesting
         #writer.add_thing(x=500, y=500, thing_type=3005, options=7)
         # Save the wad file. "bsp" command should work in your shell for this to work.
-        wad_mine = writer.save('/home/edoardo/Desktop/doom/test.wad')
+        wad_mine = writer.save('./test.wad')
 
 
     def inspect_doom2(self):
         reader = WADReader()
-        wad = reader.extract('/home/edoardo/Desktop/doom/Doom2.wad')
+        wad = reader.extract('./Doom2.wad')
         level = wad['levels'][0]
         maps = level['maps']
         writer = WADWriter()
         writer.add_level('MAP01')
         writer.from_images(heightmap=maps['heightmap'], floormap=maps['floormap'], wallmap=maps['wallmap'], thingsmap=None, debug=False)
-        writer.save('/home/edoardo/Desktop/doom/test.wad')
+        writer.save('./test.wad')
         pass
 if __name__ == '__main__':
     #WADTweaker().test_reconstruction('/run/media/edoardo/BACKUP/Datasets/DoomDataset/dataset.json')
