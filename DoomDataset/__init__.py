@@ -1,7 +1,6 @@
 import json
 import os
 import csv
-from sys import meta_path
 
 import WAD_Parser.Dictionaries.Features as Features
 import numpy as np
@@ -10,7 +9,7 @@ import tensorflow as tf
 from collections import defaultdict
 import scipy.stats as stats
 from sklearn.model_selection import train_test_split
-import seaborn as sns
+
 
 
 class DoomDataset():
@@ -468,6 +467,7 @@ class DoomDataset():
     def compare_features(self, data):
         import WAD_Parser.Dictionaries.Features as F
         import pandas as pd
+        import seaborn as sns
 
         numerical_features = [f for f in F.features if f not in F.wad_features and F.features[f] != 'string']
         toplot = {k: data[k] for k in ["title"] + numerical_features}
