@@ -528,9 +528,9 @@ class DoomGAN(object):
                             writer_valid.add_summary(sum_metrics_valid, global_step=self.checkpoint_counter)
                             writer_ref.add_summary(sum_out_ref, global_step=self.checkpoint_counter)
                             writer_ref.add_summary(sum_metrics_ref, global_step=self.checkpoint_counter)
-                            # Writing the summary for the train run
-                            writer_train.add_summary(sum_d_train, global_step=self.checkpoint_counter)
-                            writer_train.add_summary(sum_g_train, global_step=self.checkpoint_counter)
+                        # Writing the summary for the train run
+                        writer_train.add_summary(sum_d_train, global_step=self.checkpoint_counter)
+                        writer_train.add_summary(sum_g_train, global_step=self.checkpoint_counter)
 
                         # incrementing the iteration counter
                         self.checkpoint_counter += 1
