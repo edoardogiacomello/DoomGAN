@@ -48,13 +48,18 @@ You can find all the requirements in the requirements.txt file. The most importa
 1) Install Cuda 8.0
 2) Install Docker
 3) Install nvidia-docker from https://github.com/NVIDIA/nvidia-docker
-4) Move (cd) to an empty folder where you want to store the results
-5) Launch the Docker (WIP)
+4) Move (cd) to an empty folder where you want to store the results. Make sure both docker.service and nvidia-docker.service are enabled and running.
+5) Launch the Docker with (be sure to copy all the parameters, you can drop `-p 6006:6006` if you don't want to access tensorboard):
 
-This commnand will open a shell inside the DoomPCGML docker and will create an "artifacts" folder in your current directory that will contain:
+``` nvidia-docker run -v $PWD/artifacts:/DoomPCGML/artifacts -p 6006:6006 -it edoardogiacomello/doompcgml:latest /bin/bash```
+
+This commnand will download the docker container (~2GB), open a shell inside the DoomPCGML docker and will create an "artifacts" folder in your current directory that will contain:
 * Network checkpoints (your network model, saved every 100 iterations -> ~16 minutes or less)
 * Tensorboard cache (training progress data).  
 * Generated Samples
+
+This folder will be your only persistence level, so make sure of making backups if you have to experiment with the parameters.
+6) Go to "Usage" section for further commands 
 
 
 ### Manual method
@@ -75,7 +80,7 @@ follow the "usage" section.
  ## Usage
  ***README*** Run scripts for most common operations with default parameters are in the project root. 
  Make sure of calling them from the project root itself (you have to "cd" into DoomPCGML folder if you have just cloned the repository) becuse some scripts makes use of the current directory
- for importing all the modules.
+ for importing all the modules. If you are using Docker the correct working directory should already be set.
  
  ### Extracting the dataset
  Before running the model you should make sure that the datasets are extracted into the "dataset" folder. Zip files containing
@@ -83,7 +88,7 @@ datasets for 128x128 levels are already included in the repository, you only hav
 
 ``` ./extract.sh ```
 
- this will produce two .TFRecord and one .meta files. The .meta file is the one you have to specify as parameter if you need it.
+ this will produce two .TFRecord and one .meta files for the "128, one floor" dataset.
  
  **_you have to repeat the process every time you launch the container if you are using docker_**
  
