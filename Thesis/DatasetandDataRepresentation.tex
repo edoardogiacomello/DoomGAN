@@ -1,13 +1,82 @@
 \chapter{Dataset and Data Representation}
 \paragraph{Overview}
-This chapter aims to be an overview of the processes that led to the creation of the dataset the model is trained and evaluated with.
-In section~\ref{sec:Sources} a reference to the data sources is given, then the focus of section~\ref{sec:WAD} will be on how data is natively encoded for the game engine in order to give some hints on what are the difficulties to face in converting to and from that format in an automatic way. Section~\ref{sec:TargetFormat} will describe in detail what data is provided  the dataset, that is how levels are converted from the native format and what features are extracted in order to provide an input for the neural network. Lastly, section~\ref{sec:I/O} will give a brief overview of data formats used and transformation steps that have been done in order to give the possibility to replicate the dataset generation.
+This chapter aims to be an overview of the processes that led to the creation of the dataset the model is trained and evaluated with, as well as a description of the dataset structure itself.
+In section~\ref{sec:Sources} a reference to the data sources is given, then the focus of section~\ref{sec:WAD} will be on how data is natively encoded for the game engine in order to give some hints on what are the difficulties to face in converting to and from that format in an automatic way. Section~\ref{sec:TargetFormat} will describe in detail what data is provided  the dataset, that is how levels are converted from the native format and what features are extracted in order to provide an input for the neural network. Lastly, section~\ref{sec:DatasetOrganization} will give a brief overview of how the data is presented and stored into the resulting dataset.
  
 \section{Data Sources}
 \label{sec:Sources}
-All data used to train and validate the model comes solely from the \textit{Idgames Archive} founded in 1994 by \cite{idarchive}
-\section{Native Data Format: WAD Files}
-\label{sec:WAD}
+\paragraph{Archive} All data used to train and validate the model comes solely from the \textit{Idgames Archive} founded in 1994 by Barry Bloom \cite{idarchive_history} and mirrored on various FTP sources. The mirror we used for collecting levels is Doomworld.com \cite{url:doomworld} which is one of the oldest and currently most active community about the DOOM video-game series \cite{wiki:doomworld}.
+\paragraph{Level Selection} Idgames archive includes levels for multiple games such as DOOM, DOOM 2 or their various modifications and they are divided in hierarchical categories which classifies levels by game, game mode (multi-player "deathmatch" or single-player), and alphabetically.
+Amongst all the categories we selected only those levels that belong to "doom" and "doom2" excluding sub-categories named "deathmatch" and "Ports". This choice has been made in order to avoid mixing possibly different kinds of levels, since a level designed for a Single Player Mode could be structurally different from a level which is designed for multi-player games. Moreover the "Ports" category has been excluded because levels contained in it are intended to work with modifications of the game engine code and it would have led to problems in managing every particular exceptional behaviour.
+
+\paragraph{Source Data Organization} Levels in Idgames archive are stored in zip archives including a text "READ ME" file and the \gls{WAD} file that contain up to 32 levels. 
+Each zip archive can be downloaded from the respective download page which presents a variable quantity of information such as the author, a short description, screen shots, user reviews, number of views and downloads, etc.
+The dataset we present in this work always keeps track of these information about each level for correct attribution and also offers a "snapshot" of average user review score and the number of views and downloads when available. It is worth noting that since Doomworld website recently switched to a different download system \cite{wiki:doomworld}, data may not always be accurate, especially those concerning download and view counts, but they are still proposed as a starting point for further research. 
+\section{Source Data Format: WAD Files}
+\label{sec:WAD} 
+\paragraph{Introduction} The Doom Game Engine \cite{doomengine} makes use of package files called "\glspl{WAD}" to store every game resource such as Levels, Textures, Sounds, etc. 
+\gls{WAD} files have been designed in order to make the game more extendible and customizable and opened the way for a considerably large amount of user-generated content. This section is not meant to be a complete description of how \glspl{WAD} files are structured but only an overview of which aspects we considered for writing the software that generates the dataset from the \gls{WAD} files. Every information about \glspl{WAD} files has been taken from the \citetitle{doomspecs} \cite{doomspecs} and we demand to that document a deeper explanation on every aspect of the file format.
+\subsection{Overview}
+\paragraph{Type of WADs}
+\glspl{WAD} are of two types, called "IWAD" or "Internal WAD" and "PWAD" or "Patch WAD". The original game \glspl{WAD}, called "DOOM.WAD" and "DOOM2.WAD", are of the "IWAD" type as they contain every asset that is needed for the game to run, while all the \glspl{WAD} containing custom content or modifications to existing content are of the "PWAD" type. The content which is defined in a PWAD is added or replaced to the original IWAD when the \gls{WAD} is loaded, for example if a PWAD defines the level "MAP01", which is already defined in "DOOM2.WAD", the PWAD level is loaded instead of the original one, while maintaining all the other content unaltered.
+Since in our work we deal only with PWADs, we will generally refer to them simply as \glspl{WAD}.
+
+\paragraph{Lumps} Every data inside a \gls{WAD} is stored as a record called \gls{lump} which has a name up to 8 characters and a structure and size which is different depending on the lump type. In general there are no restrictions on lump order with the exception of some of them, including Lumps needed for defining a Level.
+
+\paragraph{WAD Structure} Every \gls{WAD} file is divided in three sections: A header, a set of \glspl{lump} and a trailing Directory. The header holds the information about the WAD type, the number of \glspl{lump} and the location of the Directory, which is positioned after the last \gls{lump}. The directory contains one 12-bytes entry for each \glspl{lump} included in the file that specifies the \glspl{lump} location, size and name. Table~\ref{tab:WADStructure} reports a simplified description of a \gls{WAD} file.
+
+
+
+\begin{table}[b]
+	\centering
+	\begin{tabularx}{\textwidth}{| c | c | c | c | X | }
+		\hline
+		Section Length (bytes) & Section Name & Field Size & Field Name & Description \\
+		\hline
+		   &   & 4 & Identification & ASCII string "PWAD" or "IWAD" \\ \cline{3-5}
+		12 &     Header			  & 4 & Number of Lumps & The number of Lumps included in the WAD \\  \cline{3-5}
+		&   						  & 4 & Table Offset & Integer pointer to the Dictionary \\ \cline{3-5}
+		\hline
+		Variable& Lumps & - & Lump Data & Lumps stored as a stream of Bytes \\
+		\hline
+		&                              & 4 & Lump Position & Integer holding a point to the lump's data \\ \cline{3-5}
+		16 * Number of Lumps  & \multirow{3}{*}{}{Directory} & 4 & Lump Size & Size of the lump in bytes \\ \cline{3-5}
+		&                              & 8 & Lump Name & Lump name in ASCII, up to 8 bytes long. Shorter names are null-padded \\ \cline{3-5}
+		\hline
+	\end{tabularx}
+\caption{WAD File structure}
+\label{tab:WADStructure}
+\end{table}
+
+\paragraph{Coordinate Units} The Doom game engine describes coordinates using integer values between -32768 and +32767 and it is proportional to one pixel of a texture. This unit is called "Map Unit" or "Doom Unit" in this work. Although there's not an unique real world interpretation of one Map Unit, we used an approximation for which each relevant map tile or image pixel is 32x32 MU large; this choice is motivated by the fact that the smallest radius of a functional object in DOOM is 16 MU. 
+
+\subsection{Doom Level Format}
+\paragraph{Overview} Level data in a \gls{WAD} file follows a precise structure. In particular each level is composed of an ordered sequence of lumps that describes the its structure:
+	\begin{description}[wide=\parindent]
+		\item[(NAME)]: Name of the level slot in DOOM or DOOM2 format.
+		\item[THINGS] List of every "\gls{thing}" or game object that is placeable inside the level.
+		\item[LINEDEFS] List of every line that connects two vertices.
+		\item[SIDEDEFS] Description of each side of a Linedef.
+		\item[VERTEXES]\footnote{Although the correct spelling should be "vertices", we keep the original version of the field.} Unordered list of vertices.
+		\item[SEGS] A list of linedef segments that forms sub-sectors.
+		\item[SSECTORS] A list of sub-sectors, which are convex shapes forming sectors.
+		\item[NODES] A binary tree sorting sub-sectors for speeding up the rendering process.
+		\item[SECTORS] A list of Sectors. A \gls{sector} is a closed area that has the same floor and ceiling height and textures.
+		\item[REJECT] Optional lump that specifies which sectors are visible from the other. Used to optimize the AI routines.
+		\item[BLOCKMAP] Pre-computed collision detection map. 
+	\end{description}
+
+\paragraph{Essential Subset and Optimizations} It is important to notice that although all the lumps above (with the exception of REJECT) are mandatory to build a playable level, some of them can be automatically generated from the remaining ones using some tools. In particular an editor or designer has to provide at least the lumps (name), THINGS, LINEDEFS, SIDEDEFS, VERTEXES and SECTORS. The lumps SEGS, SSECTORS, NODES, REJECT and BLOCKMAP serve the purpose of speeding-up the rendering process by avoiding runtime computation. In particular the Doom Engine uses a Binary Space Partitioning Algorithm \cite{Fuchs:1980:VSG:965105.807481} for pre-computing the Hidden surface determination (or occlusion culling) and it is usually done by an external tool. In this work we used the tool "\citetitle{bsp}" \cite{bsp} in the last stage of the pipeline in order to produce playable DOOM levels from the network output. In the following paragraphs only the lump types that are not generated by the external tool are described.
+
+\paragraph{(Name)} The first lump of a level is its slot name. We indicate this lump between parenthesis because differently from the other lumps, this one has no data associated but the Name field in the Directory is the slot name itself and the size is therefore zero. The level name descriptor has to match \textit{ExMy} ("Episode x, Map y") or \textit{MAPzz} formats for DOOM or DOOM2 respectively, with x from 1 to 4, y from 1 to 9 and zz from 1 to 32.
+
+
+\paragraph{Things} A doom "\gls{thing}" is every object included in a level that is not a wall, pavement, or a door. A "Things" lump is a list of entries each one containing five integers specifying the \textit{position} (x,y) in \gls{MU}, the \textit{angle} the thing is facing the \textit{Thing type} index and a set of flags indicating in which difficulty level the thing is present and if the thing is deaf if it is an enemy.
+
+\paragraph{Linedefs} A Linedef is a line that connects two vertices. 
+\paragraph{}
+\paragraph{}
+
 \section{Target Data Format: Feature Maps and Vectors}
 \label{sec:TargetFormat}
 \subsection{Overview and Motivation}
@@ -16,7 +85,11 @@ All data used to train and validate the model comes solely from the \textit{Idga
 %TODO: Describe the maps and data encoding
 \subsection{Graph Representation}
 \subsection{Scalar Features}
+%TODO Describe a hierarchical model for the features
 \subsection{Data Encoding}
-\section{Input and Output Pipelines}
-\label{sec:I/O}
+
+\section{Dataset Organization}
+\label{sec:DatasetOrganization}
+
 \section{Summary}
+In this chapter we presented a dataset consisting of 9460 Doom Levels %TODO GO ON

@@ -56,13 +56,29 @@
 	\if@twocolumn\hbox{}\newpage\fi\fi\fi}
 \makeatother
 
-\usepackage[citestyle=authoryear, backend=bibtex]{biblatex}
+\usepackage[backend=bibtex]{biblatex}
 \addbibresource{bibliography.bib}
 
 
+
+\usepackage[toc]{glossaries}
+\makeglossaries
+
+\usepackage{tabularx}
+\usepackage{multirow}
+\renewcommand\tabularxcolumn[1]{m{#1}}% for vertical centering text in X column
+\usepackage{enumitem} % For managing lists nicer
+\setlist[enumerate,itemize]{ % apply settings globally 
+	wide=\parindent,
+	topsep=3pt,
+	partopsep=0pt,
+	parsep=0pt,
+	itemsep=2pt
+}
+
 \begin{document}
 	
-	
+	%TODO Fix the headings
 	\maketitle
 	\cleardoublepage
 	\pagestyle{fancy} 
@@ -93,7 +109,9 @@
 	\cleardoublepage
 	\include{Appendix}
 	\cleardoublepage
-	\include{Glossary}
+	\include{Definitions}
+	\glsaddall
+	\printglossaries
 	\cleardoublepage
 	\printbibliography
 	\cleardoublepage
