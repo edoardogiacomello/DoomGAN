@@ -93,16 +93,16 @@ datasets for 128x128 levels are already included in the repository, you only hav
 
  This command will start the training and save a new network model into the ```artifacts/checkpoint``` folder every 100 iterations.
 
- #### Stopping the training  ``` ctrl + c ```
+ #### Stop the training  ``` ctrl + c ```
  
- #### Detaching/Attaching from/to the container shell (Docker)
+ #### Detach/Attach from/to the container shell (Docker)
  If you need to detach from the container shell without stopping the training process you have to press `ctrl+p` followed by `ctrl+q`.
  In order to reattach to the shell you can issue `nvidia-docker attach <container_name>`. You can find the current name with the `docker ps` command
 . 
 
  #### Restarting from scratch
  If you need to redo the training from scratch (for example if you modified the network architecture) you have to manually delete the following folders:
- `/artifacts/tensorboard_results` and `/artifacts/checkpoints`. This will every model and its relative training data. 
+ `/artifacts/tensorboard_results` and `/artifacts/checkpoints`. This will **delete** every model you trained and its relative training progress data, so make sure to do a backup if you are going to need them. 
   
  #### Sampling the network
  If you want to generate new samples from your current network just run  ```./generate.sh``` and the output will be produced in the artifact folder.
@@ -126,7 +126,7 @@ datasets for 128x128 levels are already included in the repository, you only hav
  _WIP_
  
  ###Outputing to WAD files
- You can generate working WAD files directly from the nework samples. Documentation is still in progress but you can give it a try by checking the DoomGAN.py script and running the sample function with 'WAD' save parameter.
+ You can generate working WAD files directly from the network samples. Documentation is still in progress but you can give it a try by checking the DoomGAN.py script and running the sample function with 'WAD' save parameter.
  
  ## Performances
  The developement machine had the following specs:
