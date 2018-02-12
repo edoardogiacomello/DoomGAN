@@ -18,16 +18,65 @@
 \glossaryentry{Lump?\glossentry{lump}|setentrycounter[]{page}\glsnumberformat}{22}
 \glossaryentry{Lump?\glossentry{lump}|setentrycounter[]{page}\glsnumberformat}{22}
 \glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{22}
-\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{22}
-\glossaryentry{Thing?\glossentry{thing}|setentrycounter[]{page}\glsnumberformat}{22}
+\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{23}
+\glossaryentry{Thing?\glossentry{thing}|setentrycounter[]{page}\glsnumberformat}{23}
 \glossaryentry{Sector?\glossentry{sector}|setentrycounter[]{page}\glsnumberformat}{23}
 \glossaryentry{Thing?\glossentry{thing}|setentrycounter[]{page}\glsnumberformat}{23}
 \glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{23}
-\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{Lump?\glossentry{lump}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{Thing?\glossentry{thing}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{Sector?\glossentry{sector}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{deathmatch?\glossentry{deathmatch}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{DU?\glossentry{DU}|setentrycounter[]{page}\glsnumberformat}{39}
-\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{41}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Sidedef?\glossentry{sidedef}|setentrycounter[]{page}\glsnumberformat}{24}
+sidedef
+\glossaryentry{Lump?\glossentry{lump}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{24}
+\glossaryentry{Feature Map?\glossentry{featuremap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{Feature Map?\glossentry{featuremap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{Feature Map?\glossentry{featuremap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{Feature Map?\glossentry{featuremap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{Feature Map?\glossentry{featuremap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{FloorMap?\glossentry{floormap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{FloorMap?\glossentry{floormap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{WallMap?\glossentry{wallmap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{WallMap?\glossentry{wallmap}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{26}
+\glossaryentry{HeightMap?\glossentry{heightmap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{HeightMap?\glossentry{heightmap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{ThingsMap?\glossentry{thingsmap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{ThingsMap?\glossentry{thingsmap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{TriggerMap?\glossentry{triggermap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{TriggerMap?\glossentry{triggermap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{RoomMap?\glossentry{roommap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{RoomMap?\glossentry{roommap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{FloorMap?\glossentry{floormap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{RoomMap?\glossentry{roommap}|setentrycounter[]{page}\glsnumberformat}{27}
+\glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{28}
+\glossaryentry{FloorMap?\glossentry{floormap}|setentrycounter[]{page}\glsnumberformat}{28}
+\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{Lump?\glossentry{lump}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{Thing?\glossentry{thing}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{Sector?\glossentry{sector}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{deathmatch?\glossentry{deathmatch}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{DU?\glossentry{DU}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{Linedef?\glossentry{linedef}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{Sidedef?\glossentry{sidedef}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{Feature Map?\glossentry{featuremap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{FloorMap?\glossentry{floormap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{HeightMap?\glossentry{heightmap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{RoomMap?\glossentry{roommap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{ThingsMap?\glossentry{thingsmap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{TriggerMap?\glossentry{triggermap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{WallMap?\glossentry{wallmap}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{floor?\glossentry{floor}|setentrycounter[]{page}\glsnumberformat}{47}
+\glossaryentry{MU?\glossentry{MU}|setentrycounter[]{page}\glsnumberformat}{49}
+\glossaryentry{WAD?\glossentry{WAD}|setentrycounter[]{page}\glsnumberformat}{49}
