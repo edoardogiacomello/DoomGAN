@@ -296,7 +296,7 @@ Pixel values are 0 for Empty area or floors and 255 for the walls.
 
 \paragraph{\gls{triggermap}} The \gls{triggermap} is used for representing linedef triggers and the sectors which activates. Due to the vast amount of cases the doom engine can handle, only a few types of triggers have been considered. The mapping works by assigning an integer $ i \le 32 $ to every trigger object, and subdividing triggers types in 5 groups: local doors (the ones that are activable only if the players directly interact with them), remote doors, lifts, switches and teleports. Local doors can be normal or require a key of a certain colour in order to open, but they are not indexed by the trigger index since they don't require to be linked to other linedefs in order to be opened. Table~\ref{tab:triggermap} describes the encoding for each possible item $ i $.
 
-\begin{table}[h]
+\begin{table}
 \begin{tabularx}{\textwidth}{| c | c | X | }
 	\hline
 	\textbf{Value} & \textbf{Functional Category} & \textbf{Thing Description} \\
@@ -328,7 +328,7 @@ Another way to represent the level is by using a graph. In particular, this grap
 A text representation is also available, following the work of \citeauthor{VGLC} in \cite{VGLC}. In particular the representation has been extended from one character per tile/pixel to two characters. This way it has been possible to add the information about the sector tag and the damaging floor. This representation is not currently used by our work but provided for consistence with previous works. Table \ref{tab:textmap} reports all the character used for this encoding.
 
 
-\begin{table}[h!]
+\begin{table}
 	\begin{tabularx}{\textwidth}{| c | l | c | X | }
 		\hline
 		\textbf{1st character} & \textbf{Description} & \textbf{2nd Character} & \textbf{Description} \\
@@ -374,8 +374,7 @@ Each level is annotated with 176 numerical and textual features which are divide
 	Listed in table~\ref{tab:featuresgraph}
 \end{enumerate}
 
-% TODO: Insert all the tables
-\begin{table}[h!]
+\begin{table}
 	\begin{tabularx}{\textwidth}{| l | X | c |}
 		\hline
 		\textbf{Feature Name} & \textbf{Description} & \textbf{Type} \\
@@ -406,7 +405,7 @@ Each level is annotated with 176 numerical and textual features which are divide
 \end{table}	
 
 
-\begin{table}[h!]
+\begin{table}
 	\begin{tabularx}{\textwidth}{| l | X | c |}
 		\hline
 		\textbf{Feature Name} & \textbf{Description} & \textbf{Type} \\
@@ -441,7 +440,7 @@ Each level is annotated with 176 numerical and textual features which are divide
 \end{table}	
 
 
-\begin{table}[h!]
+\begin{table}
 	\begin{tabularx}{\textwidth}{| l | X | c |}
 		\hline
 		\textbf{Feature Name} & \textbf{Description} & \textbf{Type} \\
@@ -464,7 +463,7 @@ Each level is annotated with 176 numerical and textual features which are divide
 \label{tab:featuresPNG1}
 \end{table}			
 
-\begin{table}[h!]
+\begin{table}
 	\begin{tabularx}{\textwidth}{| l | X | c |}
 		\hline
 		\textbf{Feature Name} & \textbf{Description} & \textbf{Type} \\
@@ -494,7 +493,7 @@ Each level is annotated with 176 numerical and textual features which are divide
 \end{table}			
 
 
-\begin{table}[h!]
+\begin{table}
 	\begin{tabularx}{\textwidth}{| l | X | c |}
 		\hline
 		Feature Name & Description & Type \\
@@ -531,7 +530,7 @@ In order to keep as much information as possible from the collected levels, we s
 \end{itemize}
 \paragraph{Full Dataset} 
  The full dataset is kept as much portable as possible, in the sense that it shouldn't need particular technologies to be accessed except the capability of parsing JSON files and NetworkX \cite{networkx} for analysing the graph structure. \\*
- It is composed of about \textbf{\textit{9460}} levels organized as a directory structure, while the maps are of different sizes given by the rescaling of the levels in \gls{MU} to tile/pixel format.\\*
+ It is composed of about 9172 levels organized as a directory structure, while the maps are of different sizes given by the rescaling of the levels in \gls{MU} to tile/pixel format.\\*
  The folder is structured as follow:
  \begin{itemize}
  	\item \textbf{dataset.json} Contains all the scalar and textual information explained in section~\ref{features} and the relative paths to the files in sub-directories. Acts as a level database. 
@@ -561,13 +560,47 @@ In order to keep as much information as possible from the collected levels, we s
  \begin{itemize}
  	\item \textbf{128-many-floors} Dataset of images up to 128x128 pixels (smaller levels are centered and padded) which have any number of floors, consisting of 1933 levels in training set and 829 in validation set. 
  	\item \textbf{128-one-floor} Dataset of images up to 128x128 pixels (smaller levels are centered and padded) which have just one floor, consisting of 1104 levels in training set and 474 in validation set.
-
  	
  \end{itemize}
 	\paragraph{Provided Methods} The code repository \cite{gitrepo} hosts a Python module that provides all the necessary methods to inspect and analyse and rebuild both the full dataset and the filtered dataset. Further information is provided in the code documentation as it goes beyond the scope of this chapter.
 	
-\subsection{Full Dataset Statistics}
+\subsection{Level Size Statistics}
+In this section we analyse how the level dimensions in \gls{MU} are distributed in the Full Dataset. Table \ref{tab:sizepercentiles} reports the percentile distributions for both the level height and the level width in Map units and Pixels. This distribution highlights how the choice of scaling 32 Doom units to a single pixel in order to avoid loosing functional information about the levels also leads to reasonable image sizes, since more than 80 percent of the levels are representable in with an image of 256 pixels in both height and width. Joint distribution of width and height is represented in figure~\ref{fig:sizedistribution}
 
-% TODO Inserire immagini distribuzioni del dataset sia di size che di features, magari in appendice
+\begin{table}[h!]
+	\begin{tabularx}{\textwidth}{| X | c | c | c | c |}
+		\cline{0-4}
+		\textbf{Percentile} &  \textbf{Width in DU} & \textbf{Width in pixels} &\textbf{ Height in DU} & \textbf{Height in pixels} \\
+		\cline{0-4}
+		10th & 2305 & 72 & 2065 & 64 \\  
+		20th & 3017 & 94 & 2657 & 83 \\  
+		30th & 3633 & 113 & 3137 & 98 \\  
+		40th & 4161 & 130 & 3606 & 112 \\  
+		50th & 4737 & 148 & 4101 & 128 \\  
+		60th & 5393 & 168 & 4657 & 145 \\  
+		70th & 6177 & 193 & 5313 & 166 \\  
+		80th & 7212 & 225 & 6209 & 194 \\  
+		90th & 9040 & 282 & 7809 & 244 \\
+		100th & 31233 & 976 & 32743 & 1023 \\   
+		\cline{0-4}
+\end{tabularx}
+\caption[ Percentiles of level width and height distributions ]{  Percentiles of level width and height distributions in both Map Units and Pixels }
+\label{tab:sizepercentiles}
+\end{table}	
+
+
+\begin{figure}[h!]
+	\begin{center}
+		\includegraphics[width=0.8\linewidth]{dataset_dimension_distribution}
+	\end{center}
+	
+	\captionsetup{width=0.8\linewidth}
+	\caption[DoomDataset Size distribution]{Joint distribution for the features "width" (on the x axis) and "height" (on the y axis) expressed in \gls{MU} for the level contained in the full dataset. It is possible to notice how the size of the majority of the levels are below 7000 Map Units   }
+	\label{fig:sizedistribution}
+	\medskip
+	
+\end{figure}
+
+\newpage
 \section{Summary}
-In this chapter we presented a dataset consisting of 9460 Doom Levels %TODO GO ON
+In this chapter we proposed a setting for describing the structure and the features of DOOM levels, analysing the WAD file format and exploiting its properties to extract useful data. Inspired by the work of \citeauthor{VGLC} in \citetitle{VGLC} we produced a dataset of more than 9000 DOOM levels for extending the previous work and providing a ready-to-use database for future works on video-game levels. In doing so, we developed a new system for converting WAD files into a data format that is compatible with our needs, while also trying to preserve the textual format provided by the previous work for backward compatibility. 

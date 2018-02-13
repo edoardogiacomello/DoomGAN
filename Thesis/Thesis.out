@@ -36,7 +36,7 @@
 \BOOKMARK [1][-]{section.3.4}{Dataset Organization}{chapter.3}% 36
 \BOOKMARK [2][-]{subsection.3.4.1}{Overview}{section.3.4}% 37
 \BOOKMARK [2][-]{subsection.3.4.2}{Full Dataset and Filtered Dataset}{section.3.4}% 38
-\BOOKMARK [2][-]{subsection.3.4.3}{Full Dataset Statistics}{section.3.4}% 39
+\BOOKMARK [2][-]{subsection.3.4.3}{Level Size Statistics}{section.3.4}% 39
 \BOOKMARK [1][-]{section.3.5}{Summary}{chapter.3}% 40
 \BOOKMARK [0][-]{chapter.4}{System Design and Overview}{}% 41
 \BOOKMARK [1][-]{section.4.1}{System Overview}{chapter.4}% 42
@@ -64,4 +64,4 @@
 \BOOKMARK [1][-]{section.8.1}{Open Problems}{chapter.8}% 64
 \BOOKMARK [1][-]{section.8.2}{Possible Applications and future develops}{chapter.8}% 65
 \BOOKMARK [0][-]{chapter.9}{Appendix}{}% 66
-\BOOKMARK [0][-]{section*.49}{Glossary}{}% 67
+\BOOKMARK [0][-]{section*.51}{Glossary}{}% 67
