@@ -555,6 +555,7 @@ In order to keep as much information as possible from the collected levels, we s
 		\item \textbf{DATASETNAME-validation.TFRecord}  Dataset used for model validation stored in TFRecord data format.
 		\item \textbf{DATASETNAME.meta} Metadata and statistics about the dataset contained in train and validation datasets, in JSON format. Since the TFRecord format currently does not natively hold any information about the data contained in its records, it is useful to save data such as the item count, data structure and statistics about the dataset in a separate file, for easing the process of data normalization and other kind of operations.
  	\end{itemize}
+ \label{sec:metadata_tfrecord}
  
  In our GitHub Repository \cite{gitrepo} it is possible to find the files relative to two different data subset:
  \begin{itemize}

@@ -1,14 +1,26 @@
 \chapter{Experiment Design and Results}
-\section{Parameter Tweaking and Training Phase}
+\section{Neural Network Architecture and Training Algorithm}
+\subsection{Network Architecture and Hyper-parameters}
+\label{sec:networkarch}
+\paragraph{Chosen Architecture}
+ 
+\paragraph{Advantages} %TODO Parla dei vantaggi e soprattutto del problema della (validation) loss che non sempre è sinonimo di qualità dei samples, citando i paper.
+\label{sec:arch_advantages}
+
 \subsection{Techniques and "GAN Tricks" used}
 \subsection{Training Algorithm}
 % Show the table with the steps at each iteration and motivate them
-\subsection{Evaluation metrics}
+
 \subsection{Input data}
  % TODO Inserire Constraints su tfrecords
 \label{sec:InputSelection}
+
 \subsection{Resulting Model}
+\subsection{Evaluation metrics}
+%TODO: Parla del fatto che di solito si usa inception score o simili. Cita anche il paper in cui proponevano modi alternativi che però dipendevano comunque da reti neurali e i risultati ottenuti non sono stati soddisfacenti. Poi proponi e spiega le metriche e parla del fatto che è comunque difficile trovare metriche sensate per comparare il tipo di dati su cui lavoriamo.
+\label{sec:evaluation}
 \section{Sampling the network}
+\label{sec:sampling}
 % Alcune considerazioni su come viene campionata la rete 
 % Eventuale sezione sull'interpolazione di livelli
 \section{Generated Samples}
