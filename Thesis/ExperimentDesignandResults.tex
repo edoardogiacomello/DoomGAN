@@ -1,7 +1,10 @@
 \chapter{Experiment Design and Results}
+\paragraph{Overview} This chapter describes the experiment that we conducted based on the system design showed in chapter~\ref{sec} and our final results, consisting in the trained model and its evaluation. In particular, in section~\ref{sec:nn} we present the selected architecture among the different possibilities in recent literature. Section~\ref{sec:input_metrics_sample} describes all the necessary details about the input selection, the chosen evaluation metrics and how results are produced. Section~\ref{sec:results} presents the resulting model, the metrics associated to it and some examples of generated levels. 
 \section{Neural Network Architecture and Training Algorithm}
+\label{sec:nn}
 \subsection{Network Architecture and Hyper-parameters}
 \label{sec:networkarch}
+
 \paragraph{Chosen Architecture}
  
 \paragraph{Advantages} %TODO Parla dei vantaggi e soprattutto del problema della (validation) loss che non sempre è sinonimo di qualità dei samples, citando i paper.
@@ -11,15 +14,22 @@
 \subsection{Training Algorithm}
 % Show the table with the steps at each iteration and motivate them
 
+
+\section{Input selection, Metrics and Sample Method}
+\label{sec:input_metrics_sample}
 \subsection{Input data}
  % TODO Inserire Constraints su tfrecords
 \label{sec:InputSelection}
 
-\subsection{Resulting Model}
 \subsection{Evaluation metrics}
 %TODO: Parla del fatto che di solito si usa inception score o simili. Cita anche il paper in cui proponevano modi alternativi che però dipendevano comunque da reti neurali e i risultati ottenuti non sono stati soddisfacenti. Poi proponi e spiega le metriche e parla del fatto che è comunque difficile trovare metriche sensate per comparare il tipo di dati su cui lavoriamo.
 \label{sec:evaluation}
-\section{Sampling the network}
+\subsection{Sampling the network}
+
+
+\section{Results}
+\label{sec:results}
+\subsection{Resulting Model}
 \label{sec:sampling}
 % Alcune considerazioni su come viene campionata la rete 
 % Eventuale sezione sull'interpolazione di livelli
