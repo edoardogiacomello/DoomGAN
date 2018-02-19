@@ -1,37 +1,68 @@
 \chapter{Experiment Design and Results}
-\paragraph{Overview} This chapter describes the experiment that we conducted based on the system design showed in chapter~\ref{sec} and our final results, consisting in the trained model and its evaluation. In particular, in section~\ref{sec:nn} we present the selected architecture among the different possibilities in recent literature. Section~\ref{sec:input_metrics_sample} describes all the necessary details about the input selection, the chosen evaluation metrics and how results are produced. Section~\ref{sec:results} presents the resulting model, the metrics associated to it and some examples of generated levels. 
+\paragraph{Overview} %TODO: Review this
+ This chapter describes the experiment that we conducted based on the system design showed in chapter~\ref{ch:system_design} and our final results, consisting in the trained model and its evaluation. In particular, in section~\ref{sec:nn} we present the selected architecture among the different possibilities in recent literature. Section~\ref{sec:input_metrics_sample} describes all the necessary details about the input selection, the chosen evaluation metrics and how results are produced. Section~\ref{sec:results} presents the resulting model, the metrics associated to it and some examples of generated levels. 
 \section{Neural Network Architecture and Training Algorithm}
 \label{sec:nn}
+\paragraph{Overview} Typically, training a Generative Neural Network is a difficult task. This is, among other reasons, due to the need of balancing the two networks, the generator and the discriminator, during the training process. Another issue is that the loss function is not always correlated with the generated sample quality, added to the problem of evaluating the sample quality. %TODO: Expand this.
+ Although we tried some different \glspl{gan} implementations and techniques, our principal selection criterion has been the effectiveness on our particular dataset of the proposed solution in solving this stability problems.
 \subsection{Network Architecture and Hyper-parameters}
 \label{sec:networkarch}
 
-\subsubsection{Chosen Architecture}
-\paragraph{Overview} Among the proposed variants of \gslpl{gan} that are proposed in the literature, we selected the Wesserstein GAN with Gradient Penalty \cite{wgangp} (WGAN-GP) from \citeauthor{wgangp}. This architecture is proposed as an enhanced version of the WGAN \cite{wgan}. In the WGAN architecture, the discriminator is more properly called "critic", as it is a network that is not trained to discriminate  true and generated samples but rather to evaluate them \citeauthor{wgangp}.%TODO: Inserisci pagina
+\paragraph{Chosen Architecture} Among the various \glspl{gan} implementations that are proposed in the literature, we selected the Wasserstein GAN with Gradient Penalty \cite{wgangp} (WGAN-GP) from \citeauthor{wgangp}. This architecture is proposed as an enhanced version of the WGAN \cite{wgan}. In the WGAN architecture, the discriminator is more properly called "critic", as it is a network that is not trained to discriminate true and generated samples but rather to evaluate them \cite[section 2.2, p.~2]{wgangp}.
+
+
+
+\subsubsection{Critic Loss and Generator Loss}
+\paragraph{Loss Formulation}
+We implement the Critic and Generator losses as in the \citetitle{wgangp} official implementation \cite{wgangp-imple}. With reference to the notation introduced in \ref{sec:modelstructure}:
+% TODO: Scrivi l'update rule della loss di wgangp
+\begin{equation}
+\label{eq:loss}
+ %\tag{WGAN-GP Critic Loss}
+ \begin{split}
+L_{Critic}^{(i)} \gets & \underbrace{Logits(X_{Gen}) - Logits(X_{Real})}_{\text{WGAN Loss}} + \underbrace {\lambda G_p}_{\text{Gradient Penalty}} \\
+%\tag{WGAN-GP Generator Loss}
+L_{Gen}^{(i)} \gets & -Logits(X_{Gen}) 
+\end{split}
+\end{equation}
+
+
+
+The difference of the first two addends in eq.~\ref{eq:loss}, previously introduced in section~\ref{sec:modelstructure}, are an approximation to the Wasserstein Loss \cite[\S~3]{wgan}. This distance is also called \textit{Earth-Mover Distance} due to its informal interpretation: if two distribution are viewed as two piles of "dirt", then the Wasserstein distance is the minimum cost of turning one pile into the other. \\*
+Now that we presented the WGAN-GP architecture we can give an intuitive interpretation of these addends: The critic network is trained, by minimizing \ref{eq:loss}, to assign a "score" to real and generated samples. This is one of the reasons that motivate the change in name from "discriminator" to "critic"~\footnote{ Comments about the Wasserstein GAN paper from the authors of WGAN and GAN papers, among the others: \url{https://www.reddit.com/r/MachineLearning/comments/5qxoaz/r_170107875_wasserstein_gan/}}, since the logits are not probabilities but unbounded score values.
+
+\paragraph{Gradient Penalty} The \citetitle{wgan} paper uses a technique called "weight clipping" to enforce the \textit{Lipschitz constraint} needed to ensure that the Wasserstein distance is a continuous loss function with respect to the network weights \cite[\S2]{wgan}. In order to avoid optimization problems due to the weight clipping used in the original WGAN architecture, \citetitle{wgangp}\cite{wgangp} propose an alternative method called "Gradient Penalty". The gradient of the loss function is kept to unitary norm via a penalty that is added to the loss itself, resulting in:
+
+\begin{equation}
+\label{eq:gp}
+\begin{split}
+\hat{X} & \gets \epsilon X_{True} + (1-\epsilon) X_{Gen} \\
+G_p & \gets (\| \nabla_{\hat{X}}Logits(\hat{X}) \|_2 - 1 )^2
+\end{split}
+\end{equation}
+
+With $ \epsilon \sim U[0,1] $. This way, the constraint is enforced only along straight lines between the real and the generated data distribution leading to good results and performances. For more details on the concepts introduced in this section we refer to the original papers \cite{wgan, wgangp}. 
+
+\subsubsection{Training Algorithm}
+
 
 \paragraph{Network Layers}
 
-\subsubsection{Critic Loss and Generator Loss}
-\paragraph{Overview}
-\paragraph{Critic Loss}
-We implement the Critic loss as in the \citetitle{wgangp} official implementation \cite{wgangp_imple}:
-% TODO: Scrivi l'update rule della loss di wgangp
-
-
-
-% Dai un'interpretazione alla loss e spiega il GP
-\paragraph{Generator Loss}
-The generator loss is defined as:
 
 %TODO Interpretazione
 \subsubsection{Motivation} %TODO: This
 \label{sec:arch_advantages}
 %TODO Parla dei vantaggi e soprattutto del problema della (validation) loss che non sempre è sinonimo di qualità dei samples, citando i paper.
 
+This 
+
 % Considerando il modello utilizzato, https://openreview.net/forum?id=Sy1f0e-R- dimostra che è in realtà piuttosto difficile che una GAN riesca ad imparare esattamente i sample del training set, anche con un numero molto ridotto di elementi.
 
-\subsubsection{Other details} %TODO: Techniques and "GAN Tricks" used
 
-\subsubsection{Training Algorithm}
+
+\subsubsection{Other details} %TODO: Techniques and "GAN Tricks" used
+% Specifica cose segnate nel wgan-gp
+
 % Show the table with the steps at each iteration and motivate them
 
 

@@ -211,50 +211,72 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {5.1}Neural Network Architecture and Training Algorithm}{51}{section.5.1}
 \defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{Overview}{51}{section*.74}
+\defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {5.1.1}Network Architecture and Hyper-parameters}{51}{subsection.5.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Chosen Architecture}{51}{section*.74}
+\contentsline {paragraph}{Chosen Architecture}{51}{section*.75}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Advantages}{51}{section*.75}
+\contentsline {subsubsection}{Critic Loss and Generator Loss}{51}{section*.76}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.2}Techniques and "GAN Tricks" used}{51}{subsection.5.1.2}
+\contentsline {paragraph}{Loss Formulation}{51}{section*.77}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.3}Training Algorithm}{51}{subsection.5.1.3}
+\contentsline {paragraph}{Gradient Penalty}{52}{section*.78}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Input selection, Metrics and Sample Method}{51}{section.5.2}
+\contentsline {subsubsection}{Training Algorithm}{52}{section*.79}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.1}Input data}{51}{subsection.5.2.1}
+\contentsline {paragraph}{Network Layers}{52}{section*.80}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.2}Evaluation metrics}{51}{subsection.5.2.2}
+\contentsline {subsubsection}{Motivation}{52}{section*.81}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.3}Sampling the network}{51}{subsection.5.2.3}
+\contentsline {subsubsection}{Other details}{52}{section*.82}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Results}{51}{section.5.3}
+\contentsline {section}{\numberline {5.2}Input selection, Metrics and Sample Method}{52}{section.5.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.3.1}Resulting Model}{51}{subsection.5.3.1}
+\contentsline {subsection}{\numberline {5.2.1}Input data}{52}{subsection.5.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Generated Samples}{51}{section.5.4}
+\contentsline {subsection}{\numberline {5.2.2}Evaluation metrics}{52}{subsection.5.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.5}In-Game Demonstration}{51}{section.5.5}
+\contentsline {paragraph}{Overview}{52}{section*.83}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.6}Summary}{51}{section.5.6}
+\contentsline {subsubsection}{Entropy Mean Absolute Error}{52}{section*.84}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{53}{chapter.6}
+\contentsline {subsubsection}{Structural Similarity Mean Absolute Error}{52}{section*.85}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.1}Results Evaluation}{53}{section.6.1}
+\contentsline {subsubsection}{Encoding Error}{52}{section*.86}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{53}{subsection.6.1.1}
+\contentsline {subsubsection}{Corner Error}{52}{section*.87}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{53}{subsection.6.1.2}
+\contentsline {paragraph}{}{52}{section*.88}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.2}Summary}{53}{section.6.2}
+\contentsline {subsection}{\numberline {5.2.3}Sampling the network}{53}{subsection.5.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {7}Future Work}{55}{chapter.7}
+\contentsline {section}{\numberline {5.3}Results}{53}{section.5.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.1}Open Problems}{55}{section.7.1}
+\contentsline {subsection}{\numberline {5.3.1}Resulting Model}{53}{subsection.5.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{55}{section.7.2}
+\contentsline {section}{\numberline {5.4}Generated Samples}{53}{section.5.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {8}Appendix}{57}{chapter.8}
+\contentsline {section}{\numberline {5.5}In-Game Demonstration}{53}{section.5.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{61}{section*.76}
+\contentsline {section}{\numberline {5.6}Summary}{53}{section.5.6}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{55}{chapter.6}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {6.1}Results Evaluation}{55}{section.6.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{55}{subsection.6.1.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{55}{subsection.6.1.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {6.2}Summary}{55}{section.6.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {7}Future Work}{57}{chapter.7}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {7.1}Open Problems}{57}{section.7.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{57}{section.7.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {8}Appendix}{59}{chapter.8}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Glossary}{63}{section*.89}

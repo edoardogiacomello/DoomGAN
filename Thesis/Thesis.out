@@ -53,24 +53,22 @@
 \BOOKMARK [0][-]{chapter.5}{Experiment Design and Results}{}% 53
 \BOOKMARK [1][-]{section.5.1}{Neural Network Architecture and Training Algorithm}{chapter.5}% 54
 \BOOKMARK [2][-]{subsection.5.1.1}{Network Architecture and Hyper-parameters}{section.5.1}% 55
-\BOOKMARK [2][-]{subsection.5.1.2}{Techniques and "GAN Tricks" used}{section.5.1}% 56
-\BOOKMARK [2][-]{subsection.5.1.3}{Training Algorithm}{section.5.1}% 57
-\BOOKMARK [1][-]{section.5.2}{Input selection, Metrics and Sample Method}{chapter.5}% 58
-\BOOKMARK [2][-]{subsection.5.2.1}{Input data}{section.5.2}% 59
-\BOOKMARK [2][-]{subsection.5.2.2}{Evaluation metrics}{section.5.2}% 60
-\BOOKMARK [2][-]{subsection.5.2.3}{Sampling the network}{section.5.2}% 61
-\BOOKMARK [1][-]{section.5.3}{Results}{chapter.5}% 62
-\BOOKMARK [2][-]{subsection.5.3.1}{Resulting Model}{section.5.3}% 63
-\BOOKMARK [1][-]{section.5.4}{Generated Samples}{chapter.5}% 64
-\BOOKMARK [1][-]{section.5.5}{In-Game Demonstration}{chapter.5}% 65
-\BOOKMARK [1][-]{section.5.6}{Summary}{chapter.5}% 66
-\BOOKMARK [0][-]{chapter.6}{Results Evaluation and Conclusions}{}% 67
-\BOOKMARK [1][-]{section.6.1}{Results Evaluation}{chapter.6}% 68
-\BOOKMARK [2][-]{subsection.6.1.1}{Samples Evaluation}{section.6.1}% 69
-\BOOKMARK [2][-]{subsection.6.1.2}{Loss of accuracy}{section.6.1}% 70
-\BOOKMARK [1][-]{section.6.2}{Summary}{chapter.6}% 71
-\BOOKMARK [0][-]{chapter.7}{Future Work}{}% 72
-\BOOKMARK [1][-]{section.7.1}{Open Problems}{chapter.7}% 73
-\BOOKMARK [1][-]{section.7.2}{Possible Applications and future develops}{chapter.7}% 74
-\BOOKMARK [0][-]{chapter.8}{Appendix}{}% 75
-\BOOKMARK [0][-]{section*.76}{Glossary}{}% 76
+\BOOKMARK [1][-]{section.5.2}{Input selection, Metrics and Sample Method}{chapter.5}% 56
+\BOOKMARK [2][-]{subsection.5.2.1}{Input data}{section.5.2}% 57
+\BOOKMARK [2][-]{subsection.5.2.2}{Evaluation metrics}{section.5.2}% 58
+\BOOKMARK [2][-]{subsection.5.2.3}{Sampling the network}{section.5.2}% 59
+\BOOKMARK [1][-]{section.5.3}{Results}{chapter.5}% 60
+\BOOKMARK [2][-]{subsection.5.3.1}{Resulting Model}{section.5.3}% 61
+\BOOKMARK [1][-]{section.5.4}{Generated Samples}{chapter.5}% 62
+\BOOKMARK [1][-]{section.5.5}{In-Game Demonstration}{chapter.5}% 63
+\BOOKMARK [1][-]{section.5.6}{Summary}{chapter.5}% 64
+\BOOKMARK [0][-]{chapter.6}{Results Evaluation and Conclusions}{}% 65
+\BOOKMARK [1][-]{section.6.1}{Results Evaluation}{chapter.6}% 66
+\BOOKMARK [2][-]{subsection.6.1.1}{Samples Evaluation}{section.6.1}% 67
+\BOOKMARK [2][-]{subsection.6.1.2}{Loss of accuracy}{section.6.1}% 68
+\BOOKMARK [1][-]{section.6.2}{Summary}{chapter.6}% 69
+\BOOKMARK [0][-]{chapter.7}{Future Work}{}% 70
+\BOOKMARK [1][-]{section.7.1}{Open Problems}{chapter.7}% 71
+\BOOKMARK [1][-]{section.7.2}{Possible Applications and future develops}{chapter.7}% 72
+\BOOKMARK [0][-]{chapter.8}{Appendix}{}% 73
+\BOOKMARK [0][-]{section*.89}{Glossary}{}% 74
