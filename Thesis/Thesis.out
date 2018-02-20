@@ -52,7 +52,7 @@
 \BOOKMARK [1][-]{section.4.5}{Summary}{chapter.4}% 52
 \BOOKMARK [0][-]{chapter.5}{Experiment Design and Results}{}% 53
 \BOOKMARK [1][-]{section.5.1}{Neural Network Architecture and Training Algorithm}{chapter.5}% 54
-\BOOKMARK [2][-]{subsection.5.1.1}{Network Architecture and Hyper-parameters}{section.5.1}% 55
+\BOOKMARK [2][-]{subsection.5.1.1}{Network Architecture}{section.5.1}% 55
 \BOOKMARK [1][-]{section.5.2}{Input selection, Metrics and Sample Method}{chapter.5}% 56
 \BOOKMARK [2][-]{subsection.5.2.1}{Input data}{section.5.2}% 57
 \BOOKMARK [2][-]{subsection.5.2.2}{Evaluation metrics}{section.5.2}% 58
@@ -71,4 +71,4 @@
 \BOOKMARK [1][-]{section.7.1}{Open Problems}{chapter.7}% 71
 \BOOKMARK [1][-]{section.7.2}{Possible Applications and future develops}{chapter.7}% 72
 \BOOKMARK [0][-]{chapter.8}{Appendix}{}% 73
-\BOOKMARK [0][-]{section*.89}{Glossary}{}% 74
+\BOOKMARK [0][-]{section*.91}{Glossary}{}% 74

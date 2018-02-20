@@ -5,7 +5,7 @@
 \label{sec:nn}
 \paragraph{Overview} Typically, training a Generative Neural Network is a difficult task. This is, among other reasons, due to the need of balancing the two networks, the generator and the discriminator, during the training process. Another issue is that the loss function is not always correlated with the generated sample quality, added to the problem of evaluating the sample quality. %TODO: Expand this.
  Although we tried some different \glspl{gan} implementations and techniques, our principal selection criterion has been the effectiveness on our particular dataset of the proposed solution in solving this stability problems.
-\subsection{Network Architecture and Hyper-parameters}
+\subsection{Network Architecture}
 \label{sec:networkarch}
 
 \paragraph{Chosen Architecture} Among the various \glspl{gan} implementations that are proposed in the literature, we selected the Wasserstein GAN with Gradient Penalty \cite{wgangp} (WGAN-GP) from \citeauthor{wgangp}. This architecture is proposed as an enhanced version of the WGAN \cite{wgan}. In the WGAN architecture, the discriminator is more properly called "critic", as it is a network that is not trained to discriminate true and generated samples but rather to evaluate them \cite[section 2.2, p.~2]{wgangp}.
@@ -14,21 +14,19 @@
 
 \subsubsection{Critic Loss and Generator Loss}
 \paragraph{Loss Formulation}
-We implement the Critic and Generator losses as in the \citetitle{wgangp} official implementation \cite{wgangp-imple}. With reference to the notation introduced in \ref{sec:modelstructure}:
-% TODO: Scrivi l'update rule della loss di wgangp
+We implement the Critic and Generator losses as in the \citetitle{wgangp} official implementation \cite{wgangp-imple}. Referencing to the notation introduced in \ref{sec:modelstructure} the losses are defined as follow:
 \begin{equation}
 \label{eq:loss}
  %\tag{WGAN-GP Critic Loss}
  \begin{split}
-L_{Critic}^{(i)} \gets & \underbrace{Logits(X_{Gen}) - Logits(X_{Real})}_{\text{WGAN Loss}} + \underbrace {\lambda G_p}_{\text{Gradient Penalty}} \\
+L_{Critic}^{(i)} \gets & \underbrace{\operatorname{E}(Logits(X_{Gen})) - \operatorname{E}(Logits(X_{True}))}_{\text{WGAN Loss}} + \underbrace {\lambda G_p}_{\text{Gradient Penalty}} \\
 %\tag{WGAN-GP Generator Loss}
 L_{Gen}^{(i)} \gets & -Logits(X_{Gen}) 
 \end{split}
 \end{equation}
 
-
-
-The difference of the first two addends in eq.~\ref{eq:loss}, previously introduced in section~\ref{sec:modelstructure}, are an approximation to the Wasserstein Loss \cite[\S~3]{wgan}. This distance is also called \textit{Earth-Mover Distance} due to its informal interpretation: if two distribution are viewed as two piles of "dirt", then the Wasserstein distance is the minimum cost of turning one pile into the other. \\*
+where $X_{True}$ and $X_{Gen}$ are batches of levels sampled respectively from the dataset and the generator network and $\lambda = 10$ in our experiments.
+The difference of the first two addends in eq.~\ref{eq:loss}, previously introduced in section~\ref{sec:modelstructure}, is an approximation to the Wasserstein Loss \cite[\S~3]{wgan}. This distance is also called \textit{Earth-Mover Distance} due to its informal interpretation: if two distribution are viewed as two piles of "dirt", then the Wasserstein distance is the minimum cost of turning one pile into the other. \\*
 Now that we presented the WGAN-GP architecture we can give an intuitive interpretation of these addends: The critic network is trained, by minimizing \ref{eq:loss}, to assign a "score" to real and generated samples. This is one of the reasons that motivate the change in name from "discriminator" to "critic"~\footnote{ Comments about the Wasserstein GAN paper from the authors of WGAN and GAN papers, among the others: \url{https://www.reddit.com/r/MachineLearning/comments/5qxoaz/r_170107875_wasserstein_gan/}}, since the logits are not probabilities but unbounded score values.
 
 \paragraph{Gradient Penalty} The \citetitle{wgan} paper uses a technique called "weight clipping" to enforce the \textit{Lipschitz constraint} needed to ensure that the Wasserstein distance is a continuous loss function with respect to the network weights \cite[\S2]{wgan}. In order to avoid optimization problems due to the weight clipping used in the original WGAN architecture, \citetitle{wgangp}\cite{wgangp} propose an alternative method called "Gradient Penalty". The gradient of the loss function is kept to unitary norm via a penalty that is added to the loss itself, resulting in:
@@ -43,18 +41,39 @@ G_p & \gets (\| \nabla_{\hat{X}}Logits(\hat{X}) \|_2 - 1 )^2
 
 With $ \epsilon \sim U[0,1] $. This way, the constraint is enforced only along straight lines between the real and the generated data distribution leading to good results and performances. For more details on the concepts introduced in this section we refer to the original papers \cite{wgan, wgangp}. 
 
-\subsubsection{Training Algorithm}
+\subsubsection{Training Algorithm and Hyper-Parameters}
+For implementing the training algorithm we followed the algorithm suggested by \cite[alg.~1. p.~4]{wgangp}, which uses \textit{Adam}\cite{adam} as the optimizer for both the networks and optimizes $n_{critic} = 5$ times the critic network for each generator update. \\*
+In addition to this implementation, we also imposed an input rotation of 90° for each sample at each epoch, such that each 4 epochs the network had in input all the possible orientation of a level. This allows us to exploit the rotation invariance in the representation of a level, since its playability is not affected by its orientation in the space it is represented. Table \ref{tab:training} shows in detail the frequency of each computation operation relative to each critic step, with reference to our TensorFlow implementation at \cite{gitrepo}. Due to implementation constraints, we calculate the Metrics out of the TensorBoard computation graph, so they appear as inputs since they have to be visualized with the other values. Reference Sample refers to the computation of a sample that is generated by the same $Y$ and $Z$ vectors, sampled at the beginning of the training phase. This helps in visualizing how the network weights optimization visually impact on the generation of one sample. \\*
+ The  hyperparameters we used in our experiments are $\alpha=0.0002, \beta_1=0, \beta_2, \lambda=10$.
+ 
 
+
+\begin{table}[h!]
+	\centering
+	\begin{tabularx}{\textwidth}{| c | X | X | X | X | c | X | }
+		\hline
+		Run Name & \multicolumn{3}{X|}{Inputs} & Outputs & Frequency & Evaluated operators \\ \cline{2-4}
+		  & Critic Input ($X_{True}$) & Scalar Features $(Y)$ & Generator noise (Z) &   &   &   \\
+		\hline
+		Train G & - & $Y_{Train}$ & $U[0,1]$ & $L_{Gen}$ & $5$ & $G_{optim}$, $summary_D$ \\ \hline
+		Train D & $X_{Train}$ & $Y_{Train}$ & $U[0,1]$ & $L_{Critic}$ & $1$ & $G_{optim}$, $summary_D$\\ \hline
+		Validation & $X_{Val}$ & $Y_{Val}$ & $U[0,1]$ &  $L_{Gen, Val}$, $L_{Critic, Val}$, $X_{Gen}$ & $100$ & $G_{optim}$, $summary_D$ \\ \hline
+		Metrics & \multicolumn{3}{X|}{$Metrics(X_{Val}, X_{Gen})$} &  - & $100$ & $G_{optim}$, $summary_D$ \\ \hline
+		Reference Sample & $-$ & $Y_{Ref}$ & $Z_{Ref}$ &  $X_{Ref}$ & $100$ & $G_{optim}$, $summary_D$ \\ \hline
+		Network Checkpoint & $-$ & $-$ & $-$  & checkpoint & $100$ & $save()$ \\ \hline
+	\end{tabularx}
+	\caption{Training Algorithm Operations}
+	\label{tab:training}
+\end{table}
 
 \paragraph{Network Layers}
-
+%TODO: Add network layers
 
 %TODO Interpretazione
 \subsubsection{Motivation} %TODO: This
 \label{sec:arch_advantages}
 %TODO Parla dei vantaggi e soprattutto del problema della (validation) loss che non sempre è sinonimo di qualità dei samples, citando i paper.
 
-This 
 
 % Considerando il modello utilizzato, https://openreview.net/forum?id=Sy1f0e-R- dimostra che è in realtà piuttosto difficile che una GAN riesca ad imparare esattamente i sample del training set, anche con un numero molto ridotto di elementi.
 
@@ -75,18 +94,62 @@ This
 
 \subsection{Evaluation metrics}
 \label{sec:evaluation}
-%TODO: Parla del fatto che di solito si usa inception score o simili. Cita anche il paper in cui proponevano modi alternativi che però dipendevano comunque da reti neurali e i risultati ottenuti non sono stati soddisfacenti. Poi proponi e spiega le metriche e parla del fatto che è comunque difficile trovare metriche sensate per comparare il tipo di dati su cui lavoriamo.
-\paragraph{Overview} We define 
-\subsubsection{Entropy Mean Absolute Error}
-\subsubsection{Structural Similarity Mean Absolute Error}
-\subsubsection{Encoding Error}
-\subsubsection{Corner Error}
-\paragraph{} This metric is inspired by the work of ...%TODO:Paper robotica
-We define the Corner Error as
-%TODO: Definizione
+\paragraph{Overview} As discussed in section~\ref{sec:considerations}, the problem of how evaluating the quality of the samples generated from a neural network remains an open area of research. The architectures that we considered up to now are primarily trained on datasets consisting of images representing real objects, such as faces or bedrooms. For dealing with the problem of evaluating the samples, \citeauthor{improved_gan} propose both a process in which human annotators are asked to assess the perceived quality of the samples \cite[p.~4]{improved_gan} and the usage of the Inception Model \cite{inception} Score for assessing the perceived quality of the samples. Although many authors have success in assessing sample quality using the Inception Score, this method showed poor results on our dataset. The most probable reason is that our dataset is very different from the ImageNet dataset upon which is trained the Inception Network. //* Since tuning the Inception network to work with our dataset (for example using transfer-learning techniques) or applying other proposed solutions based on similarly complex models wouldn't have been possible given our computational and time constraints, we decided to design some heuristics that could correlate with sample quality at least with our dataset.
+\paragraph{Principles} Instead of asking a neural network to evaluate the generated samples, our process compares two samples that have been generated by the network using the same conditioning vector. Since in principle, given a vector of scalar features $Y$, the network could generate samples which are topologically and visually very different, any metric that used quantities that are strictly related to the level topology rather than a perceived concept of "quality" couldn't lead to reasonable results. In designing these metrics we inspired to the paper \citetitle{slam}. In their work, \citeauthor{slam} propose their solution to the problem of evaluating the maps generated by a SLAM algorithm running on a mobile agent. Their approach consist in defining three metrics that capture different aspects of the analysed maps, which features some similarities with the \glspl{featuremap} we use, and considering the entire set of metrics as an approximation of the human perceived quality of a map. 
+\\* Following a similar approach, we defined the following metrics for estimating the perceived quality of a sample generated by our network. These metrics are not meant to be a general solution to the problem of evaluating samples of a \gls{gan} nor to improve the work of \citeauthor{slam_metrics}, but only to be used as a quantitative tool for assessing the samples in our particular case.
 
+\subsubsection{Entropy Mean Absolute Error}
+This metric is defined as the Mean Absolute error between the entropy of two images in their colour space. In particular, since as described in chapter~\ref{sec:DatasetOrganization} we are representing maps as grey-scale images whose colour ranges between 0 and 255, we calculate the pixel distribution over each possible colour value $c$ of an image $x$, $P_{c}(x)$, then we calculate the entropy as:
+\begin{equation}
+	S(x) = - \sum_{c=0}^{255}{ P_{c}(x) * \log{P_{c}(x)} }
+\end{equation}
+
+then, the metric over a batch of true images $X_{true}$ and a batch of generated images $X_{gen}$, both consisting of $N$ samples, is calculated as:
+
+\begin{equation}
+Entropy_{mae}(X_{true}, X_{gen}) = \frac{1}{N}\sum_{i=0}^{N-1} | S(X_{gen}(i)) - S(X_{true}(i)) |
+\end{equation}
+
+This metric is related to how different the entropy of a generated image is from the corresponding real image, which can also be interpreted as the difference in the quantity of information expressed by the two samples. In general, large values of this metric indicates that the generated sample is very noisy or the topology of the two levels are greatly different, while small values indicates that the entropy of the two images are on a comparable level. 
+
+\subsubsection{Mean Structural Similarity Index}
+This metric is defined as the Structural Similarity (SSIM) Index \cite{ssim} between two images.  This measure is the result of a framework that consider several aspects of an image, such as the luminance, the contrast and the structure, rather than basing only on a statistic. Moreover, the structural similarity technique is applied locally over the image, for reflecting the fact that pixels are more dependant on other spatially close pixels than far ones. \\*
+For calculating this metric we use the implementation provided by the Scikit-Image Python library, which we leave the formulation to the paper \cite[p.~604]{ssim}, and compute the mean of the SSIM index over the images belonging to the true and generated batches. Regarding the interpretation of the metrics, values closer to 1 indicate the fact that true and generated samples are often structurally similar: in other words, the network produces samples in which the local structure of the pixels are comparable.
+
+\subsubsection{Mean Encoding Error}
+We define as "Encoding Error" a measure of how far the pixels colour of a generated image are from their closest meaningful value. Specifically, as we introduced the encoding values for each feature map in chapter~\ref{sec:DatasetOrganization} the reader might have noticed that not all values correspond an actual representation. For example, the \gls{floormap} encodes the pavement as 255 and the empty space as 0, leaving values from 1 to 254 without a real meaning. Since as highlighted in section \ref{sec:usecases} the network only reads and outputs floating point numbers between 0 and 1, this is not actually a problem of choosing an encoding space for the images, rather it is intrinsic to the network definition. Due to the generation process involving noise and non-integer parameters, the network will often output pixel colours that are in-between the possible values the input images can take, even though this behaviour decreases as the training proceeds. \\*
+The definition of this function, for a generic pixel colour value $x$ which assumes meaningful values every $i$ colour values, corresponds to a periodic triangular function having base $i$ which assumes the maximum value of $1$ wherever x is halfway a meaningful value and another. More formally:
+
+\begin{equation}
+Enc_{I}(x) \equiv \sum_{k \in \mathbb{Z}}^{} \Lambda (\frac{2(x-kI)-I}{I})
+\end{equation}
+
+where $ \Lambda(x) $ is the unit-base triangular function such that $ \Lambda(0) = 1 $. \\*
+The metric is then calculated as 
+
+\begin{equation}
+MEE_(X_{gen}) = \frac{1}{N}\sum_{i=0}^{N-1} \frac{1}{|P|} \sum_{p\in P} Enc_I(p)
+\end{equation}
+
+where $p\in P$ is the colour of each pixel of the image, $|P|$ is the total number of pixels in an image and $N$ is the batch size of $X$. In particular, I is 255 for the \gls{floormap} and \gls{wallmap} while is 1 for the other maps.  \\*
+Since, by construction, $MEE_(X_{true}) = 0$ up to conversion errors or artefacts, this metric is only calculated for the generated samples and it is correlated with the ability of the network to represent precisely the data encoding.
+
+\subsubsection{Mean Corner Error}
+\paragraph{} This error is based on the idea introduced with the corner count metric introduced by \cite{slam}. We define our implementation of the Corner Error of two images as:
+\begin{equation}
+	C_{err}(n_{x}, n_{y}) = \sqrt{\frac{(n_{x} - n_{y})^2}{n_{x}n_{y}}}
+\end{equation}
+where $n_{x}$ and $n_{y}$ are respectively the corner count of two binary images, extracted using the Harris corner detector \cite{harrisdetector}.
+This formula may seem arbitrary, but it demonstrated to scale well on our dataset, since the corner count is actually limited by the size of our samples. The final metric is computed, as the other cases, averaging the corner error over the images in the batch:
+
+\begin{equation}
+MCE(X_{true}, X_{gen}) = \frac{1}{N} \sum_{i=0}^{N-1} C_{err}(n_{true,i}, n_{gen,i})
+\end{equation}
+Again, for simplicity, we indicated as $ n_{true,i} $ and $ n_{gen,i} $ the corner count given by \\ $ n_{i} = count(peak(harris(X_{i}))) $, with obvious meaning of the function names.
+This metric is proportional to the average distance that the true and generated samples have, giving a quantitative measure of relative map complexity. It is worth nothing that it's not always the case, since generation artefacts may dramatically increase this value, producing a great number of corners. For this reason, this quantity reflects both the relative average complexity between batches of images and the presence of noise or artefacts in the generated samples.
 
 \subsection{Sampling the network}
+
 
 
 \section{Results}
