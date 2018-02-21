@@ -351,20 +351,23 @@ class DoomDataset():
                 saved_levels = 0
                 for current_set in train_list, validation_list:
                     for level in current_set:
-                        # Reading the maps
-                        for path in Features.map_paths:
-                            map_img = io.imread(self.root + level[path], mode='L')
-                            padded = self._pad_image(map_img, target_size=target_size)
-                            level[Features.map_paths[path]] = padded
-                        # Adding map meta to global meta (cannot load all the dataset in memory for computing stats)
-                        meta = self._add_maps_meta(meta, level)
-                        sample = self._sample_to_TFRecord(level)
-                        if current_set is train_list:
-                            train_writer.write(sample.SerializeToString())
-                        else:
-                            validation_writer.write(sample.SerializeToString())
-                        saved_levels += 1
-
+                        try:
+                            # Reading the maps
+                            for path in Features.map_paths:
+                                map_img = io.imread(self.root + level[path], mode='L')
+                                padded = self._pad_image(map_img, target_size=target_size)
+                                level[Features.map_paths[path]] = padded
+                            # Adding map meta to global meta (cannot load all the dataset in memory for computing stats)
+                            meta = self._add_maps_meta(meta, level)
+                            sample = self._sample_to_TFRecord(level)
+                            if current_set is train_list:
+                                train_writer.write(sample.SerializeToString())
+                            else:
+                                validation_writer.write(sample.SerializeToString())
+                            saved_levels += 1
+                        except:
+                            print("Found an image that is larger than the target size. Skipping..")
+                            continue
                         if saved_levels % (len(record_list) // 100) == 0:
                             print("{}% completed.".format(round(saved_levels / len(record_list) * 100)))
                 print("{} levels saved.".format(saved_levels))

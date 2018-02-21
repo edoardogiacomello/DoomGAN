@@ -1,5 +1,7 @@
 .git
 .idea
-.GAN-Tests
-.examples
+GAN-Tests
+examples
+.Thesis
+Architecture_Database
 

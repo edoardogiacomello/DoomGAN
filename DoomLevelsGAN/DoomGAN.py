@@ -118,7 +118,7 @@ class DoomGAN(object):
             w_D = []
             for layer_id, layer in enumerate(hidden_layers):
                 if layer_id == 0:  # First layer (input)
-                    input = concatenate_features(input, y)
+                    input = concatenate_features(input, y) if self.use_features else input
                     c, w = conv2d(input, layer['n_filters'], name='d_a{}'.format(layer_id),
                                   k_h=layer['kernel_size'][0], k_w=layer['kernel_size'][1],
                                   stride_h=layer['stride'][0], stride_w=layer['stride'][1], with_w=True)
@@ -201,9 +201,9 @@ class DoomGAN(object):
 
 
 
-        if self.use_features:
-            self.y = tf.placeholder(tf.float32, [self.config.batch_size, len(self.features)])
-            self.y_norm = DataTransform.scaling_features(self.y, self.features, self.config.dataset_path, self.config.use_sigmoid)
+
+        self.y = tf.placeholder(tf.float32, [self.config.batch_size, len(self.features)]) if self.use_features else None
+        self.y_norm = DataTransform.scaling_features(self.y, self.features, self.config.dataset_path, self.config.use_sigmoid) if self.use_features else None
 
         self.z = tf.placeholder(tf.float32, [self.config.batch_size, self.config.z_dim], name='z')
 
@@ -469,20 +469,31 @@ class DoomGAN(object):
                             y_batch = np.stack([train_batch[f] for f in self.features],
                                                axis=-1) if self.use_features else None
                             # Train D
-                            self.session.run([d_optim], feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
-                                                                   self.x_rotation: [math.radians(rotation)]})
+                            net_inputs = {self.x: x_batch,
+                                          self.z: z_batch,
+                                          self.x_rotation: [math.radians(rotation)]}
+                            if self.use_features:
+                                net_inputs[self.y] = y_batch
+                            self.session.run([d_optim], feed_dict=net_inputs)
                             # Train G
                             if i == 0:
-                                self.session.run([g_optim], feed_dict={self.y: y_batch, self.z: z_batch})
+                                net_inputs = {self.z: z_batch}
+                                if self.use_features:
+                                    net_inputs[self.y] = y_batch
+                                self.session.run([g_optim], feed_dict=net_inputs)
 
                         # Check if the net should be saved
                         if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0:
                             self.save(config.checkpoint_dir)
 
                             # Calculating training loss
+                            net_inputs = {self.x: x_batch,
+                                          self.z: z_batch,
+                                          self.x_rotation: [math.radians(rotation)]}
+                            if self.use_features:
+                                net_inputs[self.y] = y_batch
                             sum_d_train, sum_g_train = self.session.run([summary_d, summary_g],
-                                                            feed_dict={self.x: x_batch, self.y: y_batch, self.z: z_batch,
-                                                                       self.x_rotation: [math.radians(rotation)]})
+                                                            feed_dict=net_inputs)
 
                             # Validation step
                             self.session.run([valid_set_iter.initializer])
@@ -496,13 +507,21 @@ class DoomGAN(object):
                             z_val_batch = np.random.uniform(-1, 1,
                                                         [self.config.batch_size, self.config.z_dim]).astype(
                                 np.float32)
+
+                            net_inputs ={self.z: z_val_batch}
+                            if self.use_features:
+                                net_inputs[self.y] = y_val_batch
                             g_val_batch = self.session.run([self.G_rescaled],
-                                                      feed_dict={self.z: z_val_batch, self.y: y_val_batch})[0]
+                                                      feed_dict=net_inputs)[0]
 
                             # Calculating validation loss for critic and generator
+                            net_inputs = {self.x: x_val_batch,
+                                          self.z: z_val_batch,
+                                          self.x_rotation: [math.radians(0)]}
+                            if self.use_features:
+                                net_inputs[self.y] = y_val_batch
                             sum_d_valid, sum_g_valid, sum_out_valid = self.session.run([summary_d, summary_g, summary_samples],
-                                             feed_dict={self.x: x_val_batch, self.y: y_val_batch, self.z: z_val_batch,
-                                                        self.x_rotation: [math.radians(0)]})
+                                                                                       feed_dict=net_inputs)
 
                             # "offline" metrics calculation (using numpy, then sending the results to tensorboard)
                             metric_results = self.compute_quality_metrics(g_val_batch, x_val_batch)
@@ -512,11 +531,16 @@ class DoomGAN(object):
                             # REFERENCE SAMPLE PLOTTING
                             # A reference sample is kept frozen and shown at each validation step to visually understand
                             # how the training is proceeding
-                            x_ref, y_ref, z_ref = self.get_reference_sample(x_val_batch, y_val_batch, z_val_batch)
-                            sum_out_ref, g_ref = self.session.run(
-                                [summary_samples, self.G_rescaled],
-                                feed_dict={self.x: x_ref, self.y: y_ref, self.z: z_ref,
-                                           self.x_rotation: [math.radians(0)]})
+                            if self.use_features:
+                                x_ref, y_ref, z_ref = self.get_reference_sample(x_val_batch, y_val_batch, z_val_batch)
+                            else:
+                                x_ref, z_ref = self.get_reference_sample(x_val_batch, None, z_val_batch)
+                            net_inputs = {self.x: x_ref,
+                                          self.z: z_ref,
+                                          self.x_rotation: [math.radians(0)]}
+                            if self.use_features:
+                                net_inputs[self.y] = y_ref
+                            sum_out_ref, g_ref = self.session.run([summary_samples, self.G_rescaled], feed_dict=net_inputs)
                             ref_metric_results = self.compute_quality_metrics(g_ref, x_ref)
                             ref_feed_dict = {self.metrics[metric]: ref_metric_results[metric] for metric in self.metrics.keys()}
                             sum_metrics_ref = self.session.run([summary_metrics], feed_dict=ref_feed_dict)[0]
@@ -545,31 +569,38 @@ class DoomGAN(object):
     def get_reference_sample(self, current_x, current_y, current_z):
         """
         Loads a saved reference batch used to visualize how the learning phase proceed on the same generated sample
-        If no samples are found in the corresponding file, then the provided batches will be saved as reference sample
+        If no samples are found in the corresponding file, then the provided batches will be saved as reference sample.
+        If the model doen't use features, then the output corresponding to y will be None
         :param current_x:
         :param current_y:
         :param current_z:
-        :return: a tuple of x, y, z reference batches
+        :return: a tuple of x, y, z reference batches if the network uses features, otherwise a tuple of x, z
         """
         if all([inp is not None for inp in self.reference_sample.values()]):
-            return self.reference_sample['x'], self.reference_sample['y'], self.reference_sample['z']
+            if self.use_features:
+                return self.reference_sample['x'], self.reference_sample['y'], self.reference_sample['z']
+            else:
+                return self.reference_sample['x'],self.reference_sample['z']
         # Try loading the samples from file
-        paths = ["reference_sample_{}.npy".format(inp) for inp in [self.reference_sample.keys()]]
+        paths = ["{}reference_sample_{}.npy".format(self.config.ref_sample_folder, inp) for inp in [self.reference_sample.keys()]]
         is_file = [os.path.isfile(p) for p in paths]
         if not all(is_file):
             # Save a new reference batch
-            np.save("reference_sample_x.npy", current_x)
-            np.save("reference_sample_y.npy", current_y)
-            np.save("reference_sample_z.npy", current_z)
+            np.save("{}reference_sample_x.npy".format(self.config.ref_sample_folder), current_x)
+            np.save("{}reference_sample_z.npy".format(self.config.ref_sample_folder), current_z)
             self.reference_sample['x'] = current_x.copy()
-            self.reference_sample['y'] = current_y.copy()
             self.reference_sample['z'] = current_z.copy()
+            if self.use_features:
+                np.save("{}reference_sample_y.npy".format(self.config.ref_sample_folder), current_y)
+                self.reference_sample['y'] = current_y.copy()
         else:
-            self.reference_sample['x'] = np.load("reference_sample_x.npy")
-            self.reference_sample['y'] = np.load("reference_sample_y.npy")
-            self.reference_sample['z'] = np.load("reference_sample_z.npy")
-        return self.reference_sample['x'], self.reference_sample['y'], self.reference_sample['z']
-
+            self.reference_sample['x'] = np.load("{}reference_sample_x.npy".format(self.config.ref_sample_folder))
+            self.reference_sample['z'] = np.load("{}reference_sample_z.npy".format(self.config.ref_sample_folder))
+        if self.use_features:
+            self.reference_sample['y'] = np.load("{}reference_sample_y.npy".format(self.config.ref_sample_folder))
+            return self.reference_sample['x'], self.reference_sample['y'], self.reference_sample['z']
+        else:
+            return self.reference_sample['x'], self.reference_sample['z']
 
     def __init__(self, session, config, features, maps, d_layers, g_layers):
         self.session = session
@@ -582,12 +613,13 @@ class DoomGAN(object):
         self.maps = maps
         self.output_channels = len(maps)
         self.nearest_features_tree = None
-        self.reference_sample = {'x': None, 'y': None, 'z':None}
+        self.reference_sample = {'x': None, 'y': None, 'z':None} if self.use_features else {'x': None, 'z':None}
         self.build()
 
     def sample(self, mode, sample_from_dataset='validation', y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False, folder=None):
         """
         Samples the network with a given generator input. Various options for selecting the feature vector (y) and the noise vector (z) are possible.
+        If the network model doesn't use any feature, than Y sampling is ignored.
         Y-Sampling has three main modes of operation for sampling the y vector, defined by the 'mode' parameter.
         1) 'dataset' means that the y vector is taken from random samples belonging to either the training or validation set (controlled by sample_from_dataset)
         2) 'factors' means that the y vector is controlled by the 'y_factors' input vector, for which each value can be '-1', corresponding to the average dataset value or in [0,1], meaning [-std, +std] of the corresponding feature.
@@ -610,43 +642,44 @@ class DoomGAN(object):
         self.initialize_and_restore()
         x_true_batch = None # This is set only if Y is picked in 'dataset' mode and it's saved along with the generated samples
         # Y Sampling
-        assert mode in ['dataset', 'factors', 'direct', 'nearest'], "Mode can only be 'dataset', 'factors' or 'direct'"
-        if mode == 'dataset':
-            assert sample_from_dataset in ['train', 'validation'], "If mode is 'dataset' then 'sample_from_dataset' must be either 'train' or 'validation'"
-            # Load the datasets
-            # Load the dataset
-            train_set_iter, valid_set_iter = self.load_dataset()
-            chosen_iter = train_set_iter if sample_from_dataset == 'train' else valid_set_iter
-            self.session.run([chosen_iter.initializer])
-            next_batch = chosen_iter.get_next()
-            batch = self.session.run(next_batch)
-            x_true_batch = np.stack([batch[m] for m in self.maps], axis=-1)
-            y = np.stack([batch[f] for f in self.features], axis=-1)
+        if self.use_features:
+            assert mode in ['dataset', 'factors', 'direct', 'nearest'], "Mode can only be 'dataset', 'factors' or 'direct'"
+            if mode == 'dataset':
+                assert sample_from_dataset in ['train', 'validation'], "If mode is 'dataset' then 'sample_from_dataset' must be either 'train' or 'validation'"
+                # Load the datasets
+                # Load the dataset
+                train_set_iter, valid_set_iter = self.load_dataset()
+                chosen_iter = train_set_iter if sample_from_dataset == 'train' else valid_set_iter
+                self.session.run([chosen_iter.initializer])
+                next_batch = chosen_iter.get_next()
+                batch = self.session.run(next_batch)
+                x_true_batch = np.stack([batch[m] for m in self.maps], axis=-1)
+                y = np.stack([batch[f] for f in self.features], axis=-1)
 
 
-        elif mode =='factors' or mode == 'nearest':
-            assert y_factors is not None, "y_factors cannot be 'None' if mode is 'factor'"
-            # Build a y vector from the y_factors by interpolating the dataset statistics
-            y_feature_space = DoomDataset().get_feature_sample(self.config.dataset_path, y_factors, features, 'std')
-            if mode == 'nearest':
-                assert sample_from_dataset in ['train',
-                                               'validation'], "If mode is 'nearest' then 'sample_from_dataset' must be either 'train' or 'validation'"
-                # Use nearest neighbour
-                if self.nearest_features_tree is None:
-                    loaded_features = DoomDataset().load_features(self.config.dataset_path, sample_from_dataset, self.features, self.output_size)
-                    self.nearest_features_tree = cKDTree(loaded_features)
+            elif mode =='factors' or mode == 'nearest':
+                assert y_factors is not None, "y_factors cannot be 'None' if mode is 'factor'"
+                # Build a y vector from the y_factors by interpolating the dataset statistics
+                y_feature_space = DoomDataset().get_feature_sample(self.config.dataset_path, y_factors, features, 'std')
+                if mode == 'nearest':
+                    assert sample_from_dataset in ['train',
+                                                   'validation'], "If mode is 'nearest' then 'sample_from_dataset' must be either 'train' or 'validation'"
+                    # Use nearest neighbour
+                    if self.nearest_features_tree is None:
+                        loaded_features = DoomDataset().load_features(self.config.dataset_path, sample_from_dataset, self.features, self.output_size)
+                        self.nearest_features_tree = cKDTree(loaded_features)
 
-                y = np.zeros_like(y_feature_space)
-                for s in range(self.config.batch_size):
-                    distance, nearest_index = self.nearest_features_tree.query(y_feature_space[s])
-                    y[s, :] = loaded_features[nearest_index]
-            else:
-                # Don't use a dataset point
-                y = y_feature_space
-        elif mode == 'direct':
-            assert y_batch is not None, "y_batch cannot be 'None' if mode is 'direct'"
-            # the y_batch is provided externally
-            y = y_batch
+                    y = np.zeros_like(y_feature_space)
+                    for s in range(self.config.batch_size):
+                        distance, nearest_index = self.nearest_features_tree.query(y_feature_space[s])
+                        y[s, :] = loaded_features[nearest_index]
+                else:
+                    # Don't use a dataset point
+                    y = y_feature_space
+            elif mode == 'direct':
+                assert y_batch is not None, "y_batch cannot be 'None' if mode is 'direct'"
+                # the y_batch is provided externally
+                y = y_batch
 
         # Z Sampling
         if seed is not None:
@@ -660,8 +693,11 @@ class DoomGAN(object):
                 np.float32)
         np.random.seed()
         # Sample Generation
+        net_input = {self.z: z_batch}
+        if self.use_features:
+            net_input[self.y] = y
         result = self.session.run([self.G_rescaled],
-                         feed_dict={self.z: z_batch, self.y: y})[0]
+                         feed_dict=net_input)[0]
         # Postprocessing and saving
         if postprocess:
             if save is False:
@@ -766,7 +802,8 @@ if __name__ == '__main__':
                         "Directory name to save the temporary files for visualization [./artifacts/tensorboard_results/]")
     flags.DEFINE_string("generated_folder", "./artifacts/generated_samples/",
                         "Directory name to save the generated samples [./artifacts/generated_samples/]")
-
+    flags.DEFINE_string("ref_sample_folder", "./artifacts/generated_samples/",
+                        "Directory name to save the generated samples [./artifacts/]")
     FLAGS = flags.FLAGS
 
     with tf.Session() as s:
