@@ -802,7 +802,7 @@ if __name__ == '__main__':
                         "Directory name to save the temporary files for visualization [./artifacts/tensorboard_results/]")
     flags.DEFINE_string("generated_folder", "./artifacts/generated_samples/",
                         "Directory name to save the generated samples [./artifacts/generated_samples/]")
-    flags.DEFINE_string("ref_sample_folder", "./artifacts/generated_samples/",
+    flags.DEFINE_string("ref_sample_folder", "./artifacts/",
                         "Directory name to save the generated samples [./artifacts/]")
     FLAGS = flags.FLAGS
 
