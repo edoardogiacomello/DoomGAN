@@ -7,6 +7,7 @@ features = ['level_equivalent_diameter',
             'nodes',
             'distmap-skew',
             'distmap-kurt']
+#features = []
 # Define here which maps to use (you can find a list in /WAD_Parser/Dictionaries/Features.py )
 maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap']
 

@@ -8,41 +8,39 @@ import WAD_Parser.Dictionaries.LinedefTypes as LinedefTypes
 from WAD_Parser.RoomTopology import *
 
 class WADFeatureExtractor(object):
-    def __init__(self, level_dict):
-        """
-        Class for extracting a set of feature from a given WAD level
-        :param level_dict: Wad in dictionary format as produced by WADReader.read()
-        """
-        self.level = level_dict
+    """
+    Class for extracting a set of feature from a given WAD level or a set of Feature Maps
+    """
+       
 
 
-    def _rescale_coord(self, x_du, y_du):
-        x_centered = x_du - self.level['features']['x_min']
-        y_centered = y_du - self.level['features']['y_min']
-        x = np.floor(x_centered / 32).astype(np.int32)
-        y = np.floor(y_centered / 32).astype(np.int32)
+    def _rescale_coord(self, x_du, y_du, wad_features, factor=32):
+        x_centered = x_du - wad_features['x_min']
+        y_centered = y_du - wad_features['y_min']
+        x = np.floor(x_centered / factor).astype(np.int32)
+        y = np.floor(y_centered / factor).astype(np.int32)
         return x, y
 
 
-    def draw_sector_maps(self):
+    def draw_sector_maps(self, level_dict, mapsize_px, wad_features):
 
-        vertices = self.level['lumps']['VERTEXES']
-        wallmap = np.zeros(self.mapsize, dtype=np.uint8)
-        heightmap = np.zeros(self.mapsize, dtype=np.uint8)
-        tagmap = np.zeros(self.mapsize, dtype=np.uint8)
-        triggermap = np.zeros(self.mapsize, dtype=np.uint8)
-        self.special_sector_map = np.zeros(self.mapsize, dtype=np.uint8)
-        height_levels = sorted({s['lump']['floor_height'] for s in self.level['sectors'].values()})
+        vertices = level_dict['lumps']['VERTEXES']
+        wallmap = np.zeros(mapsize_px, dtype=np.uint8)
+        heightmap = np.zeros(mapsize_px, dtype=np.uint8)
+        tagmap = np.zeros(mapsize_px, dtype=np.uint8)
+        triggermap = np.zeros(mapsize_px, dtype=np.uint8)
+        self.special_sector_map = np.zeros(mapsize_px, dtype=np.uint8)
+        height_levels = sorted({s['lump']['floor_height'] for s in level_dict['sectors'].values()})
         scale_color = lambda x, levels, a, b: int((levels.index(x)+1)*(b-a)/len(levels))
-        for sector in self.level['sectors'].values():
+        for sector in level_dict['sectors'].values():
             if len(sector['vertices_xy'])==0:
                 continue  # This sector is not referenced by any linedef so it's not a real sector
 
             # HEIGHTMAP GENERATION
             coords_DU = np.array(sector['vertices_xy'])  # Coordinates in DoomUnits (un-normalized)
             # skimage.draw needs all the coordinates to be > 0. They are centered and rescaled (1 pixel = 32DU)
-            x, y = self._rescale_coord(coords_DU[:, 0], coords_DU[:, 1])
-            px, py = draw.polygon(x, y, shape=tuple(self.mapsize))
+            x, y = self._rescale_coord(coords_DU[:, 0], coords_DU[:, 1], wad_features)
+            px, py = draw.polygon(x, y, shape=tuple(mapsize_px))
             # 0 is for empty space
             h = sector['lump']['floor_height']
             color = scale_color(h, height_levels, 0, 255)
@@ -57,15 +55,15 @@ class WADFeatureExtractor(object):
             self.special_sector_map[px, py] = sector['lump']['special_sector']
             # since polygon only draws the inner part of the polygon we now draw the perimeter
             if len(x) > 2 and len(y) > 2:
-                px, py = draw.polygon_perimeter(x, y, shape=tuple(self.mapsize))
+                px, py = draw.polygon_perimeter(x, y, shape=tuple(mapsize_px))
             heightmap[px, py] = color
 
         # WALLMAP and TRIGGERMAP GENERATION
-        for line in self.level['lumps']['LINEDEFS']:
+        for line in level_dict['lumps']['LINEDEFS']:
             start = np.array([vertices[line['from']]['x'], vertices[line['from']]['y']]).astype(np.int32)
             end = np.array([vertices[line['to']]['x'], vertices[line['to']]['y']]).astype(np.int32)
-            sx, sy = self._rescale_coord(start[0], start[1])
-            ex, ey = self._rescale_coord(end[0], end[1])
+            sx, sy = self._rescale_coord(start[0], start[1],wad_features)
+            ex, ey = self._rescale_coord(end[0], end[1], wad_features)
             lx, ly = draw.line(sx, sy, ex, ey)
             if line['left_sidedef'] == -1: # If no sector on the other side
                 # It's a wall
@@ -92,8 +90,8 @@ class WADFeatureExtractor(object):
                         triggermap[lx, ly] = linedef_type + trigger - 1
                         # Finding and coloring the destination
                         # First, the destination sector is needed
-                        destinations = [list(self._rescale_coord(t['x'], t['y'])) for t in self.level['lumps']['THINGS'] if t['type'] == 14] # 14 is thing type for "teleport landing"
-                        dest_map = np.zeros(self.mapsize, dtype=np.bool)
+                        destinations = [list(self._rescale_coord(t['x'], t['y'], wad_features)) for t in level_dict['lumps']['THINGS'] if t['type'] == 14] # 14 is thing type for "teleport landing"
+                        dest_map = np.zeros(mapsize_px, dtype=np.bool)
                         for dest_coord in destinations:
                             dest_map[tuple(dest_coord)] = True
                         found_dest = np.where(np.logical_and((tagmap == trigger), dest_map))
@@ -107,17 +105,17 @@ class WADFeatureExtractor(object):
 
         return wallmap, heightmap, triggermap
 
-    def draw_thingsmap(self):
-        thingsmap = np.zeros(self.mapsize, dtype=np.uint8)
-        things = self.level['lumps']['THINGS']
+    def draw_thingsmap(self, level_dict, wad_features, mapsize_px):
+        thingsmap = np.zeros(mapsize_px, dtype=np.uint8)
+        things = level_dict['lumps']['THINGS']
         for thing in things:
             category = ThingTypes.get_category_from_type_id(thing['type'])
             is_unknown = category == 'unknown'
-            out_of_bounds = thing['x'] > self.level['features']['x_max'] or thing['x'] < self.level['features']['x_min'] or \
-                            thing['y'] > self.level['features']['y_max'] or thing['y'] < self.level['features']['y_min']
+            out_of_bounds = thing['x'] > wad_features['x_max'] or thing['x'] < wad_features['x_min'] or \
+                            thing['y'] > wad_features['y_max'] or thing['y'] < wad_features['y_min']
             if is_unknown or out_of_bounds:
                 continue
-            tx, ty = self._rescale_coord(thing['x'], thing['y'])
+            tx, ty = self._rescale_coord(thing['x'], thing['y'], wad_features)
             if thingsmap[tx, ty] in ThingTypes.get_index_by_category('start'):
                 # Avoid overwriting of player start location if something else is placed there (like a teleporter)
                 continue
@@ -125,7 +123,7 @@ class WADFeatureExtractor(object):
 
         return thingsmap
 
-    def draw_textmap(self):
+    def draw_textmap(self, level_dict):
         """
                Represent the levels using 2-characters textual information.
 
@@ -157,35 +155,35 @@ class WADFeatureExtractor(object):
                :return: 
                """
 
-        X_map = np.ndarray(shape=self.level['maps']['floormap'].shape, dtype=np.uint8)
-        Y_map = np.ndarray(shape=self.level['maps']['floormap'].shape, dtype=np.uint8)
+        X_map = np.ndarray(shape=level_dict['maps']['floormap'].shape, dtype=np.uint8)
+        Y_map = np.ndarray(shape=level_dict['maps']['floormap'].shape, dtype=np.uint8)
         txtmap = np.zeros(shape=(X_map.shape[0], X_map.shape[1] * 2), dtype=np.byte)
 
         from skimage.filters import roberts
-        walls = self.level['maps']['wallmap'] != 0
-        floor = self.level['maps']['floormap'] != 0
-        change_in_height = roberts(self.level['maps']['heightmap']) != 0
-        enemies = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('monsters'))
-        weapons = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('weapons'))
-        ammo = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('ammunitions'))
-        health = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('powerups'))
-        barrels = np.isin(self.level['maps']['thingsmap'], [ThingTypes.get_index_from_type_id(t) for t in [2035, 70]])
-        keys = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('keys'))
-        start = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('start'))
-        teleport_dst = np.isin(self.level['maps']['thingsmap'], [ThingTypes.get_index_from_type_id(14)])
-        decorative = np.isin(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category('decorations'))
-        door_locked = np.isin(self.level['maps']['triggermap'],
+        walls = level_dict['maps']['wallmap'] != 0
+        floor = level_dict['maps']['floormap'] != 0
+        change_in_height = roberts(level_dict['maps']['heightmap']) != 0
+        enemies = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('monsters'))
+        weapons = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('weapons'))
+        ammo = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('ammunitions'))
+        health = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('powerups'))
+        barrels = np.isin(level_dict['maps']['thingsmap'], [ThingTypes.get_index_from_type_id(t) for t in [2035, 70]])
+        keys = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('keys'))
+        start = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('start'))
+        teleport_dst = np.isin(level_dict['maps']['thingsmap'], [ThingTypes.get_index_from_type_id(14)])
+        decorative = np.isin(level_dict['maps']['thingsmap'], ThingTypes.get_index_by_category('decorations'))
+        door_locked = np.isin(level_dict['maps']['triggermap'],
                               [LinedefTypes.get_index_from_type(l) for l in [26, 28, 27, 32, 33, 34]])
-        door_open = np.isin(self.level['maps']['triggermap'],
+        door_open = np.isin(level_dict['maps']['triggermap'],
                             [LinedefTypes.get_index_from_type(l) for l in [1, 31, 46, 117, 118]] + list(range(32, 64)))
-        teleport_src = np.logical_and(self.level['maps']['triggermap'] >= 192, self.level['maps']['triggermap'] < 255)
-        exit = self.level['maps']['triggermap'] == 255
+        teleport_src = np.logical_and(level_dict['maps']['triggermap'] >= 192, level_dict['maps']['triggermap'] < 255)
+        exit = level_dict['maps']['triggermap'] == 255
 
         dmging_floor = np.isin(self.special_sector_map, [4, 5, 7, 11, 16]) # If special tag is one of these, then it hurts the player
 
 
         # Rebuild the tagmap (contains sector and trigger tags)
-        tagmap = np.where(self.level['maps']['triggermap'] >= 32, self.level['maps']['triggermap'], -1)  # -1 means "no tags here".
+        tagmap = np.where(level_dict['maps']['triggermap'] >= 32, level_dict['maps']['triggermap'], -1)  # -1 means "no tags here".
         tagmap = np.mod(tagmap + 1, 64)  # Now all tags are from 1 to 63, 0 means "no tag"
 
         X_map[...] = ord("-")
@@ -216,52 +214,77 @@ class WADFeatureExtractor(object):
         return txtmap.tolist()
 
             
-    def compute_maps(self):
-        self.mapsize_du = np.array([self.level['features']['width'], self.level['features']['height']])
-        self.mapsize = np.ceil(self.mapsize_du / 32).astype(np.int32)
+    def compute_maps(self, level_dict, wad_features):
+        maps=dict()
+        
+        mapsize_du = np.array([wad_features['width'], wad_features['height']])
+        mapsize_px = np.ceil(mapsize_du / 32).astype(np.int32)
 
         # computing these maps require the knowledge of the level width and height
         #tag_map is an intermediate map needed to build the trigger map
-        self.level['maps']['wallmap'], self.level['maps']['heightmap'], self.level['maps']['triggermap'] = self.draw_sector_maps()
-        self.level['maps']['thingsmap'] = self.draw_thingsmap()
-        enumerated_floors, self.level['features']['floors'] = label(self.level['maps']['heightmap']>0, connectivity=2, return_num=True)
-        self.level['maps']['floormap'] = enumerated_floors.astype(np.uint8)
+        maps['wallmap'], maps['heightmap'], maps['triggermap'] = self.draw_sector_maps(level_dict, mapsize_px, wad_features)
+        maps['thingsmap'] = self.draw_thingsmap(level_dict, wad_features)
+        enumerated_floors, wad_features['floors'] = label(maps['heightmap']>0, connectivity=2, return_num=True)
+        maps['floormap'] = enumerated_floors.astype(np.uint8)
 
-        self.level['text'] = self.draw_textmap()
+        level_dict['text'] = self.draw_textmap(level_dict)
+        return maps
 
-    def _features_to_scalar(self):
-        for feature in self.level['features']:
+    def _features_to_scalar(self, level_dict):
+        for feature in level_dict['features']:
             try:
-                self.level['features'][feature] = np.asscalar(self.level['features'][feature])
+                level_dict['features'][feature] = np.asscalar(level_dict['features'][feature])
             except AttributeError:
                 pass
 
-    def extract_features(self):
-        # Computing the simplest set of features
-        self.main_features()
-        self.compute_maps()
-        # topological features rely on computed maps
-        self.image_features()
-        # "Flattening" the floormap to a binary image
-        self.level['maps']['floormap'] = ((self.level['maps']['floormap'] > 0) * 255).astype(np.uint8)
-        # Computing topological features and maps
-        self.level['maps']['roommap'], self.level['graph'], metrics = topological_features(self.level['maps']['floormap'], prepare_for_doom=False)
-        self.level['features'].update(metrics)
-        # Convert every feature to scalar
-        self._features_to_scalar()
-        return self.level['features'], self.level['maps'], self.level['text'], self.level['graph']
 
-    def _find_thing_category(self, category):
-        found_things = np.in1d(self.level['maps']['thingsmap'], ThingTypes.get_index_by_category(category)).reshape(self.level['maps']['thingsmap'].shape)
+    def extract_features_from_maps(self, floormap, wallmap, thingsmap, feature_names):
+        features = dict()
+        if wallmap is None:
+            wallmap = np.zeros_like(floormap)
+        if thingsmap is None:
+            thingsmap = np.zeros_like(floormap)
+        png_features = self.image_features(floormap=floormap,
+                                           wallmap=wallmap,
+                                           thingsmap=thingsmap)
+        _, _, graph_metrics = topological_features(floormap, prepare_for_doom=False)
+        features.update(png_features)
+        features.update(graph_metrics)
+        if feature_names is None:
+            return features
+        else:
+            return np.asarray([features[name] for name in feature_names])
+
+
+    def extract_features_from_wad(self, level_dict):
+        """
+        :param level_dict: Wad in dictionary format as produced by WADReader.read()
+        :return: 
+        """
+        
+        level_dict['features'] = dict()
+        level_dict['maps'] = dict()
+        # Computing the simplest set of features
+        wad_feats = self.wad_features(level_dict=level_dict)
+        level_dict['features'].update(wad_feats)
+        feature_maps = self.compute_maps(level_dict, level_dict['features'])
+        level_dict['maps'].update(feature_maps)
+        # morphological features rely on computed maps
+        png_features = self.image_features(floormap=level_dict['maps']['floormap'], wallmap=level_dict['maps']['wallmap'], thingsmap=level_dict['maps']['thingsmap'])
+        level_dict['features'].update(png_features)
+        # "Flattening" the floormap to a binary image
+        level_dict['maps']['floormap'] = ((level_dict['maps']['floormap'] > 0) * 255).astype(np.uint8)
+        # Computing topological features and maps
+        level_dict['maps']['roommap'], level_dict['graph'], metrics = topological_features(level_dict['maps']['floormap'], prepare_for_doom=False)
+        level_dict['features'].update(metrics)
+        # Convert every feature to scalar
+        self._features_to_scalar(level_dict)
+        return level_dict['features'], level_dict['maps'], level_dict['text'], level_dict['graph']
+
+    def _find_thing_category(self, category, thingsmap):
+        found_things = np.in1d(thingsmap, ThingTypes.get_index_by_category(category)).reshape(thingsmap.shape)
         return np.where(found_things)
 
-    def show_maps(self):
-        io.imshow(self.level['maps']['wallmap'])
-        io.show()
-        io.imshow(self.level['maps']['thingsmap'])
-        io.show()
-        io.imshow(self.level['maps']['heightmap'])
-        io.show()
 
 
     def _PolyArea(self, x, y):
@@ -286,24 +309,24 @@ class WADFeatureExtractor(object):
         ymin = np.min(y)
         return np.array([xmax - xmin + 1,ymax-ymin +1])
 
-    def main_features(self):
+    def wad_features(self, level_dict):
         '''
-        Extract features that are based on simple processing of data contained into the WAD file
+        Returns a dict of features that are based on data contained into the WAD file.
+        :param level_dict: The dictionary representation of the level as produced by the WADReader
         '''
-        self.level['features'] = dict()
-        self.level['maps'] = dict()
-        self.level['features']['number_of_lines'] = len(self.level['lumps']['LINEDEFS']) if 'LINEDEFS' in self.level['lumps'] else 0
-        self.level['features']['number_of_things'] = len(self.level['lumps']['THINGS']) if 'THINGS' in self.level['lumps'] else 0
-        self.level['features']['number_of_sectors'] = len(self.level['lumps']['SECTORS']) if 'SECTORS' in self.level['lumps'] else 0
-        self.level['features']['number_of_subsectors'] = len(self.level['lumps']['SSECTORS']) if 'SSECTORS' in self.level['lumps'] else 0
-        self.level['features']['number_of_vertices'] = len(self.level['lumps']['VERTEXES'])
-        self.level['features']['x_max'] = max(self.level['lumps']['VERTEXES'], key=lambda v: v['x'])['x']
-        self.level['features']['y_max'] = max(self.level['lumps']['VERTEXES'], key=lambda v: v['y'])['y']
-        self.level['features']['x_min'] = min(self.level['lumps']['VERTEXES'], key=lambda v: v['x'])['x']
-        self.level['features']['y_min'] = min(self.level['lumps']['VERTEXES'], key=lambda v: v['y'])['y']
-        self.level['features']['height'] = abs(self.level['features']['y_max']-self.level['features']['y_min'])+1
-        self.level['features']['width'] = abs(self.level['features']['x_max']-self.level['features']['x_min'])+1
-        self.level['features']['aspect_ratio'] = max(self.level['features']['height'], self.level['features']['width']) / min(self.level['features']['height'], self.level['features']['width'])
+        feature_dict = dict()
+        feature_dict['number_of_lines'] = len(level_dict['lumps']['LINEDEFS']) if 'LINEDEFS' in level_dict['lumps'] else 0
+        feature_dict['number_of_things'] = len(level_dict['lumps']['THINGS']) if 'THINGS' in level_dict['lumps'] else 0
+        feature_dict['number_of_sectors'] = len(level_dict['lumps']['SECTORS']) if 'SECTORS' in level_dict['lumps'] else 0
+        feature_dict['number_of_subsectors'] = len(level_dict['lumps']['SSECTORS']) if 'SSECTORS' in level_dict['lumps'] else 0
+        feature_dict['number_of_vertices'] = len(level_dict['lumps']['VERTEXES'])
+        feature_dict['x_max'] = max(level_dict['lumps']['VERTEXES'], key=lambda v: v['x'])['x']
+        feature_dict['y_max'] = max(level_dict['lumps']['VERTEXES'], key=lambda v: v['y'])['y']
+        feature_dict['x_min'] = min(level_dict['lumps']['VERTEXES'], key=lambda v: v['x'])['x']
+        feature_dict['y_min'] = min(level_dict['lumps']['VERTEXES'], key=lambda v: v['y'])['y']
+        feature_dict['height'] = abs(feature_dict['y_max']-feature_dict['y_min'])+1
+        feature_dict['width'] = abs(feature_dict['x_max']-feature_dict['x_min'])+1
+        feature_dict['aspect_ratio'] = max(feature_dict['height'], feature_dict['width']) / min(feature_dict['height'], feature_dict['width'])
 
 
         floor_height = list()
@@ -311,7 +334,7 @@ class WADFeatureExtractor(object):
         sector_area = list()
         lines_per_sector = list()
         sector_aspect_ratio = list()
-        for s_id, sector in self.level['sectors'].items():
+        for s_id, sector in level_dict['sectors'].items():
             if len(sector['vertices_xy'])==0:
                 continue  # This sector is not referenced by any linedef so it's not a real sector
             floor_height.append(sector['lump']['floor_height'])
@@ -330,32 +353,34 @@ class WADFeatureExtractor(object):
         sector_aspect_ratio = np.array(sector_aspect_ratio)
 
         room_height = ceiling_height-floor_height
-        self.level['features']['floor_height_max'] = float(np.max(floor_height))
-        self.level['features']['floor_height_min'] = float(np.min(floor_height))
-        self.level['features']['floor_height_avg'] = float(np.mean(floor_height))
-        self.level['features']['ceiling_height_max'] = float(np.max(ceiling_height))
-        self.level['features']['ceiling_height_min'] = float(np.min(ceiling_height))
-        self.level['features']['ceiling_height_avg'] = float(np.mean(ceiling_height))
-        self.level['features']['room_height_max'] = float(np.max(room_height))
-        self.level['features']['room_height_min'] = float(np.min(room_height))
-        self.level['features']['room_height_avg'] = float(np.mean(room_height))
-        self.level['features']['sector_area_max'] = float(np.max(sector_area))
-        self.level['features']['sector_area_min'] = float(np.min(sector_area))
-        self.level['features']['sector_area_avg'] = float(np.mean(sector_area))
-        self.level['features']['lines_per_sector_max'] = float(np.max(lines_per_sector))
-        self.level['features']['lines_per_sector_min'] = float(np.min(lines_per_sector))
-        self.level['features']['lines_per_sector_avg'] = float(np.mean(lines_per_sector))
-        self.level['features']['sector_aspect_ratio_max'] = float(np.max(sector_aspect_ratio))
-        self.level['features']['sector_aspect_ratio_min'] = float(np.min(sector_aspect_ratio))
-        self.level['features']['sector_aspect_ratio_avg'] = float(np.mean(sector_aspect_ratio))
+        feature_dict['floor_height_max'] = float(np.max(floor_height))
+        feature_dict['floor_height_min'] = float(np.min(floor_height))
+        feature_dict['floor_height_avg'] = float(np.mean(floor_height))
+        feature_dict['ceiling_height_max'] = float(np.max(ceiling_height))
+        feature_dict['ceiling_height_min'] = float(np.min(ceiling_height))
+        feature_dict['ceiling_height_avg'] = float(np.mean(ceiling_height))
+        feature_dict['room_height_max'] = float(np.max(room_height))
+        feature_dict['room_height_min'] = float(np.min(room_height))
+        feature_dict['room_height_avg'] = float(np.mean(room_height))
+        feature_dict['sector_area_max'] = float(np.max(sector_area))
+        feature_dict['sector_area_min'] = float(np.min(sector_area))
+        feature_dict['sector_area_avg'] = float(np.mean(sector_area))
+        feature_dict['lines_per_sector_max'] = float(np.max(lines_per_sector))
+        feature_dict['lines_per_sector_min'] = float(np.min(lines_per_sector))
+        feature_dict['lines_per_sector_avg'] = float(np.mean(lines_per_sector))
+        feature_dict['sector_aspect_ratio_max'] = float(np.max(sector_aspect_ratio))
+        feature_dict['sector_aspect_ratio_min'] = float(np.min(sector_aspect_ratio))
+        feature_dict['sector_aspect_ratio_avg'] = float(np.mean(sector_aspect_ratio))
+        return feature_dict
 
 
-
-    def image_features(self):
+    def image_features(self, floormap, wallmap, thingsmap):
+        """ Returns a dict containing the set of features that are based on the floormap and wallmaps of the level """
+        feature_dict = dict()
+        
         # Creating auxiliary feature maps
-        nonempty_map = self.level['maps']['floormap'].astype(np.bool).astype(np.uint8)
-        floormap = self.level['maps']['floormap']
-        walkablemap = np.logical_and(nonempty_map, np.logical_not(self.level['maps']['wallmap'])).astype(np.uint8)
+        nonempty_map = floormap.astype(np.bool).astype(np.uint8)
+        walkablemap = np.logical_and(nonempty_map, np.logical_not(wallmap)).astype(np.uint8)
         # Computing features
         features = regionprops(nonempty_map)
         features_floors = regionprops(floormap)
@@ -365,61 +390,60 @@ class WADFeatureExtractor(object):
                         'perimeter', 'solidity']
         for prop in region_props:
             # Adding global features
-            self.level['features']["level_{}".format(prop)] = features[0][prop]
+            feature_dict["level_{}".format(prop)] = features[0][prop]
 
             # Adding also statistics for features computed at each floor
             if prop not in ['bbox_area']:  # (bbox_area is always the global one)
                 prop_floors_vector = [features_floors[f][prop] for f in range(len(features_floors))]
-                self.level['features']["floors_{}_mean".format(prop)] = sp.mean(prop_floors_vector)
-                self.level['features']["floors_{}_min".format(prop)] = sp.amin(prop_floors_vector)
-                self.level['features']["floors_{}_max".format(prop)] = sp.amax(prop_floors_vector)
-                self.level['features']["floors_{}_std".format(prop)] = sp.std(prop_floors_vector)
+                feature_dict["floors_{}_mean".format(prop)] = sp.mean(prop_floors_vector)
+                feature_dict["floors_{}_min".format(prop)] = sp.amin(prop_floors_vector)
+                feature_dict["floors_{}_max".format(prop)] = sp.amax(prop_floors_vector)
+                feature_dict["floors_{}_std".format(prop)] = sp.std(prop_floors_vector)
 
         # Adding hu moments and centroid
         for i in range(7):
-            self.level['features']["level_hu_moment_{}".format(i)] = features[0]['moments_hu'][i]
-        self.level['features']["level_centroid_x"] = features[0]['centroid'][0]
-        self.level['features']["level_centroid_y"] = features[0]['centroid'][1]
+            feature_dict["level_hu_moment_{}".format(i)] = features[0]['moments_hu'][i]
+        feature_dict["level_centroid_x"] = features[0]['centroid'][0]
+        feature_dict["level_centroid_y"] = features[0]['centroid'][1]
 
 
-        self.level['features']['number_of_artifacts'] = int(np.size(self._find_thing_category('artifacts'), axis=-1))
-        self.level['features']['number_of_powerups'] = int(np.size(self._find_thing_category('powerups'), axis=-1))
-        self.level['features']['number_of_weapons'] = int(np.size(self._find_thing_category('weapons'), axis=-1))
-        self.level['features']['number_of_ammunitions'] = int(
-            np.size(self._find_thing_category('ammunitions'), axis=-1))
-        self.level['features']['number_of_keys'] = int(np.size(self._find_thing_category('keys'), axis=-1))
-        self.level['features']['number_of_monsters'] = int(np.size(self._find_thing_category('monsters'), axis=-1))
-        self.level['features']['number_of_obstacles'] = int(np.size(self._find_thing_category('obstacles'), axis=-1))
-        self.level['features']['number_of_decorations'] = int(
-            np.size(self._find_thing_category('decorations'), axis=-1))
+        feature_dict['number_of_artifacts'] = int(np.size(self._find_thing_category('artifacts', thingsmap), axis=-1))
+        feature_dict['number_of_powerups'] = int(np.size(self._find_thing_category('powerups', thingsmap), axis=-1))
+        feature_dict['number_of_weapons'] = int(np.size(self._find_thing_category('weapons', thingsmap), axis=-1))
+        feature_dict['number_of_ammunitions'] = int(
+            np.size(self._find_thing_category('ammunitions', thingsmap), axis=-1))
+        feature_dict['number_of_keys'] = int(np.size(self._find_thing_category('keys', thingsmap), axis=-1))
+        feature_dict['number_of_monsters'] = int(np.size(self._find_thing_category('monsters', thingsmap), axis=-1))
+        feature_dict['number_of_obstacles'] = int(np.size(self._find_thing_category('obstacles', thingsmap), axis=-1))
+        feature_dict['number_of_decorations'] = int(
+            np.size(self._find_thing_category('decorations', thingsmap), axis=-1))
 
-        self.level['features']['walkable_area'] = feature_walkablemap[0]['area']
-        self.level['features']['walkable_percentage'] = float(
-            feature_walkablemap[0]['area'] / self.level['features']['level_area'])
+        feature_dict['walkable_area'] = feature_walkablemap[0]['area']
+        feature_dict['walkable_percentage'] = float(
+            feature_walkablemap[0]['area'] / feature_dict['level_area'])
 
-        start_location = self._find_thing_category('start')
+        start_location = self._find_thing_category('start', thingsmap)
         if not len(start_location[0]) or not len(start_location[1]):
             start_x, start_y = -1, -1
-            #print("This level has no explicit start location")
         else:
             start_x, start_y = start_location[0][0], start_location[1][0]
-        self.level['features']['start_location_x_px'] = int(start_x)
-        self.level['features']['start_location_y_px'] = int(start_y)
+        feature_dict['start_location_x_px'] = int(start_x)
+        feature_dict['start_location_y_px'] = int(start_y)
 
-        self.level['features']['artifacts_per_walkable_area'] = float(
-            self.level['features']['number_of_artifacts'] / self.level['features']['walkable_area'])
-        self.level['features']['powerups_per_walkable_area'] = float(
-            self.level['features']['number_of_powerups'] / self.level['features']['walkable_area'])
-        self.level['features']['weapons_per_walkable_area'] = float(
-            self.level['features']['number_of_weapons'] / self.level['features']['walkable_area'])
-        self.level['features']['ammunitions_per_walkable_area'] = float(
-            self.level['features']['number_of_ammunitions'] / self.level['features']['walkable_area'])
-        self.level['features']['keys_per_walkable_area'] = float(
-            self.level['features']['number_of_keys'] / self.level['features']['walkable_area'])
-        self.level['features']['monsters_per_walkable_area'] = float(
-            self.level['features']['number_of_monsters'] / self.level['features']['walkable_area'])
-        self.level['features']['obstacles_per_walkable_area'] = float(
-            self.level['features']['number_of_obstacles'] / self.level['features']['walkable_area'])
-        self.level['features']['decorations_per_walkable_area'] = float(
-            self.level['features']['number_of_decorations'] / self.level['features']['walkable_area'])
-
+        feature_dict['artifacts_per_walkable_area'] = float(
+            feature_dict['number_of_artifacts'] / feature_dict['walkable_area'])
+        feature_dict['powerups_per_walkable_area'] = float(
+            feature_dict['number_of_powerups'] / feature_dict['walkable_area'])
+        feature_dict['weapons_per_walkable_area'] = float(
+            feature_dict['number_of_weapons'] / feature_dict['walkable_area'])
+        feature_dict['ammunitions_per_walkable_area'] = float(
+            feature_dict['number_of_ammunitions'] / feature_dict['walkable_area'])
+        feature_dict['keys_per_walkable_area'] = float(
+            feature_dict['number_of_keys'] / feature_dict['walkable_area'])
+        feature_dict['monsters_per_walkable_area'] = float(
+            feature_dict['number_of_monsters'] / feature_dict['walkable_area'])
+        feature_dict['obstacles_per_walkable_area'] = float(
+            feature_dict['number_of_obstacles'] / feature_dict['walkable_area'])
+        feature_dict['decorations_per_walkable_area'] = float(
+            feature_dict['number_of_decorations'] / feature_dict['walkable_area'])
+        return feature_dict

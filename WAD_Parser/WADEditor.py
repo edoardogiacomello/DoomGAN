@@ -797,8 +797,8 @@ class WADReader(object):
         parsed_wad['levels'] = list()
         for level in parsed_wad['wad'].levels:
             try:
-                extractor = WADFeatureExtractor(level)
-                features, maps, txt, graph = extractor.extract_features()
+                extractor = WADFeatureExtractor()
+                features, maps, txt, graph = extractor.extract_features_from_wad(level)
                 parsed_wad['levels'] += [{'name': level['name'], 'features': features, 'maps':maps, 'text':txt, 'graph':graph}]
             except:
                 warnings.warn("Failed to extract data for level {}".format(level['name']))

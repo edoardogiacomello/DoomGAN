@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker
+#matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker TODO: Enable this again
 import os
 import DoomLevelsGAN.network_architecture as architecture
 import tensorflow.contrib as contrib
@@ -359,9 +359,9 @@ class DoomGAN(object):
     def initialize_and_restore(self):
         # Initialize all the variables
         try:
-            tf.global_variables_initializer().run()
+            tf.global_variables_initializer().run(session=self.session)
         except:
-            tf.initialize_all_variables().run()
+            tf.initialize_all_variables().run(session=self.session)
 
         # Trying to load a checkpoint
         self.saver = tf.train.Saver()
@@ -616,7 +616,7 @@ class DoomGAN(object):
         self.reference_sample = {'x': None, 'y': None, 'z':None} if self.use_features else {'x': None, 'z':None}
         self.build()
 
-    def sample(self, mode, sample_from_dataset='validation', y_factors = None, y_batch = None, seed=None, freeze_z=False, postprocess=False, save=False, folder=None):
+    def sample(self, mode, sample_from_dataset='validation', y_factors = None, y_batch = None, seed=None, freeze_z=False, z_override=None, postprocess=False, save=False, folder=None):
         """
         Samples the network with a given generator input. Various options for selecting the feature vector (y) and the noise vector (z) are possible.
         If the network model doesn't use any feature, than Y sampling is ignored.
@@ -632,6 +632,7 @@ class DoomGAN(object):
         :param y_batch: direct batch of feature values to feed to the generator. Either y_factors or y_batch must be different from None if sample_for_dataset is None.
         :param seed: Seed for input noise generation. If None the seed is random at each z sampling [None]
         :param freeze_z: if True use the same input noise z for each generated sample in the batch
+        :param z_override: if set to a numpy array, it is used instead of sampling a new z. If freeze_z is True, then it must have the shape of a single z sample.
         :param postprocess: If true, the generated levels are postprocessed (denoised and eventually rescaled) and returned as they would be passed to the WadEditor.
         :param save: Has no effect is postprocess is not True. [False]
                     - False: Levels are returned as numpy array and not saved anywhere
@@ -639,7 +640,6 @@ class DoomGAN(object):
                     - 'WAD': Levels are converted to .WAD and saved in the generated_samples directory along with a descriptive image of the level
         :param folder: Where to folder generated samples
         """
-        self.initialize_and_restore()
         x_true_batch = None # This is set only if Y is picked in 'dataset' mode and it's saved along with the generated samples
         # Y Sampling
         if self.use_features:
@@ -685,12 +685,18 @@ class DoomGAN(object):
         if seed is not None:
             np.random.seed(seed)
         if freeze_z:
-            z_sample = np.random.uniform(-1, 1, [1, self.config.z_dim]).astype(
-            np.float32)
+            if z_override is not None:
+                z_sample = z_override
+            else:
+                z_sample = np.random.uniform(-1, 1, [1, self.config.z_dim]).astype(
+                np.float32)
             z_batch = np.repeat(z_sample, self.config.batch_size, axis=0)
         else:
-            z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
-                np.float32)
+            if z_override is not None:
+                z_batch = z_override
+            else:
+                z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
+                    np.float32)
         np.random.seed()
         # Sample Generation
         net_input = {self.z: z_batch}
@@ -712,6 +718,79 @@ class DoomGAN(object):
             elif save == 'WAD':
                 return DataTransform.build_levels(result, self.maps, self.config.batch_size)
         return result
+
+    def evaluate_samples_distribution(self, n=1, sample_from_dataset='train', postprocess=True):
+        """
+        Generates n maps for each feature vector in the dataset and computes the feature vector.
+        Returns the true features, the generated features for each n iteration, and the noise that have been used to generate the map
+        :param n: how many samples (different noise vector z) to use for each record in the dataset
+        :param sample_from_dataset: 'train' or 'validation' set
+        :param postprocess: [True] if true, rescales and denoise data to match the inputs (for example, clamps the values of the floormap to either 0 or 255)
+        :return: results_true (batch, features), results_gen (batch, features, n), z_noise (batch, z_dim, n)
+        """
+        results_true = list()
+        results_gen = list()
+        results_z = list()
+        import WAD_Parser.WADFeatureExtractor
+        feature_extractor = WAD_Parser.WADFeatureExtractor.WADFeatureExtractor()
+        self.initialize_and_restore()
+
+        # Loop through the true dataset
+        train_set_iter, valid_set_iter = self.load_dataset()
+        train_set_size, validation_set_size = DoomDataset().get_dataset_count(self.config.dataset_path)
+
+        chosen_iter = train_set_iter if sample_from_dataset == 'train' else valid_set_iter
+        chosen_size = train_set_size if sample_from_dataset == 'train' else validation_set_size
+        self.session.run([chosen_iter.initializer])
+        next_batch = chosen_iter.get_next()
+        batch_counter = 1
+        errors = 0
+        while True:
+            try:
+                batch = self.session.run(next_batch)
+                y_batch_true = np.stack([batch[f] for f in self.features], axis=-1)
+                # Z vector is sampled from the sample function
+
+                record = {'true_batch': y_batch_true, 'gen_batch': list(), 'z_batch':list()}
+                for z_sampling in range(n):
+                    print("Batch {} of {}, sample {} of {}".format(batch_counter, chosen_size//self.config.batch_size + 1, z_sampling+1, n))
+                    # Generate a new batch of maps
+                    z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
+                        np.float32)
+                    x_batch_gen = self.sample(mode='direct', y_batch=y_batch_true, z_override=z_batch, postprocess=postprocess).astype(np.uint8)
+                    y_batch_gen = list()
+                    for l, level in enumerate(x_batch_gen):
+                        # Compute level features
+                        try:
+                            y_gen = feature_extractor.extract_features_from_maps(
+                                        floormap=level[:, :, self.maps.index('floormap')],
+                                        wallmap=level[:, :, self.maps.index('wallmap')],
+                                        thingsmap=level[:, :, self.maps.index('thingsmap')],
+                                        feature_names=self.features)
+                        except:
+                            y_gen = np.full_like(self.features, np.nan)
+                            errors+=1
+                        y_batch_gen.append(y_gen)
+                    record['gen_batch'].append(np.asarray(y_batch_gen))
+                    record['z_batch'].append(np.asarray(z_batch))
+                # Now unrolling the batches of features into ('true_level_features', list('sampled_features'))
+                true_batch = record['true_batch']
+                generated_batch = np.asarray(record['gen_batch']).transpose((1,2,0))
+                noise_batch = np.asarray(record['z_batch']).transpose((1,2,0))
+                for true, gen, noise in zip(true_batch, generated_batch, noise_batch):
+                    results_true.append(true)
+                    results_gen.append(gen)
+                    results_z.append(noise)
+                batch_counter += 1
+
+            except tf.errors.OutOfRangeError:
+                print("Done")
+                if errors>0:
+                    print("{} levels have NaN feature data since feature extraction didn't work on some samples.".format(errors))
+                break
+        return np.asarray(results_true), np.asarray(results_gen), np.asarray(results_z)
+        #End of the epoch
+
 
 
     def compute_quality_metrics(self, s_gen, s_true):
@@ -758,14 +837,7 @@ class DoomGAN(object):
         return metrics
 
 
-def clean_tensorboard_cache(tensorBoardPath):
-    # Removing previous tensorboard session
-    import shutil
-    print('Cleaning temp tensorboard directory: {}'.format(tensorBoardPath))
-    shutil.rmtree(tensorBoardPath, ignore_errors=True)
-
-
-if __name__ == '__main__':
+def define_flags():
     flags = tf.app.flags
     flags.DEFINE_integer("epoch", 10000, "Epoch to train [10000]")
     # HYPERPARAMETERS
@@ -779,7 +851,6 @@ if __name__ == '__main__':
     flags.DEFINE_float("wgangp_beta1", 0., "beta1 for WGAN-GP adam [0.]")
     flags.DEFINE_float("wgangp_beta2", 0.9, "beta2 for WGAN-GP adam [0.9]")
     flags.DEFINE_integer("lambda_gradient_penalty", 10, "Gradient penalty lambda hyperparameter [10]")
-
 
     flags.DEFINE_float("lr_wgangp", 5e-5, "Learning rate of for WGAN RMSProp [5e-5]")
 
@@ -804,25 +875,32 @@ if __name__ == '__main__':
                         "Directory name to save the generated samples [./artifacts/generated_samples/]")
     flags.DEFINE_string("ref_sample_folder", "./artifacts/",
                         "Directory name to save the generated samples [./artifacts/]")
-    FLAGS = flags.FLAGS
+    return flags.FLAGS
 
-    with tf.Session() as s:
-        # Layers and inputs are defined in netowk_architecture.py
-        features = architecture.features
-        maps = architecture.maps
-        g_layers = architecture.g_layers
-        d_layers = architecture.d_layers
 
-        gan = DoomGAN(session=s,
-                      config=FLAGS, features=features, maps=maps,
-                      g_layers = g_layers, d_layers = d_layers
-                      )
-        show_all_variables()
+
+FLAGS = define_flags()
+with tf.Session() as s:
+    # Layers and inputs are defined in network_architecture.py
+    features = architecture.features
+    maps = architecture.maps
+    g_layers = architecture.g_layers
+    d_layers = architecture.d_layers
+    print("Building the network...")
+    gan = DoomGAN(session=s,
+                  config=FLAGS, features=features, maps=maps,
+                  g_layers = g_layers, d_layers = d_layers
+                  )
+    show_all_variables()
+
+    if __name__ == '__main__':
         if FLAGS.train:
+            print("Starting training process...")
             gan.train(FLAGS)
         else:
             feat_factors = [-1 for f in features]
             if FLAGS.generate:
                 factors = np.random.normal(0.5, 0.1, size=(FLAGS.batch_size, len(features)))
+                gan.initialize_and_restore()
                 gan.sample(mode='dataset', y_factors=factors, postprocess=True, save='PNG', seed=FLAGS.seed, folder=FLAGS.generated_folder)
 
