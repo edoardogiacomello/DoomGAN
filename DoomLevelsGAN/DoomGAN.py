@@ -8,6 +8,7 @@ from DoomDataset import DoomDataset
 from DoomLevelsGAN.NNHelpers import *
 from WAD_Parser.RoomTopology import *
 from scipy.spatial import cKDTree
+from WAD_Parser.Dictionaries import Features as all_features
 
 
 
@@ -722,15 +723,32 @@ class DoomGAN(object):
     def evaluate_samples_distribution(self, n=1, sample_from_dataset='train', postprocess=True):
         """
         Generates n maps for each feature vector in the dataset and computes the feature vector.
-        Returns the true features, the generated features for each n iteration, and the noise that have been used to generate the map
-        :param n: how many samples (different noise vector z) to use for each record in the dataset
+        Returns (as Numpy Arrays):
+         * A list of level names (since the dataset gets shuffled when loaded). Size [levels]
+         * The list of input features for the true levels. Size [levels, features(input)]
+         * The list of the other features for the true levels that are not used as network input. Size [levels, features(~input)]
+         * The list of generated features, for each level and for each n sample. Size [levels, features(input), N]
+         * The list of generated features, for each level and for each n sample, that are not used as network input. Size [levels, features(~input), N]
+         * The list of noise vectors used in each sampling, for each level and for each sample. Size [levels, z_dim, N]
+
+        The index of the first dimension of each returned vector matches the index of the others,
+        so level_names[4] is the name of the level having features results_true[4] that are used to generate results_gen[4] using noise vector result_noise[4], etc.
+        The same is valid for the last dimension N.
+        :param n: how many samples (different noise vector z) to generate for each true level.
         :param sample_from_dataset: 'train' or 'validation' set
         :param postprocess: [True] if true, rescales and denoise data to match the inputs (for example, clamps the values of the floormap to either 0 or 255)
-        :return: results_true (batch, features), results_gen (batch, features, n), z_noise (batch, z_dim, n)
+        :return: level names, true features input, additional true features, generated features, additional generated features, noise vectors.
         """
         results_true = list()
+        results_true_oth = list()
         results_gen = list()
+        results_gen_oth = list()
         results_z = list()
+        level_names = list()
+
+        # Feature columns definition
+        oth_features = [f for f in all_features.features_for_evaluation if f not in self.features]
+
         import WAD_Parser.WADFeatureExtractor
         feature_extractor = WAD_Parser.WADFeatureExtractor.WADFeatureExtractor()
         self.initialize_and_restore()
@@ -749,37 +767,53 @@ class DoomGAN(object):
             try:
                 batch = self.session.run(next_batch)
                 y_batch_true = np.stack([batch[f] for f in self.features], axis=-1)
-                # Z vector is sampled from the sample function
+                y_batch_true_oth = np.stack([batch[f] for f in oth_features], axis=-1)
+                names_batch = np.array(batch['path_json'])
 
-                record = {'true_batch': y_batch_true, 'gen_batch': list(), 'z_batch':list()}
+
+                record = {'true_batch': y_batch_true, 'names_batch': names_batch, 'gen_batch': list(), 'z_batch': list(), 'true_names': list(), 'gen_batch_oth': list(), 'true_batch_oth': y_batch_true_oth}
                 for z_sampling in range(n):
                     print("Batch {} of {}, sample {} of {}".format(batch_counter, chosen_size//self.config.batch_size + 1, z_sampling+1, n))
                     # Generate a new batch of maps
                     z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
                         np.float32)
                     x_batch_gen = self.sample(mode='direct', y_batch=y_batch_true, z_override=z_batch, postprocess=postprocess).astype(np.uint8)
-                    y_batch_gen = list()
+                    y_batch_gen = list()  # Batches of generated features (inputs to the networks)
+                    y_batch_gen_oth = list()  # Batches of generated features (other features, not in input)
                     for l, level in enumerate(x_batch_gen):
                         # Compute level features
                         try:
-                            y_gen = feature_extractor.extract_features_from_maps(
+                            # Compute all features from the generated level maps
+                            y_gen_all = feature_extractor.extract_features_from_maps(
                                         floormap=level[:, :, self.maps.index('floormap')],
                                         wallmap=level[:, :, self.maps.index('wallmap')],
-                                        thingsmap=level[:, :, self.maps.index('thingsmap')],
-                                        feature_names=self.features)
+                                        thingsmap=level[:, :, self.maps.index('thingsmap')])
+                            # Select only the features that are inputs to the network
+                            y_gen = np.asarray([y_gen_all[name] for name in self.features])
+                            # Other features
+                            y_gen_oth = np.asarray([y_gen_all[name] for name in oth_features])
                         except:
+                            # Fill the feature record with NaNs indicating a failure in calculation
                             y_gen = np.full_like(self.features, np.nan)
+                            y_gen_oth = np.full_like(oth_features, np.nan)
                             errors+=1
                         y_batch_gen.append(y_gen)
+                        y_batch_gen_oth.append(y_gen_oth)
                     record['gen_batch'].append(np.asarray(y_batch_gen))
+                    record['gen_batch_oth'].append(np.asarray(y_batch_gen_oth))
                     record['z_batch'].append(np.asarray(z_batch))
-                # Now unrolling the batches of features into ('true_level_features', list('sampled_features'))
+                # Now unrolling the batches of features into lists of levels
                 true_batch = record['true_batch']
+                true_batch_oth = record['true_batch_oth']
                 generated_batch = np.asarray(record['gen_batch']).transpose((1,2,0))
+                generated_batch_oth = np.asarray(record['gen_batch_oth']).transpose((1,2,0))
                 noise_batch = np.asarray(record['z_batch']).transpose((1,2,0))
-                for true, gen, noise in zip(true_batch, generated_batch, noise_batch):
+                for names, true, true_oth, gen, gen_oth, noise in zip(names_batch, true_batch, true_batch_oth, generated_batch, generated_batch_oth, noise_batch):
+                    level_names.append(names)
                     results_true.append(true)
+                    results_true_oth.append(true_oth)
                     results_gen.append(gen)
+                    results_gen_oth.append(gen_oth)
                     results_z.append(noise)
                 batch_counter += 1
 
@@ -788,8 +822,8 @@ class DoomGAN(object):
                 if errors>0:
                     print("{} levels have NaN feature data since feature extraction didn't work on some samples.".format(errors))
                 break
-        return np.asarray(results_true), np.asarray(results_gen), np.asarray(results_z)
-        #End of the epoch
+        return np.asarray(level_names), np.asarray(results_true), np.asarray(results_true_oth), np.asarray(results_gen), np.asarray(results_gen_oth), np.asarray(results_z)
+
 
 
 

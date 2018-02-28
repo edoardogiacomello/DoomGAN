@@ -238,7 +238,7 @@ class WADFeatureExtractor(object):
                 pass
 
 
-    def extract_features_from_maps(self, floormap, wallmap, thingsmap, feature_names):
+    def extract_features_from_maps(self, floormap, wallmap, thingsmap, feature_names=None):
         features = dict()
         if wallmap is None:
             wallmap = np.zeros_like(floormap)

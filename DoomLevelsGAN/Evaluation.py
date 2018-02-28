@@ -3,22 +3,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sb
 import DoomLevelsGAN.DoomGAN as nn
+from WAD_Parser.Dictionaries import Features as all_features
 
-
-def plot_feature_distributions_1v1(true_data, gen_data):
-    """
-    Shows a joint plot for each feature (old version)
-    :param true_data:
-    :param gen_data:
-    :return:
-    """
-    for f_id, f_name in enumerate(nn.features):
-        feats = np.stack([true_data[:, f_id], gen_data[:, f_id]], axis=1).astype(np.float32)
-        cols = ['True {}'.format(f_name), 'Generated {}'.format(f_name)]
-        pdata = pd.DataFrame(feats, columns=cols)
-        g = sb.jointplot(cols[0], cols[1], data=pdata, kind="reg", size=7, space=0)
-        print("Showing plot {} of {}".format(f_id, len(nn.features)))
-        plt.show()
 
 def generate_results_and_save(samples_for_map):
     """
@@ -27,9 +13,12 @@ def generate_results_and_save(samples_for_map):
     :param samples_for_map: How many samples to generate for each "true" map.
     :return:
     """
-    true_features, generated_features, noise = nn.gan.evaluate_samples_distribution(n=samples_for_map)
+    names, true_features, oth_true_features, generated_features, oth_gen_features, noise = nn.gan.evaluate_samples_distribution(n=samples_for_map)
+    np.save(nn.FLAGS.ref_sample_folder+'results_names.npy', names)
     np.save(nn.FLAGS.ref_sample_folder+'results_true.npy', true_features)
+    np.save(nn.FLAGS.ref_sample_folder+'results_true_oth.npy', oth_true_features)
     np.save(nn.FLAGS.ref_sample_folder+'results_gen.npy', generated_features)
+    np.save(nn.FLAGS.ref_sample_folder+'results_gen_oth.npy', oth_gen_features)
     np.save(nn.FLAGS.ref_sample_folder+'results_noise.npy', noise)
 
 def load_results_from_file():
@@ -38,17 +27,38 @@ def load_results_from_file():
     gen = np.load(nn.FLAGS.ref_sample_folder+'results_gen.npy')[:,:].astype(np.float32)
     return true, gen
 
+def clean_nans(a):
+    """
+    Removes rows from a that contains non numerical values
+    :param a:
+    :return:
+    """
+    return a[~np.isnan(a).any(axis=1)]
 
-def distribution_visualization_new():
+def distribution_visualization_1v1(feature_names):
     """ WORK IN PROGRESS"""
     true, gen = load_results_from_file()
-    # Pandas dataframe generation (for visualizing in seaborn)
+    # fixing the first dimension
+    gen = np.mean(gen, axis=-1)
+    tc = clean_nans(true)
+    gc = clean_nans(gen)
     features = nn.features
-    sets = ['True', 'Generated']
-    # Expand the arrays for matching the pandas syntax
-    columns = [[s for s in sets for f in features], [f for s in sets for f in features]]
-    data = np.reshape(np.concatenate([true, gen], axis=-1).flatten(), (true.shape[0], len(features)*len(sets)))
-    pdata = pd.DataFrame(data, columns=columns, names=['source', 'features'])
+    # Showing True features distribution vs Generated
+    for f, fname in enumerate(features):
+        axt = sb.kdeplot(tc[:,f], label="True")
+        tmean = tc[:, f].mean()
+        sb.rugplot([tmean], height=1, ax=axt, ls="--", color=axt.get_lines()[-1].get_color())
+
+        axg = sb.kdeplot(gc[:,f], label="Generated")
+        gmean = gc[:, f].mean()
+        sb.rugplot([gmean], height=1, ax=axg, ls="--", color=axg.get_lines()[-1].get_color())
+
+        axt.set_xlabel("{}".format(fname))
+        axt.figure.canvas.set_window_title("1v1_{}".format(fname))
+        plt.show()
 
 
 
+# distribution_visualization_new()
+input_features = nn.features
+oth_features = [f for f in all_features.features_for_evaluation if f not in input_features]
