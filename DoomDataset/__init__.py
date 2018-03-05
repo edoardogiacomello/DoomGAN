@@ -502,3 +502,4 @@ class DoomDataset():
             fig.add_subplot(rows, cols, i)
             plt.imshow(img)
         plt.show()
+
