@@ -15,270 +15,274 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\numberline {1}Introduction}{17}{chapter.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {1.1}Background: Level Design}{17}{section.1.1}
+\contentsline {section}{\numberline {1.1}Background}{17}{section.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {1.2}Related Work}{17}{section.1.2}
+\contentsline {subsection}{\numberline {1.1.1}Level Design}{17}{subsection.1.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {1.2.1}Procedurally Generated Content}{17}{subsection.1.2.1}
+\contentsline {subsection}{\numberline {1.1.2}Procedurally Generated Content}{17}{subsection.1.1.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {1.2.2}Procedural Content Generation via Machine Learning (PCGML)}{17}{subsection.1.2.2}
+\contentsline {subsection}{\numberline {1.1.3}Procedural Content Generation via Machine Learning (PCGML)}{18}{subsection.1.1.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {1.2.3}Video Game Level Corpus}{17}{subsection.1.2.3}
+\contentsline {section}{\numberline {1.2}Scope}{18}{section.1.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {1.2.4}Generative Adversarial Networks}{17}{subsection.1.2.4}
+\contentsline {section}{\numberline {1.3}Related Work}{18}{section.1.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {1.3}Scope}{17}{section.1.3}
+\contentsline {subsection}{\numberline {1.3.1}PCGML in Video-Games}{18}{subsection.1.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {1.4}Thesis Structure}{17}{section.1.4}
+\contentsline {subsection}{\numberline {1.3.2}Video Game Level Corpus}{18}{subsection.1.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {1.5}Summary}{17}{section.1.5}
+\contentsline {subsection}{\numberline {1.3.3}Generative Adversarial Networks}{19}{subsection.1.3.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {2}Towards learn-based level generation}{19}{chapter.2}
+\contentsline {section}{\numberline {1.4}Thesis Structure}{19}{section.1.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{19}{section*.7}
+\contentsline {section}{\numberline {1.5}Summary}{19}{section.1.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.1}Generative Adversarial Networks}{19}{section.2.1}
+\contentsline {chapter}{\numberline {2}Towards learn-based level generation}{21}{chapter.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.1.1}Overview}{19}{subsection.2.1.1}
+\contentsline {paragraph}{Overview}{21}{section*.7}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{GAN}{19}{section*.8}
+\contentsline {section}{\numberline {2.1}Generative Adversarial Networks}{21}{section.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Conditional GAN}{19}{section*.9}
+\contentsline {subsection}{\numberline {2.1.1}Overview}{21}{subsection.2.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Additional Architectures}{19}{section*.10}
+\contentsline {paragraph}{GAN}{21}{section*.8}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.1.2}Deep Convolutional GAN}{20}{subsection.2.1.2}
+\contentsline {paragraph}{Conditional GAN}{21}{section*.9}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.1.3}Wesserstein GAN}{20}{subsection.2.1.3}
+\contentsline {paragraph}{Additional Architectures}{21}{section*.10}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.1.4}Wesserstein GAN with Gradient Penalty}{20}{subsection.2.1.4}
+\contentsline {subsection}{\numberline {2.1.2}Deep Convolutional GAN}{22}{subsection.2.1.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.2}Game of choice: DOOM}{20}{section.2.2}
+\contentsline {subsection}{\numberline {2.1.3}Wesserstein GAN}{22}{subsection.2.1.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.2.1}Description}{20}{subsection.2.2.1}
+\contentsline {subsection}{\numberline {2.1.4}Wesserstein GAN with Gradient Penalty}{22}{subsection.2.1.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.2.2}Motivation}{20}{subsection.2.2.2}
+\contentsline {section}{\numberline {2.2}Game of choice: DOOM}{22}{section.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.3}General Considerations}{20}{section.2.3}
+\contentsline {subsection}{\numberline {2.2.1}Description}{22}{subsection.2.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.4}Summary}{20}{section.2.4}
+\contentsline {subsection}{\numberline {2.2.2}Motivation}{22}{subsection.2.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {3}Dataset and Data Representation}{21}{chapter.3}
+\contentsline {section}{\numberline {2.3}General Considerations}{22}{section.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{21}{section*.11}
+\contentsline {section}{\numberline {2.4}Summary}{22}{section.2.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.1}Data Sources}{21}{section.3.1}
+\contentsline {chapter}{\numberline {3}Dataset and Data Representation}{23}{chapter.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Archive}{21}{section*.12}
+\contentsline {paragraph}{}{23}{section*.11}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Level Selection}{21}{section*.13}
+\contentsline {section}{\numberline {3.1}Data Sources}{23}{section.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Source Data Organization}{21}{section*.14}
+\contentsline {paragraph}{}{23}{section*.12}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.2}Source Data Format: WAD Files}{22}{section.3.2}
+\contentsline {paragraph}{}{23}{section*.13}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Introduction}{22}{section*.15}
+\contentsline {paragraph}{}{23}{section*.14}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.2.1}Overview}{22}{subsection.3.2.1}
+\contentsline {section}{\numberline {3.2}Source Data Format: WAD Files}{24}{section.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Type of WADs}{22}{section*.16}
+\contentsline {paragraph}{}{24}{section*.15}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Lumps}{22}{section*.17}
+\contentsline {subsection}{\numberline {3.2.1}Overview}{24}{subsection.3.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{WAD Structure}{22}{section*.18}
+\contentsline {subsubsection}{Type of WADs}{24}{section*.16}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Coordinate Units}{22}{section*.20}
+\contentsline {subsubsection}{Lumps}{24}{section*.17}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.2.2}Doom Level Format}{23}{subsection.3.2.2}
+\contentsline {subsubsection}{WAD Structure}{24}{section*.18}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{23}{section*.21}
+\contentsline {subsubsection}{Coordinate Units}{24}{section*.20}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Essential Subset and Optimizations}{23}{section*.22}
+\contentsline {subsection}{\numberline {3.2.2}Doom Level Format}{25}{subsection.3.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{(Name)}{23}{section*.23}
+\contentsline {paragraph}{}{25}{section*.21}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Things}{23}{section*.24}
+\contentsline {paragraph}{}{25}{section*.22}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Linedefs}{24}{section*.25}
+\contentsline {paragraph}{(Name):}{25}{section*.23}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Sidedefs}{24}{section*.26}
+\contentsline {paragraph}{Things:}{25}{section*.24}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Vertexes}{24}{section*.27}
+\contentsline {paragraph}{Linedefs:}{26}{section*.25}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Sectors}{24}{section*.28}
+\contentsline {paragraph}{Sidedefs:}{26}{section*.26}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.2.3}Conversion issues}{24}{subsection.3.2.3}
+\contentsline {paragraph}{Vertexes:}{26}{section*.27}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.3}Target Data Format: Feature Maps and Vectors}{26}{section.3.3}
+\contentsline {paragraph}{Sectors:}{26}{section*.28}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Introduction}{26}{section*.30}
+\contentsline {subsection}{\numberline {3.2.3}Conversion issues}{26}{subsection.3.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.3.1}Level Description and Motivation}{26}{subsection.3.3.1}
+\contentsline {section}{\numberline {3.3}Target Data Format: Feature Maps and Vectors}{28}{section.3.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{26}{section*.31}
+\contentsline {paragraph}{}{28}{section*.30}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.3.2}Feature Maps}{26}{subsection.3.3.2}
+\contentsline {subsection}{\numberline {3.3.1}Level Description and Motivation}{28}{subsection.3.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{26}{section*.32}
+\contentsline {paragraph}{}{28}{section*.31}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{\gls {floormap}}{26}{section*.33}
+\contentsline {subsection}{\numberline {3.3.2}Feature Maps}{28}{subsection.3.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{\gls {wallmap}}{26}{section*.34}
+\contentsline {paragraph}{}{28}{section*.32}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{\gls {heightmap}}{27}{section*.35}
+\contentsline {paragraph}{\gls {floormap}}{28}{section*.33}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{\gls {thingsmap}}{27}{section*.36}
+\contentsline {paragraph}{\gls {wallmap}}{28}{section*.34}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{\gls {triggermap}}{27}{section*.40}
+\contentsline {paragraph}{\gls {heightmap}}{29}{section*.35}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{\gls {roommap}}{27}{section*.42}
+\contentsline {paragraph}{\gls {thingsmap}}{29}{section*.36}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.3.3}Graph Representation}{27}{subsection.3.3.3}
+\contentsline {paragraph}{\gls {triggermap}}{29}{section*.40}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.3.4}Text Representation}{28}{subsection.3.3.4}
+\contentsline {paragraph}{\gls {roommap}}{29}{section*.42}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.3.5}Scalar Features}{28}{subsection.3.3.5}
+\contentsline {subsection}{\numberline {3.3.3}Graph Representation}{29}{subsection.3.3.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.4}Dataset Organization}{28}{section.3.4}
+\contentsline {subsection}{\numberline {3.3.4}Text Representation}{30}{subsection.3.3.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.4.1}Overview}{28}{subsection.3.4.1}
+\contentsline {subsection}{\numberline {3.3.5}Scalar Features}{30}{subsection.3.3.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.4.2}Full Dataset and Filtered Dataset}{28}{subsection.3.4.2}
+\contentsline {section}{\numberline {3.4}Dataset Organization}{30}{section.3.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Full Dataset}{28}{section*.49}
+\contentsline {subsection}{\numberline {3.4.1}Overview}{30}{subsection.3.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Filtered Dataset}{29}{section*.50}
+\contentsline {subsection}{\numberline {3.4.2}Full Dataset and Filtered Dataset}{30}{subsection.3.4.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Provided Methods}{29}{section*.51}
+\contentsline {subsubsection}{Full Dataset}{31}{section*.49}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.4.3}Level Size Statistics}{30}{subsection.3.4.3}
+\contentsline {subsubsection}{Filtered Dataset}{31}{section*.50}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.5}Summary}{31}{section.3.5}
+\contentsline {paragraph}{}{32}{section*.51}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {4}System Design and Overview}{43}{chapter.4}
+\contentsline {subsection}{\numberline {3.4.3}Level Size Statistics}{32}{subsection.3.4.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{43}{section*.54}
+\contentsline {section}{\numberline {3.5}Summary}{33}{section.3.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.1}Generative Model Structure}{43}{section.4.1}
+\contentsline {chapter}{\numberline {4}System Design and Overview}{45}{chapter.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{43}{section*.55}
+\contentsline {paragraph}{Overview}{45}{section*.54}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Conditional GAN Structure}{43}{section*.57}
+\contentsline {section}{\numberline {4.1}Generative Model Structure}{45}{section.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.2}Use Cases}{44}{section.4.2}
+\contentsline {paragraph}{Overview}{45}{section*.55}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{44}{section*.58}
+\contentsline {paragraph}{Conditional GAN Structure}{45}{section*.57}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.2.1}Use Case: Model Optimization (Training)}{45}{subsection.4.2.1}
+\contentsline {section}{\numberline {4.2}Use Cases}{46}{section.4.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{45}{section*.59}
+\contentsline {paragraph}{Overview}{46}{section*.58}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.2.2}Use Case: Model Validation and Sample Evaluation}{45}{subsection.4.2.2}
+\contentsline {subsection}{\numberline {4.2.1}Use Case: Model Optimization (Training)}{47}{subsection.4.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{45}{section*.61}
+\contentsline {paragraph}{}{47}{section*.59}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.2.3}Use Case: Sampling or Generation}{46}{subsection.4.2.3}
+\contentsline {subsection}{\numberline {4.2.2}Use Case: Sample Evaluation}{47}{subsection.4.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{46}{section*.63}
+\contentsline {paragraph}{}{47}{section*.61}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.3}Data Flow}{47}{section.4.3}
+\contentsline {subsection}{\numberline {4.2.3}Use Case: Sampling or Generation}{48}{subsection.4.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{47}{section*.66}
+\contentsline {paragraph}{}{48}{section*.63}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.4}WAD Editor and Feature Extractor}{49}{section.4.4}
+\contentsline {section}{\numberline {4.3}Data Flow}{49}{section.4.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{49}{section*.67}
+\contentsline {paragraph}{}{49}{section*.66}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.4.1}Reading and Writing}{49}{subsection.4.4.1}
+\contentsline {section}{\numberline {4.4}WAD Editor and Feature Extractor}{51}{section.4.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Data Collection}{49}{section*.68}
+\contentsline {paragraph}{Overview}{51}{section*.67}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Editor}{49}{section*.69}
+\contentsline {subsection}{\numberline {4.4.1}Reading and Writing}{51}{subsection.4.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.4.2}Feature Extraction}{49}{subsection.4.4.2}
+\contentsline {paragraph}{Data Collection}{51}{section*.68}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{49}{section*.70}
+\contentsline {paragraph}{Editor}{51}{section*.69}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{WAD to Feature Maps}{49}{section*.71}
+\contentsline {subsection}{\numberline {4.4.2}Feature Extraction}{51}{subsection.4.4.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Feature Maps to WAD}{49}{section*.72}
+\contentsline {paragraph}{Overview}{51}{section*.70}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.5}Summary}{50}{section.4.5}
+\contentsline {paragraph}{WAD to Feature Maps}{51}{section*.71}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {5}Experiment Design and Results}{51}{chapter.5}
+\contentsline {paragraph}{Feature Maps to WAD}{51}{section*.72}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{51}{section*.73}
+\contentsline {section}{\numberline {4.5}Summary}{52}{section.4.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.1}Neural Network Architecture and Training Algorithm}{51}{section.5.1}
+\contentsline {chapter}{\numberline {5}Experiment Design and Results}{53}{chapter.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{51}{section*.74}
+\contentsline {paragraph}{Overview}{53}{section*.73}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.1}Network Architecture}{51}{subsection.5.1.1}
+\contentsline {section}{\numberline {5.1}Neural Network Architecture and Training Algorithm}{53}{section.5.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Chosen Architecture}{51}{section*.75}
+\contentsline {paragraph}{Overview}{53}{section*.74}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Critic Loss and Generator Loss}{51}{section*.76}
+\contentsline {subsection}{\numberline {5.1.1}Network Architecture}{53}{subsection.5.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Loss Formulation}{51}{section*.77}
+\contentsline {paragraph}{Chosen Architecture}{53}{section*.75}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Gradient Penalty}{52}{section*.78}
+\contentsline {subsubsection}{Critic Loss and Generator Loss}{53}{section*.76}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Training Algorithm and Hyper-Parameters}{52}{section*.79}
+\contentsline {paragraph}{Loss Formulation}{53}{section*.77}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Network Layers}{52}{section*.81}
+\contentsline {paragraph}{Gradient Penalty}{54}{section*.78}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Motivation}{53}{section*.82}
+\contentsline {subsubsection}{Training Algorithm and Hyper-Parameters}{54}{section*.79}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Other details}{53}{section*.83}
+\contentsline {paragraph}{Network Layers}{54}{section*.81}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Input selection, Metrics and Sample Method}{53}{section.5.2}
+\contentsline {subsubsection}{Motivation}{55}{section*.82}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.1}Input data}{53}{subsection.5.2.1}
+\contentsline {subsubsection}{Other details}{55}{section*.83}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.2}Evaluation metrics}{53}{subsection.5.2.2}
+\contentsline {section}{\numberline {5.2}Input selection, Metrics and Sample Method}{55}{section.5.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{53}{section*.84}
+\contentsline {subsection}{\numberline {5.2.1}Input data}{55}{subsection.5.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Principles}{53}{section*.85}
+\contentsline {subsection}{\numberline {5.2.2}Sample Evaluation metrics}{55}{subsection.5.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Entropy Mean Absolute Error}{54}{section*.86}
+\contentsline {paragraph}{Overview}{55}{section*.84}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Mean Structural Similarity Index}{54}{section*.87}
+\contentsline {paragraph}{Principles}{55}{section*.85}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Mean Encoding Error}{54}{section*.88}
+\contentsline {subsubsection}{Entropy Mean Absolute Error}{56}{section*.86}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Mean Corner Error}{55}{section*.89}
+\contentsline {subsubsection}{Mean Structural Similarity Index}{56}{section*.87}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{55}{section*.90}
+\contentsline {subsubsection}{Mean Encoding Error}{56}{section*.88}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.3}Sampling the network}{56}{subsection.5.2.3}
+\contentsline {subsubsection}{Mean Corner Error}{57}{section*.89}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Results}{56}{section.5.3}
+\contentsline {paragraph}{}{57}{section*.90}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.3.1}Resulting Model}{56}{subsection.5.3.1}
+\contentsline {subsection}{\numberline {5.2.3}Model Evaluation}{58}{subsection.5.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Generated Samples}{56}{section.5.4}
+\contentsline {section}{\numberline {5.3}Results}{58}{section.5.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.5}In-Game Demonstration}{56}{section.5.5}
+\contentsline {subsection}{\numberline {5.3.1}Resulting Model}{58}{subsection.5.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.6}Summary}{56}{section.5.6}
+\contentsline {section}{\numberline {5.4}Generated Samples}{58}{section.5.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{57}{chapter.6}
+\contentsline {section}{\numberline {5.5}In-Game Demonstration}{58}{section.5.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.1}Results Evaluation}{57}{section.6.1}
+\contentsline {section}{\numberline {5.6}Summary}{58}{section.5.6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{57}{subsection.6.1.1}
+\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{59}{chapter.6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{57}{subsection.6.1.2}
+\contentsline {section}{\numberline {6.1}Results Evaluation}{59}{section.6.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.2}Summary}{57}{section.6.2}
+\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{59}{subsection.6.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {7}Future Work}{59}{chapter.7}
+\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{59}{subsection.6.1.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.1}Open Problems}{59}{section.7.1}
+\contentsline {section}{\numberline {6.2}Summary}{59}{section.6.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{59}{section.7.2}
+\contentsline {chapter}{\numberline {7}Future Work}{61}{chapter.7}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {8}Appendix}{61}{chapter.8}
+\contentsline {section}{\numberline {7.1}Open Problems}{61}{section.7.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{65}{section*.91}
+\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{61}{section.7.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {8}Appendix}{63}{chapter.8}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Glossary}{67}{section*.91}
