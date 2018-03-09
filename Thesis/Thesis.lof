@@ -9,25 +9,31 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Pix2Pix example from \citeauthor {image-to-image}}}{19}{figure.caption.7}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.1}{\ignorespaces A simple level showing sectors and linedefs}}{27}{figure.caption.29}
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Layers from DCGAN, \citeauthor {gan:dcgan}}}{22}{figure.caption.12}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.2}{\ignorespaces DoomDataset Size distribution}}{32}{figure.caption.53}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Samples from WGAN-GP, \citeauthor {wgangp}}}{23}{figure.caption.15}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.1}{\ignorespaces System Overview: Generative Model Structure}}{46}{figure.caption.56}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces A simple level showing sectors and linedefs}}{29}{figure.caption.38}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Use Case: Model Optimization}}{47}{figure.caption.60}
+\contentsline {figure}{\numberline {3.2}{\ignorespaces DoomDataset Size distribution}}{34}{figure.caption.62}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Use Case: Validation and Sample Evaluation}}{48}{figure.caption.62}
+\addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Use Case: Sampling or Generation}}{49}{figure.caption.64}
+\contentsline {figure}{\numberline {4.1}{\ignorespaces System Overview: Generative Model Structure}}{48}{figure.caption.65}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.5}{\ignorespaces System Overview: Data Flow Diagram}}{50}{figure.caption.65}
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Use Case: Model Optimization}}{49}{figure.caption.69}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Use Case: Validation and Sample Evaluation}}{50}{figure.caption.71}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Use Case: Sampling or Generation}}{51}{figure.caption.73}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.5}{\ignorespaces System Overview: Data Flow Diagram}}{52}{figure.caption.74}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 

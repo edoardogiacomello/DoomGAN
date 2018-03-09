@@ -22,8 +22,6 @@ Thanks to the increasing interest that machine learning topics gained in recent 
 
 \section{Scope}
 In this work we study the applicability of Generative Adversarial Networks to the problem of generating new maps for the First Person Shooter game DOOM in the context of Procedural Content Generation via Machine Learning. Our work proposes an alternative model over the classical \textit{procedural content generation}, inheriting the advantages introduced by PCGML. This allows creation of new levels without the need of having an human expert to embed their knowledge during the process, but exploiting patterns in the training data instead. Our work takes place in the domain of first person shooter maps, for which few work has been done yet using this type of models.
-% Si vuole proporre un modello alternativo che in linea teorica dovrebbe portare alcuni vantaggi rispetto al PCG, ovvero un approccio basato su machine learning che noi applichiamo  a DOOM, che permette di aiutare il designer non solo nel processo di generazione dei livelli ma anche nel sfruttare caratteristiche intriseche nei dati senza una esplicita definizione delle stesse da parte di un esperto (questo al costo di una certa quantità di dati da analizzare). Si vuole descrivere un sistema (...) ed evidenziare le principali problematiche incontrate e le motivazioni per cui questi problemi non sono affrontabili con le tecniche in uso correntementente.
-% Cita anche le differenze del nostro tipo di dati rispetto a quello che è comunemente usato
 
 \section{Related Work}
 \subsection{PCGML in Video-Games} 
@@ -34,11 +32,29 @@ In the settings of Generative Adversarial Networks, \citeauthor{heightgen} propo
  
 
 \subsection{Video Game Level Corpus}
-One of the problems with this type of generative models, as explained in \cite{PCGML} is the fact that the domain of video-games levels does not benefit of large datasets to work with. In addition to this, video games levels does not shares common data structures. \citeauthor{VGLC} created the video game level corpus, a collection of game levels represented in multiple formats. Basing on this starting point, we collected about 9000 user-generated Doom levels of different size and designed an extended representation that better fit our needs, while still keeping the dataset compatible with the original VGLC representation. Although VGLC provides the parser they used for data generation, we wrote a new parser which better integrates with our system and feature representation, and can also be used as a stand-alone parser for future researches.
+One of the problems with this type of generative models, as explained in \cite{PCGML} is that they require a large amount of data to be optimized. Unfortunately, the domain of video-games levels does not benefit of large datasets to work with, and generally levels from different video games does not share common data structures. \citeauthor{VGLC} created the video game level corpus, a collection of game levels represented in multiple formats. Basing on this starting point, we collected about 9000 user-generated Doom levels of different size and designed an extended representation that better fit our needs, while still keeping the dataset compatible with the original VGLC representation. Although VGLC provides the parser they used for data generation, we wrote a new parser which better integrates with our system and feature representation, and can also be used as a stand-alone parser for future researches.
 
 \subsection{Generative Adversarial Networks}
 % Parla di dei risultati raggiunti dalle gan e di come però lavorino solo su immagini vere
-Generative Adversarial Networks are a new generative model based on Neural networks. 
+Generative Adversarial Networks are a recent generative model based on Artificial Neural Networks. This type of model allows to learn the data distribution of a dataset and generate synthetic data that exhibit similar characteristics to the real data. Among all the domains in which GANs have been already applied, that of images is one of the most prominent. For example, generation tasks are commonly applied to the handwritten digits (MNIST \cite{dataset:MNIST}) dataset, human faces (CelebA \cite{dataset:celebA}) and bedrooms (LSUN \cite{dataset:LSUN}) as in \cite{gan:dcgan}, but a large amount of creative work is done with many other datasets such as birds, flower \cite{gan:birds}, and other type of images. Another task which involves pictures is the image-to-image translation: \citeauthor{image-to-image} investigates GANs as a general solution to this problem in several settings \cite{image-to-image} such as image colourisation, segmented image to realistic scene conversion or  the generation of realistic objects starting from hand-drawn input from the user (Figure~\ref{fig:img-to-img}). The GAN approach has been also used in many other domains such as frame prediction in videos \cite{gan:frameprediction} and sound generation \cite{gan:sound}, and it's a research area in rapid expansion.
+
+\begin{figure}[h!]
+	\begin{center}
+		\includegraphics[width=1\linewidth]{pix2pix}
+	\end{center}
+	
+	\captionsetup{width=1\linewidth}
+	\caption[Pix2Pix example from \citeauthor{image-to-image}]{Examples from the work of \citeauthor{image-to-image} on image-to-image translation problem \cite{image-to-image}.}
+	\label{fig:img-to-img}
+	\medskip
+	
+\end{figure}
+
+
+
+
+
+
 %TODO: Go on
 
 
