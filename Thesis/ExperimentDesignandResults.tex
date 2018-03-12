@@ -2,26 +2,25 @@
 \label{ch:experiment}
 
 %TODO: Review all the chapter: Fai riferimenti corretti alle formule che ora sono state inserite nella sezione di teoria e rimuovi le cose che hai già detto lì. Metti la struttura dei livelli e scrivi solo la loss finale e i tricks che hai usato, con lo stride e tutto il resto. 
-\paragraph{Overview} 
- This chapter describes the experiment that we conducted based on the system design showed in chapter~\ref{ch:system_design} and our final results, consisting in the trained model and its evaluation. In particular, in section~\ref{sec:nn} we present the selected architecture among the different possibilities in recent literature. Section~\ref{sec:input_metrics_sample} describes all the necessary details about the input selection, the chosen evaluation metrics and how results are produced. Section~\ref{sec:results} presents the resulting model, the metrics associated to it and some examples of generated levels. 
+\paragraph{} 
+
+ 
 \section{Neural Network Architecture and Training Algorithm}
 \label{sec:nn}
-\paragraph{Overview} Another issue is that the loss function is not always correlated with the generated sample quality, added to the problem of evaluating the sample quality. %TODO: Expand this.
- Although we tried some different \glspl{gan} implementations and techniques, our principal selection criterion has been the effectiveness on our particular dataset of the proposed solution in solving this stability problems.
+\paragraph{} One issue with GAN models is that the loss function is not always correlated with the generated sample quality, added to the problem of evaluating the sample quality. Although we tried some different \glspl{gan} implementations and techniques, our principal selection criterion has been the effectiveness on our particular dataset of the proposed solution in solving this stability problems.
+
 \subsection{Network Architecture}
 \label{sec:networkarch}
 
-\paragraph{Chosen Architectures} Among the various \glspl{gan} implementations that are proposed in the literature, we selected the Wasserstein GAN with Gradient Penalty \cite{wgangp} (WGAN-GP) from \citeauthor{wgangp}. This architecture is proposed as an enhanced version of the WGAN \cite{wgan}. In the WGAN architecture, the discriminator is more properly called "critic", as it is a network that is not trained to discriminate true and generated samples but rather to evaluate them \cite[section 2.2, p.~2]{wgangp}.
+\subsubsection{Chosen Architectures} 
+\paragraph{} Among the various \glspl{gan} implementations that are proposed in the literature, we selected the Wasserstein GAN with Gradient Penalty \cite{wgangp} (WGAN-GP) described in section~\ref{sec:wgangp} as it showed better training stability with the DCGAN layer configuration and at least comparable sample quality as opposed to the other models.
 
 
-
-\subsubsection{Critic Loss and Generator Loss}
-\paragraph{Loss Formulation}
-We implement the Critic and Generator losses as in the \citetitle{wgangp} official implementation \cite{wgangp-imple}. Referencing to the notation introduced in \ref{sec:modelstructure} the losses are defined as follow:
+\subsubsection{Loss Formulation}
+\paragraph{} We implement the Critic and Generator losses as in the \citetitle{wgangp} official implementation \cite{wgangp-imple}, which combines formulas \ref{eq:wganloss} and \ref{eq:gp}. Referencing to the notation introduced in \ref{sec:modelstructure} the losses are defined as follow:
 
 \begin{equation}
 \label{eq:loss}
- %\tag{WGAN-GP Critic Loss}
  \begin{split}
 L_{Critic}^{(i)} \gets & \underbrace{\operatorname{E}(Logits(X_{Gen})) - \operatorname{E}(Logits(X_{True}))}_{\text{WGAN Loss}} + \underbrace {\lambda G_p}_{\text{Gradient Penalty}} \\
 %\tag{WGAN-GP Generator Loss}
@@ -29,15 +28,9 @@ L_{Gen}^{(i)} \gets & -Logits(X_{Gen})
 \end{split}
 \end{equation}
 
-where $X_{True}$ and $X_{Gen}$ are batches of levels sampled respectively from the dataset and the generator network and $\lambda = 10$ in our experiments.
-The difference of the first two addends in eq.~\ref{eq:loss}, previously introduced in section~\ref{sec:modelstructure}, is an approximation to the Wasserstein Loss \cite[\S~3]{wgan}. This distance is also called \textit{Earth-Mover Distance} due to its informal interpretation: if two distribution are viewed as two piles of "dirt", then the Wasserstein distance is the minimum cost of turning one pile into the other. \\*
-Now we can give an intuitive interpretation of the loss we used: The critic network is trained, by minimizing \ref{eq:loss}, to assign a "score" to real and generated samples. This is one of the reasons that motivate the change in name from "discriminator" to "critic"~\footnote{ Comments about the Wasserstein GAN paper from the authors of WGAN and GAN papers, among the others: \url{https://www.reddit.com/r/MachineLearning/comments/5qxoaz/r_170107875_wasserstein_gan/}}, since the network outputs are in this case not probabilities but unbound values.
+where $X_{True}$ and $X_{Gen}$ are batches of levels sampled respectively from the dataset and the generator network, $\lambda = 10$ and $ \epsilon \sim U[0,1] $ (for the gradient penalty), in our experiments.
 
-\paragraph{Gradient Penalty} The \citetitle{wgan} paper uses a technique called "weight clipping" to enforce the \textit{Lipschitz constraint} needed to ensure that the Wasserstein distance is a continuous loss function with respect to the network weights \cite[\S2]{wgan}. In order to avoid optimization problems due to the weight clipping used in the original WGAN architecture, \citetitle{wgangp}\cite{wgangp} propose an alternative method called "Gradient Penalty". The gradient of the loss function is kept to unitary norm via a penalty that is added to the loss itself, resulting in:
-
-
-
-With $ \epsilon \sim U[0,1] $. 
+\paragraph{} We can now give an intuitive interpretation of the loss we used: The critic network is trained, by minimizing \ref{eq:loss}, to assign a "score" to real and generated samples. This is one of the reasons that motivate the change in name from "discriminator" to "critic"~\footnote{ Comments about the Wasserstein GAN paper from the authors of WGAN and GAN papers, among the others: \url{https://www.reddit.com/r/MachineLearning/comments/5qxoaz/r_170107875_wasserstein_gan/}}, since the network outputs are in this case not probabilities but unbound values.
 
 \subsubsection{Training Algorithm and Hyper-Parameters}
 For implementing the training algorithm we followed the algorithm suggested by \cite[alg.~1. p.~4]{wgangp}, which uses \textit{Adam}\cite{adam} as the optimizer for both the networks and optimizes $n_{critic} = 5$ times the critic network for each generator update. \\*
@@ -64,37 +57,29 @@ In addition to this implementation, we also imposed an input rotation of 90° fo
 	\label{tab:training}
 \end{table}
 
-\paragraph{Network Layers}
-%TODO: Add network layers
-
-%TODO Interpretazione
-\subsubsection{Motivation} %TODO: This
-\label{sec:arch_advantages}
-%TODO Parla dei vantaggi e soprattutto del problema della (validation) loss che non sempre è sinonimo di qualità dei samples, citando i paper.
-
-
-% Considerando il modello utilizzato, https://openreview.net/forum?id=Sy1f0e-R- dimostra che è in realtà piuttosto difficile che una GAN riesca ad imparare esattamente i sample del training set, anche con un numero molto ridotto di elementi.
 
 
 
-\subsubsection{Other details} %TODO: Techniques and "GAN Tricks" used
-% Specifica cose segnate nel wgan-gp
 
-% Show the table with the steps at each iteration and motivate them
+
+
+
+\subsubsection{Artefacts Reduction}
+\paragraph{} One of the problem that often affects GAN is the presence of artefacts or regular patterns in the generated samples. This problem can be less noticeable when the network is generating images of real objects such in the majority of used dataset, but it's an important issue in our setting in which a change in a pixel can have noticeable impact on the resulting level and its associated metrics. This problem is well explained in \cite{artifacts} and it's due to how the transposed convolution is applied in case the kernel size is not divisible by the stride. In this case the convolution leads to an un-even overlap of outputs in the high-resolution image, generating the artefacts. Among the proposed solutions to overcome this issue we chose to simply use a kernel size of 4 and a stride of 2, which showed to reduce the problem in our case without impacting on performances or layer architecture. 
+
 
 
 \section{Input selection, Metrics and Sample Method}
 \label{sec:input_metrics_sample}
 \subsection{Input data}
 \label{sec:InputSelection}
- % TODO Inserire Constraints su tfrecords
-
+\paragraph{} For our experiments we filtered the DoomDataset by taking only the samples up to 128x128 in size and which had exactly 1 "floor". This led to a dataset of about 1000 samples, which are then augmented by rotation during the training process. This is motivated from the fact that even if the level orientation does not affect playability, using levels with more floors could lead the network to learn a correlation between floors (and how to arrange them inside the map) which could potentially be misleading or be just enforced by the sample size or the way the editor arranged them on the level coordinate space. Moreover, using only one-floor levels helped in reducing smaller artefacts that appeared as very small floors in resulting output.
 
 \subsection{Sample Evaluation metrics}
 \label{sec:evaluation}
-\paragraph{Overview} As discussed in section~\ref{sec:considerations}, the problem of evaluating the quality of the samples generated from a neural network remains an open area of research. The architectures that we considered are primarily trained on datasets consisting of images representing real objects, such as faces or bedrooms. For dealing with this problem, \citeauthor{improved_gan} propose both a process in which human annotators are asked to assess the perceived quality of the samples \cite[p.~4]{improved_gan} and the usage of the Inception Model \cite{inception} Score for assessing the perceived quality of the samples. Although many authors had success in assessing sample quality using the Inception Score, this method showed to perform poorly on our dataset. The most probable reason is that our dataset is very different from the ImageNet dataset upon which is trained the Inception Network. //* Since tuning the Inception network to work with our dataset or applying other proposed solutions based on similarly complex models wouldn't have been possible given our computational and time constraints, we decided to design some heuristics that could correlate with sample quality at least with our dataset. These sample evaluation metrics give an additional measure for assessing the generated sample quality during the training process, while the final model performance is assessed by confronting the true and generated input distributions (Section \ref{sec:modelevaluation}).
+\paragraph{} The problem of evaluating the quality of the samples generated from a neural network remains an open area of research. The architectures that we considered are primarily trained on datasets consisting of images representing real objects, such as faces or bedrooms. For dealing with this problem, \citeauthor{improved_gan} propose both a process in which human annotators are asked to assess the perceived quality of the samples \cite[p.~4]{improved_gan} and the usage of the Inception Model \cite{inception} Score for assessing the perceived quality of the samples. Although many authors had success in assessing sample quality using the Inception Score, this method showed to perform poorly on our dataset. The most probable reason is that our dataset is very different from the ImageNet dataset upon which is trained the Inception Network. \\* Since tuning the Inception network to work with our dataset or applying other proposed solutions based on similarly complex models wouldn't have been possible given our computational and time constraints, we decided to design some heuristics that could correlate with sample quality at least with our dataset. These sample evaluation metrics give an additional measure for assessing the generated sample quality during the training process, while the final model performance is assessed by confronting the true and generated input distributions (Section \ref{sec:modelevaluation}).
 
-\paragraph{Principles} Instead of asking a neural network to evaluate the generated samples, our process compares two samples that have been generated by the network using the same conditioning vector. Since in principle, given a vector of scalar features $Y$, the network could generate samples which are topologically and visually very different, any metric that used quantities that are strictly related to the level topology rather than a perceived concept of "quality" couldn't lead to reasonable results. In designing these metrics we inspired to the paper \citetitle{slam}. In their work, \citeauthor{slam} propose their solution to the problem of evaluating the maps generated by a SLAM algorithm running on a mobile agent. Their approach consist in defining three metrics that capture different aspects of the analysed maps, which features some similarities with the \glspl{featuremap} we use, and considering the entire set of metrics as an approximation of the human perceived quality of a map. 
+\paragraph{} Instead of asking a neural network to evaluate the generated samples, our process compares two samples that have been generated by the network using the same conditioning vector. Since in principle, given a vector of scalar features $Y$, the network could generate samples which are topologically and visually very different, any metric that used quantities that are strictly related to the level topology rather than a perceived concept of "quality" couldn't lead to reasonable results. In designing these metrics we inspired to the paper \citetitle{slam}. In their work, \citeauthor{slam} propose their solution to the problem of evaluating the maps generated by a SLAM algorithm running on a mobile agent. Their approach consist in defining three metrics that capture different aspects of the analysed maps, which features some similarities with the \glspl{featuremap} we use, and considering the entire set of metrics as an approximation of the human perceived quality of a map. 
 \\* Following a similar approach, we defined the following metrics for estimating the perceived quality of a sample generated by our network. These metrics are not meant to be a general solution to the problem of evaluating samples of a \gls{gan} nor to improve the work of \citeauthor{slam_metrics}, but only to be used as a quantitative tool for assessing the samples in our particular case.
 
 \subsubsection{Entropy Mean Absolute Error}
@@ -150,7 +135,13 @@ This metric is proportional to the average distance that the true and generated 
 
 \subsection{Model Evaluation}
 \label{sec:modelevaluation}
+\paragraph{} In order to evaluate each model performance in a systematic way we designed an experiment for comparing the distribution of true data and the one generated from the neural network, according to the features that is possible to calculate from the output images.
+%TODO: continue this
 
+\section{Experiments}
+\label{sec:experiments}
+
+%TODO: Show the network architecure for each run we tried
 
 \section{Results}
 \label{sec:results}

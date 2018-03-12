@@ -1,7 +1,6 @@
-\chapter{Towards learn-based level generation}
-%TODO: Rescrivi questo. Lo scopo del capitolo è di dare un overview delle tecniche che abbiamo utilizzato nel nostro lavoro in modo che sia meglio comprensibile il lavoro che abbiamo fatto. Inoltre 
+\chapter{Theory and Motivation}
 \paragraph{} This chapter further describes the setting of our work and gives the reader some overview of the tools and techniques we used in our work. Section~\ref{sec:gantheory} first provides the theoretical background necessary to better understand the setting in which our work take place. Then, section~\ref{sec:doominfo} describes and motivates the choice of the game we work with. 
-%TODO: Bisogna anche sottolineare la congiunzione tra ML e PGC, che ha originato questa tesi
+
 \section{Theoretical Background}
 \label{sec:gantheory}
 \subsection{Overview}
@@ -57,6 +56,7 @@ L_{Gen}^{(i)} \gets & -D(X_{Gen})
 This approximation is derived from an alternative formulation of the Wasserstein distance, which requires to calculate a supremum over \textit{K-Lipschitz} functions. To force the network to only model K-Lipschitz functions the weights of the critic network are clamped, and no output functions are applied to the discriminator function, in this case called \textit{critic}.  
 
 \subsection{Wasserstein GAN with Gradient Penalty}
+\label{sec:wgangp}
 \paragraph{} \citeauthor{wgangp} remark in \cite{wgangp} that the WGAN architecture suffers from some optimization problems related to the weight clipping. Their experiment shows that gradient often vanishes or explodes if the weight clipping is not tuned carefully, and that this technique also biases the network toward too simple functions. To overcome these problems, they propose an alternative way to enforce the \textit{Lipschitz constraint} by keeping the gradient at unitary size. This involves adding a penalty term to the critic loss to enforce the constraint only along straight lines between the real and the generated data distribution, which leads to good results and performances.
 
 \begin{equation}
@@ -68,7 +68,6 @@ G_p & \gets (\| \nabla_{\hat{X}}D(\hat{X}) \|_2 - 1 )^2
 \end{equation}
 
 Results obtained from \citeauthor{wgangp} on the LSUN dataset are shown in Figure \ref{fig:wgangp}.
-%TODO: Cita questa immagine
 \begin{figure}[h!]
 	\begin{center}
 		\includegraphics[width=1\linewidth]{wgangp_example}
@@ -91,9 +90,13 @@ Results obtained from \citeauthor{wgangp} on the LSUN dataset are shown in Figur
 \section{Game of choice: DOOM}
 \label{sec:doominfo}
 \subsection{Description}
+\paragraph{} DOOM is a video-game produced \textit{Id Software} in 1993, and can be considered one of the games that defined the First Person Shooter genre. Gameplay consisted in traversing a series of levels populated by several enemies, and the player had the possibility to collect weapons, ammunition and power-ups in order to reach the exit of the level. Often, in order to reach the exit point, the player had to explore the level in order to find some keys required to open the doors that blocked the path. DOOM levels are divided in episodes of 8\/9 levels each. The first episode was released as shareware and \textit{Id Software} greatly encouraged the diffusion of the game. This contributed to the large celebrity the game had in a time in which internet was still not accessible to anyone.
+
 \subsection{Motivation}
-% Parla del game engine, dei livelli piatti (limitazione/vantaggio), dataset disponibile, grande community ancora attiva, ben documentato
 
+\paragraph{} The domain we chose for this work is that of First Person Shooter levels, which usually require the player a more explorative approach as opposed to platform games that are typically traversed in a single direction. This different type of exploration usually requires an higher dimensional representation of the levels, which makes working with fps levels more difficult. One of the peculiarities of this game engine is that the levels actually develop on a 2d plane, with the height added separately. In other words, rooms cannot overlap on the height dimension, and often game designers succeeded in producing this type of illusion. This makes DOOM a good game for researching on first person shooters levels while keeping a simple 2d representation. 
 
+\paragraph{} Another important feature of the Doom Game Engine is that it provided native "mods" support. This fact encouraged many people to develop and exchange their levels for DOOM, and soon this produced a large level database of levels which is still expanding nowadays. Thanks to a large active community it is possible to easily find many resources and specifications to work with DOOM levels and understand how the game engine works.
 
 \section{Summary}
+In this chapter we described some of the main Generative Adversarial Network architectures that are currently available in the literature, starting from the standard GAN to the most used improvements. Then, we briefly described the motivation we selected DOOM as the game to work with. In the next chapter we give a more in-depth explanation of how the Doom Engine works and levels are described, while in chapter \ref{ch:system_design} we give a logical description of how we implemented the GAN architecture. 
