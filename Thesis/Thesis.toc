@@ -235,7 +235,7 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {5.1.1}Network Architecture}{55}{subsection.5.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Chosen Architectures}{55}{section*.87}
+\contentsline {subsubsection}{Chosen Architecture}{55}{section*.87}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{55}{section*.88}
 \defcounter {refsection}{0}\relax 
@@ -277,17 +277,23 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{59}{section*.104}
 \defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{59}{section*.105}
+\defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {5.3}Experiments}{59}{section.5.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Results}{59}{section.5.4}
+\contentsline {paragraph}{}{59}{section*.106}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.4.1}Resulting Model}{59}{subsection.5.4.1}
+\contentsline {paragraph}{}{59}{table.caption.108}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.5}Generated Samples}{59}{section.5.5}
+\contentsline {section}{\numberline {5.4}Results}{60}{section.5.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.6}In-Game Demonstration}{59}{section.5.6}
+\contentsline {subsection}{\numberline {5.4.1}Resulting Model}{60}{subsection.5.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.7}Summary}{59}{section.5.7}
+\contentsline {section}{\numberline {5.5}Generated Samples}{60}{section.5.5}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.6}In-Game Demonstration}{60}{section.5.6}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.7}Summary}{60}{section.5.7}
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{61}{chapter.6}
 \defcounter {refsection}{0}\relax 
@@ -309,4 +315,4 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\numberline {8}Appendix}{65}{chapter.8}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{69}{section*.105}
+\contentsline {chapter}{Glossary}{69}{section*.109}

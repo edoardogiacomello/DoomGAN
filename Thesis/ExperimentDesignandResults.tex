@@ -1,8 +1,8 @@
 \chapter{Experiment Design and Results}
 \label{ch:experiment}
 
-%TODO: Review all the chapter: Fai riferimenti corretti alle formule che ora sono state inserite nella sezione di teoria e rimuovi le cose che hai già detto lì. Metti la struttura dei livelli e scrivi solo la loss finale e i tricks che hai usato, con lo stride e tutto il resto. 
-\paragraph{} 
+% TODO: Scrivi intro
+\paragraph{}
 
  
 \section{Neural Network Architecture and Training Algorithm}
@@ -12,7 +12,7 @@
 \subsection{Network Architecture}
 \label{sec:networkarch}
 
-\subsubsection{Chosen Architectures} 
+\subsubsection{Chosen Architecture} 
 \paragraph{} Among the various \glspl{gan} implementations that are proposed in the literature, we selected the Wasserstein GAN with Gradient Penalty \cite{wgangp} (WGAN-GP) described in section~\ref{sec:wgangp} as it showed better training stability with the DCGAN layer configuration and at least comparable sample quality as opposed to the other models.
 
 
@@ -117,7 +117,7 @@ MEE(X_{gen}) = \frac{1}{N}\sum_{i=0}^{N-1} \frac{1}{|P|} \sum_{p\in P} Enc_I(p)
 \end{equation}
 
 where $p\in P$ is the colour of each pixel of the image, $|P|$ is the total number of pixels in an image and $N$ is the batch size of $X$. In particular, I is 255 for the \gls{floormap} and \gls{wallmap} while is 1 for the other maps.  \\*
-Since, by construction, $MEE_(X_{true}) = 0$ up to conversion errors or artefacts, this metric is only calculated for the generated samples and it is correlated with the ability of the network to represent precisely the data encoding.
+Since, by construction, $MEE(X_{true}) = 0$ up to conversion errors or artefacts, this metric is only calculated for the generated samples and it is correlated with the ability of the network to represent precisely the data encoding.
 
 \subsubsection{Mean Corner Error}
 \paragraph{} This error is based on the idea introduced with the corner count metric introduced by \cite{slam}. We define our implementation of the Corner Error of two images as:
@@ -135,13 +135,115 @@ This metric is proportional to the average distance that the true and generated 
 
 \subsection{Model Evaluation}
 \label{sec:modelevaluation}
-\paragraph{} In order to evaluate each model performance in a systematic way we designed an experiment for comparing the distribution of true data and the one generated from the neural network, according to the features that is possible to calculate from the output images.
-%TODO: continue this
+\paragraph{} In order to evaluate each model performance in a systematic way we designed an experiment for comparing the distribution of true data and the one generated from the neural network, according to the features that is possible to calculate from the output images. In particular we set up two evaluation experiments: The first generates a map for each feature vector taken from the dataset and compares the distributions of the real and generated datasets, for both input features and non-input features.
+The second experiment selects a subset of different maps and considers the distribution of 1000 maps that are generated using the given input feature, for each map.
+
+\paragraph{} 
+%TODO: continue this, explain more what the experiments mean
+
+
 
 \section{Experiments}
 \label{sec:experiments}
+\paragraph{} We ran different input and layer settings for finding if one performed better than the others. In particular we kept fixed the WGAN-GP architecture, learning hyperparameters, the kernel size and the stride, while we varied the input features and the number of layers. \ref{tab:experiments} shows the details of each run.
 
-%TODO: Show the network architecure for each run we tried
+\paragraph{} %TODO: Parla della selezione delle feature
+
+\begin{table}[h!]
+	\begin{tabularx}{\textwidth}{| l | c | X | X | X | X |}
+		\hline
+		\textbf{Run} & \textbf{Iterations} & \textbf{Features} & \textbf{Maps} & \textbf{D Layers (filters)} & \textbf{G Layers (filters)} \\
+		\hline
+		1 & 26000 & 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] level equivalent diameter
+			\item[] level major axis length
+			\item[] level minor axis length
+			\item[] level solidity
+			\item[] nodes
+			\item[] distmap-skew
+			\item[] distmap-kurt
+		\end{itemize}
+		 & 
+		 	\begin{itemize}
+		 	\raggedright
+		 	\small
+		 	\item[] floormap
+		 	\item[] heightmap
+		 	\item[] wallmap
+		 	\item[] thingsmap
+		 \end{itemize}
+		 & 4 (1024, 512, 256, 128) & 4 (128, 256, 512, 1024)\\
+		
+		\hline
+		
+		2 & 12000 & 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] level equivalent diameter
+			\item[] level major axis length
+			\item[] level minor axis length
+			\item[] level solidity
+			\item[] nodes
+			\item[] distmap-skew
+			\item[] distmap-kurt
+		\end{itemize}
+		& 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] floormap
+			\item[] heightmap
+			\item[] wallmap
+			\item[] thingsmap
+		\end{itemize}
+		& 4 (1024, 512, 256, 128) & 4 (128, 256, 512, 1024)\\
+		
+		\hline
+		
+		3 & 15000 & 
+		No features
+		& 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] floormap
+			\item[] heightmap
+			\item[] wallmap
+			\item[] thingsmap
+		\end{itemize}
+		& 4 (1024, 512, 256, 128) & 4 (128, 256, 512, 1024)\\
+		
+		\hline
+		
+		5 & 11000 & 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] level equivalent diameter
+			\item[] level major axis length
+			\item[] level minor axis length
+			\item[] level solidity
+			\item[] nodes
+		\end{itemize}
+		& 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] floormap
+			\item[] wallmap
+			\item[] thingsmap
+		\end{itemize}
+		& 8 (1024, 1024, 512, 512, 256,  256, 128, 128) & 8 (128, 128, 256, 256, 512, 512, 1024, 1024)\\
+		\hline
+		
+	\end{tabularx}
+	\caption[ Experiments ]{ Trained models }
+	\label{tab:experiments}
+\end{table}	
 
 \section{Results}
 \label{sec:results}
