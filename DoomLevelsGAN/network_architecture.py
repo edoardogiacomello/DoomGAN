@@ -1,12 +1,6 @@
 # This file defines the the network layers and the input features.
 # Define here which features to use (you can find a list in /WAD_Parser/Dictionaries/Features.py )
-features = ['level_equivalent_diameter',
-            'level_major_axis_length',
-            'level_minor_axis_length',
-            'level_solidity',
-            'nodes',
-            'distmap-skew',
-            'distmap-kurt']
+features = []
 #features = []
 # Define here which maps to use (you can find a list in /WAD_Parser/Dictionaries/Features.py )
 maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap']

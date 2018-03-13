@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sb
 import DoomLevelsGAN.DoomGAN as nn
 from WAD_Parser.Dictionaries import Features as all_features
+from scipy.stats import wilcoxon, ttest_ind
 import os
 import json
 
@@ -51,15 +52,23 @@ def load_results_from_files():
     return names, true_features, oth_true_features, generated_features, oth_gen_features, noise
 
 
-def clean_nans(a):
+def clean_nans(a, b=None):
     """
-    Removes rows from a that contains non numerical values
+    Removes rows that contains non numerical values.
+    If given two vectors, then 
     :param a:
     :return:
     """
-    if len(a.shape) == 1:
-        return a[~np.isnan(a)]
-    return a[~np.isnan(a).any(axis=1)]
+    if b is None:
+        if len(a.shape) == 1:
+            return a[~np.isnan(a)]
+        return a[~np.isnan(a).any(axis=1)]
+    else:
+        if len(a.shape) == 1 and len(b.shape) == 1:
+            non_nan_indices = np.logical_and(~np.isnan(a), ~np.isnan(b))
+        else:
+            non_nan_indices = np.logical_and(~np.isnan(a).any(axis=1), ~np.isnan(b).any(axis=1))
+        return a[non_nan_indices], b[non_nan_indices]
 
 def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
     """
@@ -107,11 +116,10 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         plt.close(fig)
 
     for f, fname in enumerate(oth_features):
-        otc = clean_nans(oth_true[:, f])
-        ogc = clean_nans(oth_gen[:, f])
+        otc, ogc = clean_nans(oth_true[:, f], oth_gen[:, f])
         fig = plt.figure()
         axt = sb.rugplot([otc.mean()], height=1, ls="--", color=colors['True'], linewidth=0.75)
-        sb.kdeplot(otc, ax=axt, label="True", ls="--",  color=colors['True']) if np.unique(otc, axis=0).size > 1 else None
+        sb.kdeplot(otc, ax=axt, label="True", ls="--",  color=colors['True'], legend=True) if np.unique(otc, axis=0).size > 1 else None
         # Don't show the distribution if data contains only a value -> matrix is singular
 
 
@@ -119,9 +127,15 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         sb.kdeplot(ogc, ax=axg, label="Generated",  color=colors['Gen']) if np.unique(ogc, axis=0).size > 1 else None
         # Don't show the distribution if data contains only a value -> matrix is singular
 
-        axt.set_xlabel("{}".format(fname))
+
+        # Calculating wilcoxon and t-test p-values
+        t_stat, t_pvalue = ttest_ind(otc, ogc, nan_policy='omit')
+        w_stat, w_pvalue = wilcoxon(otc, ogc)
+        print("{}\t{}\t{}".format(fname, w_pvalue, t_pvalue))
+        axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{}".format(fname, w_pvalue, t_pvalue))
         fig_name = "1v1_{}".format(fname)
         axt.figure.canvas.set_window_title(fig_name)
+        fig.tight_layout()
         axt.figure.savefig(oth_features_output_folder+'png/'+fig_name+'.png')
         axt.figure.savefig(oth_features_output_folder+'pdf/'+fig_name+'.pdf')
         plt.close(fig)
@@ -129,7 +143,7 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
 
 def pick_samples_from_feature_percentiles():
     """
-    Composes a set of samples picking the 0,25,50,75 and 100th percentile from the distribution of each input feature.
+    Composes a set of samples picking the 25,50 and 75th percentile from the distribution of each input feature.
     Result is saved into the artifacts folder
     """
     samples_output_folder = nn.FLAGS.ref_sample_folder + 'samples_percentiles/'
@@ -137,7 +151,7 @@ def pick_samples_from_feature_percentiles():
 
     percent_dict = dict() # Sample names organized by percentiles
     names, true, oth_true, gen, oth_gen, noise = load_results_from_files()
-    percentiles = [0,25,50,75,100];
+    percentiles = [25,50,75];
     feat_list_perc = list() # List containing feature values corresponding to the percentiles (perc, features)
     for perc in percentiles:
         pr = np.nanpercentile(true, perc, axis=0)
@@ -198,7 +212,7 @@ def load_level_subset():
 
 def distribution_visualization_1vN(n, load=False, colors=['r','g','b','c','gray', 'm']):
     """ Plots a graph for each input feature, showing the generated sample distribution around the true feature for
-    the samples that are positioned at the (0, 25, 50, 75, 100)th percentiles. """
+    the samples that are positioned at the (25, 50, 75)th percentiles. """
     output_graph_folder = nn.FLAGS.ref_sample_folder + "graphs/1v{}/input_features/".format(n)
     os.makedirs(output_graph_folder, exist_ok=True)
     percent_dict = load_level_subset()
@@ -236,3 +250,6 @@ def distribution_visualization_1vN(n, load=False, colors=['r','g','b','c','gray'
         fig.canvas.set_window_title("{}".format("{}".format(fname)))
         fig.savefig(output_graph_folder + '1v{}_{}.png'.format(n, fname))
         fig.savefig(output_graph_folder + '1v{}_{}.pdf'.format(n, fname))
+
+
+distribution_visualization_1v1()
