@@ -268,6 +268,7 @@ def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
 
         plt.title("{} generated samples distribution from every quartile of feature \"{}\"".format(n, fname))
         fig.canvas.set_window_title("{}".format("{}".format(fname)))
+        fig.tight_layout()
         fig.savefig(output_graph_folder + '1v{}_{}.png'.format(n, fname))
         fig.savefig(output_graph_folder + '1v{}_{}.pdf'.format(n, fname))
 
