@@ -205,15 +205,15 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{51}{section*.78}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.4}WAD Editor and Feature Extractor}{53}{section.4.4}
+\contentsline {section}{\numberline {4.4}WAD Editor and Feature Extractor}{52}{section.4.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Overview}{53}{section*.79}
+\contentsline {paragraph}{Overview}{52}{section*.79}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.4.1}Reading and Writing}{53}{subsection.4.4.1}
+\contentsline {subsection}{\numberline {4.4.1}Reading and Writing}{52}{subsection.4.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Data Collection}{53}{section*.80}
+\contentsline {paragraph}{Data Collection}{52}{section*.80}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{Editor}{53}{section*.81}
+\contentsline {paragraph}{Editor}{52}{section*.81}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {4.4.2}Feature Extraction}{53}{subsection.4.4.2}
 \defcounter {refsection}{0}\relax 
@@ -223,7 +223,7 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{Feature Maps to WAD}{53}{section*.84}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.5}Summary}{54}{section.4.5}
+\contentsline {section}{\numberline {4.5}Summary}{53}{section.4.5}
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\numberline {5}Experiment Design and Results}{55}{chapter.5}
 \defcounter {refsection}{0}\relax 
@@ -251,68 +251,82 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{56}{section*.95}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Input selection, Metrics and Sample Method}{57}{section.5.2}
-\defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.1}Input data}{57}{subsection.5.2.1}
+\contentsline {subsection}{\numberline {5.1.2}Sample Evaluation metrics}{57}{subsection.5.1.2}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{57}{section*.96}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.2}Sample Evaluation metrics}{57}{subsection.5.2.2}
-\defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{57}{section*.97}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{57}{section*.98}
+\contentsline {subsubsection}{Entropy Mean Absolute Error}{57}{section*.98}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Entropy Mean Absolute Error}{57}{section*.99}
+\contentsline {subsubsection}{Mean Structural Similarity Index}{58}{section*.99}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Mean Structural Similarity Index}{58}{section*.100}
+\contentsline {subsubsection}{Mean Encoding Error}{58}{section*.100}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Mean Encoding Error}{58}{section*.101}
+\contentsline {subsubsection}{Mean Corner Error}{58}{section*.101}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Mean Corner Error}{59}{section*.102}
+\contentsline {paragraph}{}{58}{section*.102}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.2}Experiments}{59}{section.5.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {5.2.1}Input data}{59}{subsection.5.2.1}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{59}{section*.103}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.3}Model Evaluation}{59}{subsection.5.2.3}
+\contentsline {subsection}{\numberline {5.2.2}Framework Evaluation}{59}{subsection.5.2.2}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{59}{section*.104}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{59}{section*.105}
+\contentsline {subsection}{\numberline {5.2.3}Feature Selection}{59}{subsection.5.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Trained Models}{59}{section.5.3}
+\contentsline {paragraph}{}{60}{section*.105}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{59}{section*.106}
+\contentsline {subsection}{\numberline {5.2.4}Trained Architectures}{61}{subsection.5.2.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{59}{table.caption.108}
+\contentsline {paragraph}{}{61}{section*.107}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Results}{61}{section.5.4}
+\contentsline {subsection}{\numberline {5.2.5}Experiments description}{62}{subsection.5.2.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.4.1}Experiment Results}{61}{subsection.5.4.1}
+\contentsline {subsubsection}{Experiment 1}{62}{section*.109}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.4.2}Resulting Model}{61}{subsection.5.4.2}
+\contentsline {subsubsection}{Experiment 2}{62}{section*.110}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.5}Generated Samples}{61}{section.5.5}
+\contentsline {subsubsection}{Experiment 3}{62}{section*.111}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.6}Summary}{61}{section.5.6}
+\contentsline {chapter}{\numberline {6}Results}{63}{chapter.6}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{63}{chapter.6}
+\contentsline {section}{\numberline {6.1}Training Results}{63}{section.6.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.1}Results Evaluation}{63}{section.6.1}
+\contentsline {section}{\numberline {6.2}Experiment Results}{63}{section.6.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{63}{subsection.6.1.1}
+\contentsline {section}{\numberline {6.3}Resulting Model}{63}{section.6.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{63}{subsection.6.1.2}
+\contentsline {section}{\numberline {6.4}Generated Samples}{63}{section.6.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.2}General Considerations}{63}{section.6.2}
+\contentsline {section}{\numberline {6.5}Summary}{63}{section.6.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.3}Summary}{63}{section.6.3}
+\contentsline {chapter}{\numberline {7}Results Evaluation and Conclusions}{71}{chapter.7}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {7}Future Work}{65}{chapter.7}
+\contentsline {section}{\numberline {7.1}Results Evaluation}{71}{section.7.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.1}Open Problems}{65}{section.7.1}
+\contentsline {subsection}{\numberline {7.1.1}Samples Evaluation}{71}{subsection.7.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{65}{section.7.2}
+\contentsline {subsection}{\numberline {7.1.2}Loss of accuracy}{71}{subsection.7.1.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {8}Appendix}{67}{chapter.8}
+\contentsline {section}{\numberline {7.2}General Considerations}{71}{section.7.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{71}{section*.110}
+\contentsline {section}{\numberline {7.3}Summary}{71}{section.7.3}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {8}Future Work}{73}{chapter.8}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {8.1}Open Problems}{73}{section.8.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {8.2}Possible Applications and future develops}{73}{section.8.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {9}Appendix}{75}{chapter.9}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {9.1}Results for non-input features}{75}{section.9.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{75}{section*.119}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Glossary}{111}{section*.186}

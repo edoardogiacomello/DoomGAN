@@ -81,7 +81,6 @@ Logits are actually the output of the last layer of the discriminator network be
 \subsection{Use Case: Sampling or Generation}
 \label{sec:usecase_sampling}
 \paragraph{} This use case is the one that produces new levels and it is run after a model has been trained. In particular, our system supports several methods for sampling the network in order to generate new levels. \\*
-These different sampling methods are motivated in section \ref{sec:sampling}, while in this section we only highlight the differences from an input/output point of view.
 The main problem of sampling this network, as highlighted in the work of \citeauthor{slerp}\cite{slerp}, is choosing a feature vector that has lies in an area that has enough prior probability. We here present four possible methods for sampling our network, while more details are given in section \ref{sec:sampling}. These methods differ, other from the sampling method, on the input that is requested from the user. The noise vector $Z$ can be either random generated for each sampling or kept the same for testing how the $Y$ vector impacts on the network generation.
 
 \begin{itemize}
