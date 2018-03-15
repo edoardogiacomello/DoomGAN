@@ -279,40 +279,40 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{59}{section*.105}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Experiments}{59}{section.5.3}
+\contentsline {section}{\numberline {5.3}Trained Models}{59}{section.5.3}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{59}{section*.106}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{59}{table.caption.108}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Results}{60}{section.5.4}
+\contentsline {section}{\numberline {5.4}Results}{61}{section.5.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.4.1}Resulting Model}{60}{subsection.5.4.1}
+\contentsline {subsection}{\numberline {5.4.1}Experiment Results}{61}{subsection.5.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.5}Generated Samples}{60}{section.5.5}
+\contentsline {subsection}{\numberline {5.4.2}Resulting Model}{61}{subsection.5.4.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.6}In-Game Demonstration}{60}{section.5.6}
+\contentsline {section}{\numberline {5.5}Generated Samples}{61}{section.5.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.7}Summary}{60}{section.5.7}
+\contentsline {section}{\numberline {5.6}Summary}{61}{section.5.6}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{61}{chapter.6}
+\contentsline {chapter}{\numberline {6}Results Evaluation and Conclusions}{63}{chapter.6}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.1}Results Evaluation}{61}{section.6.1}
+\contentsline {section}{\numberline {6.1}Results Evaluation}{63}{section.6.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{61}{subsection.6.1.1}
+\contentsline {subsection}{\numberline {6.1.1}Samples Evaluation}{63}{subsection.6.1.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{61}{subsection.6.1.2}
+\contentsline {subsection}{\numberline {6.1.2}Loss of accuracy}{63}{subsection.6.1.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.2}General Considerations}{61}{section.6.2}
+\contentsline {section}{\numberline {6.2}General Considerations}{63}{section.6.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.3}Summary}{61}{section.6.3}
+\contentsline {section}{\numberline {6.3}Summary}{63}{section.6.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {7}Future Work}{63}{chapter.7}
+\contentsline {chapter}{\numberline {7}Future Work}{65}{chapter.7}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.1}Open Problems}{63}{section.7.1}
+\contentsline {section}{\numberline {7.1}Open Problems}{65}{section.7.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{63}{section.7.2}
+\contentsline {section}{\numberline {7.2}Possible Applications and future develops}{65}{section.7.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {8}Appendix}{65}{chapter.8}
+\contentsline {chapter}{\numberline {8}Appendix}{67}{chapter.8}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{69}{section*.109}
+\contentsline {chapter}{Glossary}{71}{section*.110}
