@@ -78,13 +78,22 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
     :param colors:
     :return:
     """
+    numpy_result_folder = nn.FLAGS.ref_sample_folder + "numpy_results"
     features_output_folder = nn.FLAGS.ref_sample_folder + "graphs/1v1/input_features/"
     oth_features_output_folder = nn.FLAGS.ref_sample_folder + "graphs/1v1/other_features/"
 
+    os.makedirs(numpy_result_folder, exist_ok=True)
     os.makedirs(features_output_folder+"png/",exist_ok=True)
     os.makedirs(features_output_folder+"pdf/",exist_ok=True)
     os.makedirs(oth_features_output_folder+"png/",exist_ok=True)
     os.makedirs(oth_features_output_folder+"pdf/",exist_ok=True)
+
+    # Creating a numpy structured array for storing results
+    np_struct = np.dtype([('name', '<U64'),
+                         ('t_stat', np.float32), ('t_p-value', np.float32),
+                         ('w_stat', np.float32), ('w_p-value', np.float32)])
+    stat_test_input = list()
+    stat_test_other = list()
 
     oth_features = [f for f in all_features.features_for_evaluation if f not in nn.gan.features]
 
@@ -96,9 +105,7 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
     # Showing True features distribution vs Generated for the input features
     for f, fname in enumerate(nn.features):
         # Clearing rows containing NaNs, from now on the correspondence between indices/level name is lost
-
-        tc = clean_nans(true[:,f])
-        gc = clean_nans(gen[:,f])
+        tc, gc = clean_nans(true[:, f], gen[:, f])
 
         fig = plt.figure()
         axt = sb.rugplot([tc.mean()], height=1, ls="--", color=colors['True'], linewidth=0.75)
@@ -107,13 +114,21 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         axg = sb.rugplot([gc.mean()], height=1, color=colors['Gen'], linewidth=0.75)
         sb.kdeplot(gc, ax=axg, label="Generated", color=colors['Gen'])
 
-        axt.set_xlabel("{}".format(fname))
+        # Calculating wilcoxon and t-test p-values
+        t_stat, t_pvalue = ttest_ind(tc, gc, nan_policy='omit')
+        w_stat, w_pvalue = wilcoxon(tc, gc)
+        stat_test_input.append((fname, w_stat, w_pvalue, t_stat, t_pvalue))
+
+        #print("{}\t{}\t{}".format(fname, w_pvalue, t_pvalue))
+        axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{}".format(fname, w_pvalue, t_pvalue))
         fig_name = "1v1_{}".format(fname)
         axt.figure.canvas.set_window_title(fig_name)
-
+        fig.tight_layout()
         fig.savefig(features_output_folder+'png/'+fig_name+'.png')
         fig.savefig(features_output_folder+'pdf/'+fig_name+'.pdf')
         plt.close(fig)
+
+    np.save(numpy_result_folder+"/stat_test_result_input.npy", np.array(stat_test_input, dtype=np_struct))
 
     for f, fname in enumerate(oth_features):
         otc, ogc = clean_nans(oth_true[:, f], oth_gen[:, f])
@@ -131,7 +146,8 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         # Calculating wilcoxon and t-test p-values
         t_stat, t_pvalue = ttest_ind(otc, ogc, nan_policy='omit')
         w_stat, w_pvalue = wilcoxon(otc, ogc)
-        print("{}\t{}\t{}".format(fname, w_pvalue, t_pvalue))
+        stat_test_other.append((fname, w_stat, w_pvalue, t_stat, t_pvalue))
+        #print("{}\t{}\t{}".format(fname, w_pvalue, t_pvalue))
         axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{}".format(fname, w_pvalue, t_pvalue))
         fig_name = "1v1_{}".format(fname)
         axt.figure.canvas.set_window_title(fig_name)
@@ -140,6 +156,7 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         axt.figure.savefig(oth_features_output_folder+'pdf/'+fig_name+'.pdf')
         plt.close(fig)
 
+    np.save(numpy_result_folder + "/stat_test_result_other.npy", np.array(stat_test_other, dtype=np_struct))
 
 def pick_samples_from_feature_percentiles():
     """
@@ -210,7 +227,7 @@ def load_level_subset():
         percent_dict = json.load(jin)
     return percent_dict
 
-def distribution_visualization_1vN(n, load=False, colors=['r','g','b','c','gray', 'm']):
+def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
     """ Plots a graph for each input feature, showing the generated sample distribution around the true feature for
     the samples that are positioned at the (25, 50, 75)th percentiles. """
     output_graph_folder = nn.FLAGS.ref_sample_folder + "graphs/1v{}/input_features/".format(n)
@@ -238,18 +255,21 @@ def distribution_visualization_1vN(n, load=False, colors=['r','g','b','c','gray'
     for f, fname in enumerate(nn.gan.features):
         fig = plt.figure(figsize=(15,11))
         for p, pname in enumerate(percent_dict):
+            if pname == 'perc0' or pname == 'perc100':
+                continue
             name = percent_dict[pname][f]
             samp = generated[np.where(names == name)][0]
             true_value = true_samples[name][fname]
             values = samp[fname]
             #axt = sb.rugplot([np.mean(values)], height=1, ls="-", linewidth=0.75, color=colors[p])
-            axt = sb.rugplot(true_value, height=1, ls="--", linewidth=0.75, label="True", color=colors[p])
+            axt = sb.rugplot(true_value, height=1, ls="--", linewidth=0.75, label="True_{}".format(pname), color=colors[p])
             sb.kdeplot(values, ax=axt, ls="-", label="Generated_{}".format(pname), color=colors[p])
+            axt.set_xlabel("{}".format(fname))
 
-        plt.title("{}".format("{}".format(fname)))
+        plt.title("{} generated samples distribution from every quartile of feature \"{}\"".format(n, fname))
         fig.canvas.set_window_title("{}".format("{}".format(fname)))
         fig.savefig(output_graph_folder + '1v{}_{}.png'.format(n, fname))
         fig.savefig(output_graph_folder + '1v{}_{}.pdf'.format(n, fname))
 
 
-distribution_visualization_1v1()
+distribution_visualization_1vN(1000)
