@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
-import DoomLevelsGAN.DoomGAN as nn
+#import DoomLevelsGAN.DoomGAN as nn
+import DoomLevelsGAN.network_architecture as arch
 from WAD_Parser.Dictionaries import Features as all_features
-from scipy.stats import wilcoxon, ttest_ind
+from scipy.stats import wilcoxon, ttest_ind, mannwhitneyu
 import os
 import json
 
@@ -15,8 +16,9 @@ def generate_results_and_save(samples_per_map):
     :param samples_per_map: How many samples to generate for each "true" map.
     :return:
     """
+    import DoomLevelsGAN.DoomGAN as nn
     if samples_per_map == 1:
-
+        
         names, true_features, oth_true_features, generated_features, oth_gen_features, noise = nn.gan.evaluate_samples_distribution(n=samples_per_map)
         np.save(nn.FLAGS.ref_sample_folder+'results_names.npy', names)
         np.save(nn.FLAGS.ref_sample_folder+'results_true.npy', true_features)
@@ -41,14 +43,15 @@ def generate_results_and_save(samples_per_map):
         np.save(path + 'generated.npy', generated)
 
 
-def load_results_from_files():
+def load_results_from_files(load_folder = "../artifacts/"):
+    import DoomLevelsGAN.DoomGAN as nn
     """Loads previously saved results from the artifacts folder"""
-    names = np.load(nn.FLAGS.ref_sample_folder + 'results_names.npy')
-    true_features = np.load(nn.FLAGS.ref_sample_folder + 'results_true.npy').astype(np.float32)
-    oth_true_features = np.load(nn.FLAGS.ref_sample_folder + 'results_true_oth.npy').astype(np.float32)
-    generated_features = np.load(nn.FLAGS.ref_sample_folder + 'results_gen.npy').astype(np.float32)
-    oth_gen_features = np.load(nn.FLAGS.ref_sample_folder + 'results_gen_oth.npy').astype(np.float32)
-    noise = np.load(nn.FLAGS.ref_sample_folder + 'results_noise.npy').astype(np.float32)
+    names = np.load(load_folder + 'results_names.npy')
+    true_features = np.load(load_folder + 'results_true.npy').astype(np.float32)
+    oth_true_features = np.load(load_folder + 'results_true_oth.npy').astype(np.float32)
+    generated_features = np.load(load_folder + 'results_gen.npy').astype(np.float32)
+    oth_gen_features = np.load(load_folder + 'results_gen_oth.npy').astype(np.float32)
+    noise = np.load(load_folder + 'results_noise.npy').astype(np.float32)
     return names, true_features, oth_true_features, generated_features, oth_gen_features, noise
 
 
@@ -78,9 +81,9 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
     :param colors:
     :return:
     """
-    numpy_result_folder = nn.FLAGS.ref_sample_folder + "numpy_results"
-    features_output_folder = nn.FLAGS.ref_sample_folder + "graphs/1v1/input_features/"
-    oth_features_output_folder = nn.FLAGS.ref_sample_folder + "graphs/1v1/other_features/"
+    numpy_result_folder = "../artifacts/" + "numpy_results"
+    features_output_folder = "../artifacts/" + "graphs/1v1/input_features/"
+    oth_features_output_folder = "../artifacts/" + "graphs/1v1/other_features/"
 
     os.makedirs(numpy_result_folder, exist_ok=True)
     os.makedirs(features_output_folder+"png/",exist_ok=True)
@@ -95,15 +98,15 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
     stat_test_input = list()
     stat_test_other = list()
 
-    oth_features = [f for f in all_features.features_for_evaluation if f not in nn.gan.features]
+    oth_features = [f for f in all_features.features_for_evaluation if f not in arch.features]
 
-    names, true, oth_true, gen, oth_gen, noise = load_results_from_files()
+    names, true, oth_true, gen, oth_gen, noise = load_results_from_files("../artifacts/")
     # fixing the first dimension
-    gen = np.squeeze(gen,-1) if len(nn.gan.features) > 0 else gen
+    gen = np.squeeze(gen,-1) if len(arch.features) > 0 else gen
     oth_gen = np.squeeze(oth_gen,-1)
 
     # Showing True features distribution vs Generated for the input features
-    for f, fname in enumerate(nn.features):
+    for f, fname in enumerate(arch.features):
         # Clearing rows containing NaNs, from now on the correspondence between indices/level name is lost
         tc, gc = clean_nans(true[:, f], gen[:, f])
 
@@ -117,10 +120,11 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         # Calculating wilcoxon and t-test p-values
         t_stat, t_pvalue = ttest_ind(tc, gc, nan_policy='omit')
         w_stat, w_pvalue = wilcoxon(tc, gc)
+        w_stat, u_pvalue = mannwhitneyu(tc, gc, alternative='two-sided')
         stat_test_input.append((fname, w_stat, w_pvalue, t_stat, t_pvalue))
 
         #print("{}\t{}\t{}".format(fname, w_pvalue, t_pvalue))
-        axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{}".format(fname, w_pvalue, t_pvalue))
+        axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{} \n U-Test:{}".format(fname, w_pvalue, t_pvalue, u_pvalue))
         fig_name = "1v1_{}".format(fname)
         axt.figure.canvas.set_window_title(fig_name)
         fig.tight_layout()
@@ -146,9 +150,13 @@ def distribution_visualization_1v1(colors={'True':'red', 'Gen':'dodgerblue'}):
         # Calculating wilcoxon and t-test p-values
         t_stat, t_pvalue = ttest_ind(otc, ogc, nan_policy='omit')
         w_stat, w_pvalue = wilcoxon(otc, ogc)
+        try:
+            w_stat, u_pvalue = mannwhitneyu(otc, ogc, alternative='two-sided')
+        except:
+            print("Error")
         stat_test_other.append((fname, w_stat, w_pvalue, t_stat, t_pvalue))
         #print("{}\t{}\t{}".format(fname, w_pvalue, t_pvalue))
-        axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{}".format(fname, w_pvalue, t_pvalue))
+        axt.set_xlabel("{}\nWilcoxon: {} \n T-Test:{} \n U-Test:{}".format(fname, w_pvalue, t_pvalue, u_pvalue))
         fig_name = "1v1_{}".format(fname)
         axt.figure.canvas.set_window_title(fig_name)
         fig.tight_layout()
@@ -163,6 +171,7 @@ def pick_samples_from_feature_percentiles():
     Composes a set of samples picking the 25,50 and 75th percentile from the distribution of each input feature.
     Result is saved into the artifacts folder
     """
+    import DoomLevelsGAN.DoomGAN as nn
     samples_output_folder = nn.FLAGS.ref_sample_folder + 'samples_percentiles/'
     os.makedirs(samples_output_folder, exist_ok=True)
 
@@ -222,6 +231,7 @@ def pick_samples_from_feature_percentiles():
 
 def load_level_subset():
     """ Loads the json file containing the list of level names for the 1vsN comparison"""
+    import DoomLevelsGAN.DoomGAN as nn
     samples_output_folder = nn.FLAGS.ref_sample_folder + 'samples_percentiles/'
     with open(samples_output_folder + 'samples_names.json', 'r') as jin:
         percent_dict = json.load(jin)
@@ -230,6 +240,7 @@ def load_level_subset():
 def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
     """ Plots a graph for each input feature, showing the generated sample distribution around the true feature for
     the samples that are positioned at the (25, 50, 75)th percentiles. """
+    import DoomLevelsGAN.DoomGAN as nn
     output_graph_folder = nn.FLAGS.ref_sample_folder + "graphs/1v{}/input_features/".format(n)
     os.makedirs(output_graph_folder, exist_ok=True)
     percent_dict = load_level_subset()
@@ -273,4 +284,4 @@ def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
         fig.savefig(output_graph_folder + '1v{}_{}.pdf'.format(n, fname))
 
 
-distribution_visualization_1vN(1000)
+distribution_visualization_1v1()
