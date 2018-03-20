@@ -167,5 +167,3 @@ def distribution_visualization_1v1(mode='pdf', colors={'True':'red', 'Gen':'dodg
         writer.writerow(stat_columns)
         for stat in stat_test_input:
             writer.writerow(stat)
-
-distribution_visualization_1v1(mode='pdf')
