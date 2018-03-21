@@ -72,10 +72,11 @@ def plot_all(cumulative=True):
             gc = clean_data['gen'][fname]
 
             # If it's the first network for this feature then plot the true distribution
-            if fold_id == 0:
-                axt = sb.kdeplot(tc, label="True", ls="--", cumulative=cumulative)
-                xlabel.append(fname)
             try:
+                if fold_id == 0:
+                    axt = sb.kdeplot(tc, label="True", ls="--", cumulative=cumulative)
+                    xlabel.append(fname)
+
                 sb.kdeplot(gc, label=names[fold_id], cumulative=cumulative)
 
                 # STATISTICAL TESTS
@@ -94,7 +95,8 @@ def plot_all(cumulative=True):
                 tests_results[fold_id].append((fname, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan))
                 continue
         # GRAPH ANNOTATIONS
-        axt.set_xlabel("\n".join(xlabel), fontsize=16)
+        if axt is not None:
+            axt.set_xlabel("\n".join(xlabel), fontsize=16)
         fig_name = "{}".format(fname)
         fig.canvas.set_window_title(fig_name)
         fig.tight_layout()
@@ -114,4 +116,4 @@ def plot_all(cumulative=True):
                 writer.writerow(stat)
 
 
-plot_all(cumulative=False)
+plot_all(cumulative=True)
