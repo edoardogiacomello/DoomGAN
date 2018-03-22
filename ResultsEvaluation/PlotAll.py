@@ -117,7 +117,7 @@ def plot_all(cumulative=True):
             for stat in tests_results[n_id]:
                 writer.writerow(stat)
 
-def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', name_format="test_uncorrected_pvalues_{}.csv", exclude_uninformative_features=True, rejected = 'R', not_rejected = 'NR'):
+def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', name_format="test_uncorrected_pvalues_{}.csv", exclude_uninformative_features=True, rejected = 'R', not_rejected = 'N'):
     """
         Generate text for showing the results associated to the plotted files.
     Loads the stat_test_result for every network and generate a table, highlighting the result if the pvalue is smaller than alpha
@@ -152,14 +152,20 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
     if exclude_uninformative_features:
         data_pv = data_pv.drop(labels=to_exclude, axis=0)
         data_s = data_s.drop(labels=to_exclude, axis=0)
-    # Calculating results, Where cond is True, keep the original value.
+
+    # Since multipletests relies on the array length for correcting the p-values we concatenate all the columns
 
 
-    perform_test = lambda x: multipletests(x, alpha=alpha, method=correction_method)[0]
-    correct_pvalues = lambda x:  multipletests(x, alpha=alpha, method=correction_method)[1]
+    all_pv = np.array([data_pv[col] for col in data_pv.columns]).flatten()
+    all_results, all_corr_pv, alpha_sidac, alpha_bonf = multipletests(all_pv, alpha=alpha, method=correction_method)
+    nd_all_results = np.split(all_results, len(data_pv.columns))
+    nd_all_corr_pv = np.split(all_corr_pv, len(data_pv.columns))
+    results = pd.DataFrame().reindex_like(data_pv)
+    corr_pv = pd.DataFrame().reindex_like(data_pv)
+    for c, col in enumerate(data_pv.columns):
+        results[col] = nd_all_results[c]
+        corr_pv[col] = nd_all_corr_pv[c]
 
-    results = data_pv.apply(perform_test)
-    corr_pv = data_pv.apply(correct_pvalues)
 
     # Feature clustering
     def label_features(x, uncond_column, cond_column):
@@ -233,13 +239,11 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
 
 
 
-    results_other_feats
-
     with open(output_files + 'tabular_results.tex', 'w') as out:
         caption_results_input_feats_short = "Test results for input features"
         caption_results_input_feats = "Kolmogorov-Smirnov test results for input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test".format(alpha, correction_method.capitalize())
         caption_results_other_feats_short = "Test results for non input features"
-        caption_results_other_feats = "Kolmogorov-Smirnov test results for input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test".format(alpha, correction_method.capitalize())
+        caption_results_other_feats = "Kolmogorov-Smirnov test results for non-input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test".format(alpha, correction_method.capitalize())
         caption_data_s_short = "KS statistic values"
         caption_data_s = "KS statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data"
         caption_corr_pv_short = "Corrected p-values"
