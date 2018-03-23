@@ -1,0 +1,9 @@
+% For printing with the A5 format
+\documentclass[10pt,twoside,openright,english,italian]{report}% twoside!
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\begin{document}
+
+
+\end{document}
