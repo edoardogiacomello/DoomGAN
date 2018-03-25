@@ -318,7 +318,7 @@ class DoomGAN(object):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def load_dataset(self, batch_size=None):
+    def load_dataset(self, batch_size=None, shuffle=True):
         """
         Loads both training and validation .TFRecords datasets from self.config.dataset_path pointing to a .meta file.
         :return: A tuple of dataset iterators (Training, Validation)
@@ -338,9 +338,9 @@ class DoomGAN(object):
         print(
             "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(train_remainder, train_set_size,
                                                                                            batch_size))
-        train_set = train_set.shuffle(buffer_size=train_set_size*100)
+        train_set = train_set.shuffle(buffer_size=train_set_size*100) if shuffle else train_set
         train_set = train_set.skip(train_remainder)
-        train_set = train_set.shuffle(buffer_size=(train_set_size-train_remainder)*100)
+        train_set = train_set.shuffle(buffer_size=(train_set_size-train_remainder)*100)  if shuffle else train_set
         train_set = train_set.batch(batch_size)
         train_iter = train_set.make_initializable_iterator()
 
@@ -351,9 +351,9 @@ class DoomGAN(object):
                 "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(validation_remainder,
                                                                                                validation_set_size,
                                                                                                batch_size))
-            validation_set = validation_set.shuffle(buffer_size=validation_set_size * 100)
+            validation_set = validation_set.shuffle(buffer_size=validation_set_size * 100) if shuffle else validation_set
             validation_set = validation_set.skip(validation_remainder)
-            validation_set = validation_set.shuffle(buffer_size=(validation_set_size - validation_remainder) * 100)
+            validation_set = validation_set.shuffle(buffer_size=(validation_set_size - validation_remainder) * 100) if shuffle else validation_set
             validation_set = validation_set.batch(batch_size)
             validation_iter = validation_set.make_initializable_iterator()
 
@@ -725,7 +725,7 @@ class DoomGAN(object):
                 return DataTransform.build_levels(result, self.maps, self.config.batch_size)
         return result
 
-    def evaluate_samples_distribution(self, input_subset=None, n=1, sample_from_dataset='train', postprocess=True):
+    def evaluate_samples_distribution(self, input_subset=None, z_override=None, n=1, sample_from_dataset='train', postprocess=True):
         """
         Generates n maps for each feature vector in the dataset and computes the feature vector.
         If input_subset is None, then the levels are taken from the dataset specified by sample_from_dataset, otherwise
@@ -745,6 +745,7 @@ class DoomGAN(object):
         so level_names[4] is the name of the level having features results_true[4] that are used to generate results_gen[4] using noise vector result_noise[4], etc.
         The same is valid for the last dimension N.
         :param n: how many samples (different noise vector z) to generate for each true level.
+        :param z_override: If not None, it should contain a noise vector of shape (levels, z_dim) that will be used instead of being sampled for each level.
         :param sample_from_dataset: 'train' or 'validation' set
         :param postprocess: [True] if true, rescales and denoise data to match the inputs (for example, clamps the values of the floormap to either 0 or 255)
         :return: if input_subset is None: level names, true features input, additional true features, generated features, additional generated features, noise vectors. Otherwise level names, generated features (all)
@@ -767,7 +768,7 @@ class DoomGAN(object):
 
         if input_subset is None:
             # Loop through the dataset
-            train_set_iter, valid_set_iter = self.load_dataset()
+            train_set_iter, valid_set_iter = self.load_dataset(shuffle=False)
             train_set_size, validation_set_size = DoomDataset().get_dataset_count(self.config.dataset_path)
 
             chosen_iter = train_set_iter if sample_from_dataset == 'train' else valid_set_iter
@@ -785,13 +786,16 @@ class DoomGAN(object):
                     y_batch_true_oth = np.stack([batch[f] for f in oth_features], axis=-1)
                     names_batch = np.array(batch['path_json'])
 
-
                     record = {'true_batch': y_batch_true, 'names_batch': names_batch, 'gen_batch': list(), 'z_batch': list(), 'true_names': list(), 'gen_batch_oth': list(), 'true_batch_oth': y_batch_true_oth}
                     for z_sampling in range(n):
                         print("Batch {} of {}, sample {} of {}".format(batch_counter+1, chosen_size//self.config.batch_size + 1, z_sampling+1, n))
                         # Generate a new batch of maps
-                        z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
-                            np.float32)
+                        if z_override is None:
+                            z_batch = np.random.uniform(-1, 1, [self.config.batch_size, self.config.z_dim]).astype(
+                                np.float32)
+                        else:
+                            z_batch = z_override[batch_counter*self.config.batch_size:(batch_counter+1)*self.config.batch_size, :]
+
                         x_batch_gen = self.sample(mode='direct', y_batch=y_batch_true, z_override=z_batch, postprocess=postprocess).astype(np.uint8)
                         y_batch_gen = list()  # Batches of generated features (inputs to the networks)
                         y_batch_gen_oth = list()  # Batches of generated features (other features, not in input)
