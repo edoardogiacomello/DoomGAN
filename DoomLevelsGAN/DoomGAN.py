@@ -188,6 +188,12 @@ class DoomGAN(object):
             return self.loss_d, self.loss_g
 
     def build(self):
+        # SETTING THE NETWORK SEED
+        if architecture.seed is not None:
+            print("Setting network seed: {}".format(architecture.seed))
+            tf.set_random_seed(architecture.seed)
+        else:
+            print("No seed defined for this network, using a random one")
         # x: True inputs coming from the dataset
         # z: Noise in input to the generator
         # y: Feature vector
@@ -365,7 +371,7 @@ class DoomGAN(object):
             tf.initialize_all_variables().run(session=self.session)
 
         # Trying to load a checkpoint
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
         could_load, checkpoint_counter = self.load(self.config.checkpoint_dir)
         if could_load:
             self.checkpoint_counter = checkpoint_counter
@@ -450,7 +456,7 @@ class DoomGAN(object):
         else:
             d_iters = 1
 
-        for i_epoch in range(1, config.epoch + 1):
+        while True:
             self.session.run([train_set_iter.initializer])
             next_train_batch = train_set_iter.get_next()
 
@@ -486,7 +492,7 @@ class DoomGAN(object):
                         # Check if the net should be saved
                         if np.mod(self.checkpoint_counter, self.config.save_net_every) == 0:
                             self.save(config.checkpoint_dir)
-
+                        if np.mod(self.checkpoint_counter, self.config.test_net_every) == 0:
                             # Calculating training loss
                             net_inputs = {self.x: x_batch,
                                           self.z: z_batch,
@@ -564,8 +570,7 @@ class DoomGAN(object):
                     except tf.errors.OutOfRangeError:
                         # We reached the end of the dataset, break the loop and start a new epoch
                         break
-            i_epoch += 1
-        print("Training complete after {} epochs corresponding to {} iterations".format(i_epoch, self.checkpoint_counter))
+
 
     def get_reference_sample(self, current_x, current_y, current_z):
         """
@@ -969,7 +974,8 @@ def define_flags():
     flags.DEFINE_integer("width", 128, "Target sample width")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
     flags.DEFINE_integer("batch_size", 32, "Batch size")
-    flags.DEFINE_integer("save_net_every", 100, "Number of training iterations after which the next is saved")
+    flags.DEFINE_integer("save_net_every", 2000, "Number of training iterations after which the next is saved")
+    flags.DEFINE_integer("test_net_every", 100, "Number of training iterations after which the next is saved")
     flags.DEFINE_integer("seed", None, "Seed for generating samples. If None random noise is applied to the generator input [None]")
     flags.DEFINE_boolean("train", False, "enable training if true")
     flags.DEFINE_boolean("generate", False, "If true, generate some levels with a fixed y value and seed and save them into ./generated_samples")
