@@ -313,7 +313,7 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {7.1}Results Evaluation}{73}{section.7.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}General Considerations}{73}{section.7.2}
+\contentsline {section}{\numberline {7.2}Conclusions}{73}{section.7.2}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{73}{section*.118}
 \defcounter {refsection}{0}\relax 
@@ -323,11 +323,11 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{73}{section*.120}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.3.1}Open Problems}{73}{subsection.7.3.1}
+\contentsline {subsection}{\numberline {7.3.1}Open Problems}{74}{subsection.7.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Data Availability}{73}{section*.121}
+\contentsline {subsubsection}{Data Availability}{74}{section*.121}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{73}{section*.122}
+\contentsline {paragraph}{}{74}{section*.122}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsubsection}{Samples Evaluation}{74}{section*.123}
 \defcounter {refsection}{0}\relax 
@@ -335,26 +335,42 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsubsection}{Loss of accuracy}{74}{section*.125}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Presence of Noise}{74}{section*.126}
+\contentsline {paragraph}{}{74}{section*.126}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{Improving Network Sampling}{74}{section*.127}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{74}{section*.128}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {7.3.2}Possible Applications and future develops}{74}{subsection.7.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Augmenting input data}{74}{section*.127}
+\contentsline {subsubsection}{Augmenting input data}{74}{section*.129}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Better map conversion}{74}{section*.128}
+\contentsline {paragraph}{}{74}{section*.130}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Sample interpolation}{74}{section*.129}
-\defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Tweaking the model}{74}{section*.130}
-\defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Different architectures}{74}{section*.131}
-\defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {8}Appendix}{75}{chapter.8}
-\defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {8.1}Training Progress}{75}{section.8.1}
-\defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {8.2}Results for non-input features}{75}{section.8.2}
+\contentsline {subsubsection}{Better samples to WAD conversion}{75}{section*.131}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{75}{section*.132}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{111}{section*.199}
+\contentsline {subsubsection}{Sample interpolation and Style Transfer}{75}{section*.133}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{75}{section*.134}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{Tweaking the model}{75}{section*.135}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{75}{section*.136}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{Different architectures}{75}{section*.137}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{75}{section*.138}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{Possible Applications}{75}{section*.139}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {8}Appendix}{77}{chapter.8}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {8.1}Training Progress}{77}{section.8.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {8.2}Results for non-input features}{77}{section.8.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{77}{section*.140}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Glossary}{113}{section*.207}

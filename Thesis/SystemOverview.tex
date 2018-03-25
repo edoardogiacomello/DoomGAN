@@ -175,6 +175,7 @@ The hyperparameters we used in our experiments are $\alpha=0.0002, \beta_1=0, \b
 
 
 \subsubsection{Artefacts Reduction}
+\label{sec:artefacts-reduction}
 \paragraph{} One of the problem that often affects GAN is the presence of artefacts or regular patterns in the generated samples. This problem can be less noticeable when the network is generating images of real objects such in the majority of used dataset, but it's an important issue in our setting in which a change in a pixel can have noticeable impact on the resulting level and its associated metrics. This problem is well explained in \cite{artifacts} and it's due to how the transposed convolution is applied in case the kernel size is not divisible by the stride. In this case the convolution leads to an un-even overlap of outputs in the high-resolution image, generating the artefacts. Among the proposed solutions to overcome this issue we chose to simply use a kernel size of 4 and a stride of 2, which showed to reduce the problem in our case without impacting on performances or layer architecture. 
 
 \subsection{Sample Evaluation metrics}
