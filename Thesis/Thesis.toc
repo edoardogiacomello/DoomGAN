@@ -305,72 +305,88 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {6.2}Experiment Results}{65}{section.6.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.3}Generated Samples}{65}{section.6.3}
+\contentsline {subsection}{\numberline {6.2.1}Tests results for experiments 1 and 2}{65}{subsection.6.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.4}Summary}{65}{section.6.4}
+\contentsline {subsection}{\numberline {6.2.2}}{66}{subsection.6.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {7}Results Evaluation and Conclusions}{73}{chapter.7}
+\contentsline {section}{\numberline {6.3}Generated Samples}{66}{section.6.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.1}Results Evaluation}{73}{section.7.1}
+\contentsline {section}{\numberline {6.4}Summary}{66}{section.6.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Conclusions}{73}{section.7.2}
+\contentsline {chapter}{\numberline {7}Results Evaluation and Conclusions}{67}{chapter.7}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{73}{section*.118}
+\contentsline {section}{\numberline {7.1}Results Evaluation}{67}{section.7.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{73}{section*.119}
+\contentsline {section}{\numberline {7.2}Conclusions}{67}{section.7.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.3}Future Work}{73}{section.7.3}
+\contentsline {paragraph}{}{67}{section*.111}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{73}{section*.120}
+\contentsline {paragraph}{}{67}{section*.112}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.3.1}Open Problems}{74}{subsection.7.3.1}
+\contentsline {section}{\numberline {7.3}Future Work}{67}{section.7.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Data Availability}{74}{section*.121}
+\contentsline {paragraph}{}{67}{section*.113}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{74}{section*.122}
+\contentsline {subsection}{\numberline {7.3.1}Open Problems}{68}{subsection.7.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Samples Evaluation}{74}{section*.123}
+\contentsline {subsubsection}{Data Availability}{68}{section*.114}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{74}{section*.124}
+\contentsline {paragraph}{}{68}{section*.115}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Loss of accuracy}{74}{section*.125}
+\contentsline {subsubsection}{Samples Evaluation}{68}{section*.116}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{74}{section*.126}
+\contentsline {paragraph}{}{68}{section*.117}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Improving Network Sampling}{74}{section*.127}
+\contentsline {subsubsection}{Loss of accuracy}{68}{section*.118}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{74}{section*.128}
+\contentsline {paragraph}{}{68}{section*.119}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.3.2}Possible Applications and future develops}{74}{subsection.7.3.2}
+\contentsline {subsubsection}{Improving Network Sampling}{68}{section*.120}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Augmenting input data}{74}{section*.129}
+\contentsline {paragraph}{}{68}{section*.121}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{74}{section*.130}
+\contentsline {subsection}{\numberline {7.3.2}Possible Applications and future develops}{68}{subsection.7.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Better samples to WAD conversion}{75}{section*.131}
+\contentsline {subsubsection}{Augmenting input data}{68}{section*.122}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{75}{section*.132}
+\contentsline {paragraph}{}{68}{section*.123}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Sample interpolation and Style Transfer}{75}{section*.133}
+\contentsline {subsubsection}{Better samples to WAD conversion}{69}{section*.124}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{75}{section*.134}
+\contentsline {paragraph}{}{69}{section*.125}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Tweaking the model}{75}{section*.135}
+\contentsline {subsubsection}{Sample interpolation and Style Transfer}{69}{section*.126}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{75}{section*.136}
+\contentsline {paragraph}{}{69}{section*.127}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Different architectures}{75}{section*.137}
+\contentsline {subsubsection}{Tweaking the model}{69}{section*.128}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{75}{section*.138}
+\contentsline {paragraph}{}{69}{section*.129}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Possible Applications}{75}{section*.139}
+\contentsline {subsubsection}{Different architectures}{69}{section*.130}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {8}Appendix}{77}{chapter.8}
+\contentsline {paragraph}{}{69}{section*.131}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {8.1}Training Progress}{77}{section.8.1}
+\contentsline {subsubsection}{Possible Applications}{69}{section*.132}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {8.2}Results for non-input features}{77}{section.8.2}
+\contentsline {chapter}{\numberline {8}Appendix}{71}{chapter.8}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{77}{section*.140}
+\contentsline {section}{\numberline {8.1}Training Progress}{71}{section.8.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{113}{section*.207}
+\contentsline {section}{\numberline {8.2}Test Results for every feature}{71}{section.8.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{Input features}{71}{section*.133}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{71}{section*.134}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{Non-Input features}{71}{section*.135}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{71}{section*.136}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {8.3}KS Statistic values and corrected p-values}{73}{section.8.3}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {8.4}Graphical results for non-input features}{76}{section.8.4}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{76}{section*.137}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Glossary}{81}{section*.138}

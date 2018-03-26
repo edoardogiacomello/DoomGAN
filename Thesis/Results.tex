@@ -4,158 +4,82 @@
 %TODO: Add training results?
 
 \section{Experiment Results}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_nodes.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_nodes.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_nodes.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_nodes.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_nodes.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature nodes]{ Results of the experiments 1, 2 and 3 for the feature nodes. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_nodes}
-\end{figure}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_solidity.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_solidity.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_solidity.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_level_solidity.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_level_solidity.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature level\textunderscore solidity]{ Results of the experiments 1, 2 and 3 for the feature level\textunderscore solidity. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_level_solidity}
-\end{figure}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_equivalent_diameter.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_equivalent_diameter.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_equivalent_diameter.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_level_equivalent_diameter.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_level_equivalent_diameter.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature level\textunderscore equivalent\textunderscore diameter]{ Results of the experiments 1, 2 and 3 for the feature level\textunderscore equivalent\textunderscore diameter. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_level_equivalent_diameter}
-\end{figure}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-skew.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-skew.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-skew.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_distmap-skew.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_distmap-skew.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature distmap-skew]{ Results of the experiments 1, 2 and 3 for the feature distmap-skew. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_distmap-skew}
-\end{figure}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-kurt.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-kurt.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-kurt.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_distmap-kurt.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_distmap-kurt.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature distmap-kurt]{ Results of the experiments 1, 2 and 3 for the feature distmap-kurt. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_distmap-kurt}
-\end{figure}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_minor_axis_length.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_minor_axis_length.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_minor_axis_length.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_level_minor_axis_length.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_level_minor_axis_length.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature level\textunderscore minor\textunderscore axis\textunderscore length]{ Results of the experiments 1, 2 and 3 for the feature level\textunderscore minor\textunderscore axis\textunderscore length. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_level_minor_axis_length}
-\end{figure}
-\begin{figure}[h!]
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_major_axis_length.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_major_axis_length.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_major_axis_length.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-12k/1v1000_level_major_axis_length.pdf}
-	\end{minipage}
-	\begin{minipage}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{results/exp3-26k/1v1000_level_major_axis_length.pdf}
-	\end{minipage}
-	\caption[ Results: Input feature level\textunderscore major\textunderscore axis\textunderscore length]{ Results of the experiments 1, 2 and 3 for the feature level\textunderscore major\textunderscore axis\textunderscore length. \\* Experiment 1 (first row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a network with no input features. \\* Experiment 2 (second row): True distribution (red, dashed) vs Generated distribution (blue, solid) in the case of a conditional network trained for 12000 (left) and 26000 (right) iterations. \\* Experiment 3 (third row): Input feature values for the 25th (red), 50th (green), 75th (blue) percentile vs. the corresponding generated distribution}
-	\label{fig:results_level_major_axis_length}
-\end{figure}
+\paragraph{} In this section we report the list of features divided according to the feature groups described in section~\ref{sec:experiment-2} for an easier 
+\subsection{Tests results for experiments 1 and 2}
+\paragraph{} Results of experiment 1 are all the features belonging to groups F3 (Table~\ref{tab:results-f3-features}) and F4 \ref{tab:results-f4-features}), since in both cases the feature is well represented in the generated output for the unconditioned network, while results for the experiment 2 correspond to groups F2 (Table~\ref{tab:results-f2-features}) and F3 (Table~\ref{tab:results-f3-features}).
 
 
+\begin{longtable}{ll}
+	\caption[Features belonging to the F1 group]{ \small Features that belong to group F1. Group F1 contains the features for which the null hypotesis is rejected for both the unconditioned and conditioned network.}\\
+	\toprule
+	{} & uncond-vs-cond \\
+	feature                       &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_eccentricity            &             F1 \\
+	level\_euler\_number            &             F1 \\
+	level\_extent                  &             F1 \\
+	level\_major\_axis\_length       &             F1 \\
+	level\_solidity                &             F1 \\
+	level\_hu\_moment\_1             &             F1 \\
+	level\_hu\_moment\_2             &             F1 \\
+	level\_centroid\_x              &             F1 \\
+	level\_centroid\_y              &             F1 \\
+	number\_of\_artifacts           &             F1 \\
+	number\_of\_weapons             &             F1 \\
+	number\_of\_ammunitions         &             F1 \\
+	number\_of\_keys                &             F1 \\
+	number\_of\_monsters            &             F1 \\
+	number\_of\_obstacles           &             F1 \\
+	number\_of\_decorations         &             F1 \\
+	start\_location\_x\_px           &             F1 \\
+	start\_location\_y\_px           &             F1 \\
+	artifacts\_per\_walkable\_area   &             F1 \\
+	weapons\_per\_walkable\_area     &             F1 \\
+	ammunitions\_per\_walkable\_area &             F1 \\
+	keys\_per\_walkable\_area        &             F1 \\
+	monsters\_per\_walkable\_area    &             F1 \\
+	obstacles\_per\_walkable\_area   &             F1 \\
+	decorations\_per\_walkable\_area &             F1 \\
+	nodes                         &             F1 \\
+	avg-path-length               &             F1 \\
+	diameter-mean                 &             F1 \\
+	art-points                    &             F1 \\
+	assortativity-mean            &             F1 \\
+	betw-cen-max                  &             F1 \\
+	betw-cen-mean                 &             F1 \\
+	betw-cen-var                  &             F1 \\
+	betw-cen-skew                 &             F1 \\
+	betw-cen-kurt                 &             F1 \\
+	betw-cen-Q1                   &             F1 \\
+	betw-cen-Q2                   &             F1 \\
+	betw-cen-Q3                   &             F1 \\
+	closn-cen-min                 &             F1 \\
+	closn-cen-max                 &             F1 \\
+	closn-cen-mean                &             F1 \\
+	closn-cen-var                 &             F1 \\
+	closn-cen-skew                &             F1 \\
+	closn-cen-kurt                &             F1 \\
+	closn-cen-Q1                  &             F1 \\
+	closn-cen-Q2                  &             F1 \\
+	closn-cen-Q3                  &             F1 \\
+	distmap-max                   &             F1 \\
+	distmap-mean                  &             F1 \\
+	distmap-var                   &             F1 \\
+	distmap-skew                  &             F1 \\
+	distmap-Q1                    &             F1 \\
+	distmap-Q2                    &             F1 \\
+	distmap-Q3                    &             F1 \\
+	\label{tab:results-f1-features}
+\end{longtable}
 
-
-
-
+\subsection{}
 \section{Generated Samples}
 \section{Summary}

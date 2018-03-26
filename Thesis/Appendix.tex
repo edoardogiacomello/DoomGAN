@@ -2,1259 +2,302 @@
 \section{Training Progress}
 
 
-\section{Results for non-input features}
+\section{Test Results for every feature}
+\subsubsection{Input features}
+\paragraph{} Tests results for the level generation in the unconditional and conditional case, for the features that have been selected as input for the conditional network are shown in table~\ref{tab:results-input-features}.
+\begin{longtable}{lll}
+	\caption[Test results for input features]{ \small KS-test results for input features, using a significance level of 0.05 and the Bonferroni correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An asterisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network}\\
+	\toprule
+	{} & uncond & cond \\
+	feature                   &        &      \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_equivalent\_diameter &      N &    N \\
+	level\_major\_axis\_length   &     R* &    R \\
+	level\_minor\_axis\_length   &      N &    N \\
+	level\_solidity            &      R &   R* \\
+	nodes                     &      R &   R* \\
+	distmap-skew              &      R &   R* \\
+	distmap-kurt              &      R &    N \\
+	\label{tab:results-input-features}
+\end{longtable}
+
+\subsubsection{Non-Input features}
+\paragraph{} Tests results for the level generation in the unconditional and conditional case, for all the features that haven't been selected as input for the conditional network are shown in table~\ref{tab:results-other-features}.
+
+\begin{longtable}{lll}
+	\caption[Test results for non input features]{ \small KS-test results for non-input features, using a significance level of 0.05 and the Bonferroni correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An asterisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network}\\
+	\toprule
+	{} & uncond & cond \\
+	feature                       &        &      \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                    &      N &    N \\
+	level\_convex\_area             &      N &    N \\
+	level\_eccentricity            &     R* &    R \\
+	level\_euler\_number            &      R &   R* \\
+	level\_extent                  &      R &   R* \\
+	level\_filled\_area             &      N &    N \\
+	level\_orientation             &      N &    N \\
+	level\_perimeter               &      N &    N \\
+	level\_hu\_moment\_0             &      N &    R \\
+	level\_hu\_moment\_1             &     R* &    R \\
+	level\_hu\_moment\_2             &      R &   R* \\
+	level\_hu\_moment\_3             &      R &    N \\
+	level\_hu\_moment\_4             &      N &    R \\
+	level\_hu\_moment\_5             &      N &    R \\
+	level\_hu\_moment\_6             &      R &    N \\
+	level\_centroid\_x              &     R* &    R \\
+	level\_centroid\_y              &     R* &    R \\
+	number\_of\_artifacts           &      R &   R* \\
+	number\_of\_powerups            &      R &    N \\
+	number\_of\_weapons             &      R &   R* \\
+	number\_of\_ammunitions         &     R* &    R \\
+	number\_of\_keys                &      R &   R* \\
+	number\_of\_monsters            &     R* &    R \\
+	number\_of\_obstacles           &      R &   R* \\
+	number\_of\_decorations         &      R &   R* \\
+	walkable\_area                 &      N &    N \\
+	walkable\_percentage           &      N &    N \\
+	start\_location\_x\_px           &      R &   R* \\
+	start\_location\_y\_px           &      R &   R* \\
+	artifacts\_per\_walkable\_area   &      R &   R* \\
+	powerups\_per\_walkable\_area    &      R &    N \\
+	weapons\_per\_walkable\_area     &      R &   R* \\
+	ammunitions\_per\_walkable\_area &     R* &    R \\
+	keys\_per\_walkable\_area        &      R &   R* \\
+	monsters\_per\_walkable\_area    &      R &   R* \\
+	obstacles\_per\_walkable\_area   &      R &   R* \\
+	decorations\_per\_walkable\_area &      R &   R* \\
+	avg-path-length               &      R &   R* \\
+	diameter-mean                 &      R &   R* \\
+	art-points                    &     R* &    R \\
+	assortativity-mean            &     R* &    R \\
+	betw-cen-min                  &      N &    N \\
+	betw-cen-max                  &      R &   R* \\
+	betw-cen-mean                 &     R* &    R \\
+	betw-cen-var                  &     R* &    R \\
+	betw-cen-skew                 &      R &   R* \\
+	betw-cen-kurt                 &      R &   R* \\
+	betw-cen-Q1                   &     R* &    R \\
+	betw-cen-Q2                   &     R* &    R \\
+	betw-cen-Q3                   &     R* &    R \\
+	closn-cen-min                 &     R* &    R \\
+	closn-cen-max                 &      R &   R* \\
+	closn-cen-mean                &     R* &    R \\
+	closn-cen-var                 &      R &   R* \\
+	closn-cen-skew                &     R* &    R \\
+	closn-cen-kurt                &     R* &    R \\
+	closn-cen-Q1                  &     R* &    R \\
+	closn-cen-Q2                  &      R &   R* \\
+	closn-cen-Q3                  &      R &   R* \\
+	distmap-max                   &     R* &    R \\
+	distmap-mean                  &     R* &    R \\
+	distmap-var                   &     R* &    R \\
+	distmap-Q1                    &     R* &    R \\
+	distmap-Q2                    &      R &   R* \\
+	distmap-Q3                    &      R &   R* \\
+	\label{tab:results-other-features}
+\end{longtable}
+
+\section{KS Statistic values and corrected p-values}
+
+\begin{longtable}{lrr}
+	\caption[KS statistic values]{ \small KS statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data}\\
+	\toprule
+	{} &  uncond-s &    cond-s \\
+	feature                       &           &           \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                    &  0.031279 &  0.043398 \\
+	level\_convex\_area             &  0.047838 &  0.052632 \\
+	level\_eccentricity            &  0.144434 &  0.223453 \\
+	level\_equivalent\_diameter     &  0.031279 &  0.043398 \\
+	level\_euler\_number            &  0.226311 &  0.180055 \\
+	level\_extent                  &  0.127875 &  0.104340 \\
+	level\_filled\_area             &  0.035879 &  0.042475 \\
+	level\_major\_axis\_length       &  0.106716 &  0.116343 \\
+	level\_minor\_axis\_length       &  0.076357 &  0.078486 \\
+	level\_orientation             &  0.058878 &  0.068329 \\
+	level\_perimeter               &  0.080957 &  0.060942 \\
+	level\_solidity                &  0.121435 &  0.113573 \\
+	level\_hu\_moment\_0             &  0.077277 &  0.098800 \\
+	level\_hu\_moment\_1             &  0.125115 &  0.190212 \\
+	level\_hu\_moment\_2             &  0.121435 &  0.104340 \\
+	level\_hu\_moment\_3             &  0.106716 &  0.076639 \\
+	level\_hu\_moment\_4             &  0.070837 &  0.121884 \\
+	level\_hu\_moment\_5             &  0.079117 &  0.094183 \\
+	level\_hu\_moment\_6             &  0.091076 &  0.059095 \\
+	level\_centroid\_x              &  0.726771 &  0.777470 \\
+	level\_centroid\_y              &  0.812328 &  0.815328 \\
+	number\_of\_artifacts           &  0.467341 &  0.369344 \\
+	number\_of\_powerups            &  0.128795 &  0.083102 \\
+	number\_of\_weapons             &  0.383625 &  0.241921 \\
+	number\_of\_ammunitions         &  0.359706 &  0.422899 \\
+	number\_of\_keys                &  0.963201 &  0.943675 \\
+	number\_of\_monsters            &  0.514259 &  0.574331 \\
+	number\_of\_obstacles           &  0.519779 &  0.438596 \\
+	number\_of\_decorations         &  0.823367 &  0.784857 \\
+	walkable\_area                 &  0.034959 &  0.046168 \\
+	walkable\_percentage           &  0.051518 &  0.081256 \\
+	start\_location\_x\_px           &  0.232751 &  0.166205 \\
+	start\_location\_y\_px           &  0.529899 &  0.382271 \\
+	artifacts\_per\_walkable\_area   &  0.553818 &  0.390582 \\
+	powerups\_per\_walkable\_area    &  0.181233 &  0.088643 \\
+	weapons\_per\_walkable\_area     &  0.397424 &  0.242844 \\
+	ammunitions\_per\_walkable\_area &  0.399264 &  0.444137 \\
+	keys\_per\_walkable\_area        &  0.959522 &  0.938135 \\
+	monsters\_per\_walkable\_area    &  0.597056 &  0.591874 \\
+	obstacles\_per\_walkable\_area   &  0.665133 &  0.518006 \\
+	decorations\_per\_walkable\_area &  0.897884 &  0.845799 \\
+	nodes                         &  0.180313 &  0.159741 \\
+	avg-path-length               &  0.174793 &  0.156048 \\
+	diameter-mean                 &  0.155474 &  0.141274 \\
+	art-points                    &  0.115915 &  0.139428 \\
+	assortativity-mean            &  0.427032 &  0.456802 \\
+	betw-cen-min                  &  0.006440 &  0.006464 \\
+	betw-cen-max                  &  0.376265 &  0.347184 \\
+	betw-cen-mean                 &  0.371665 &  0.384118 \\
+	betw-cen-var                  &  0.362069 &  0.375894 \\
+	betw-cen-skew                 &  0.250230 &  0.238227 \\
+	betw-cen-kurt                 &  0.215271 &  0.207756 \\
+	betw-cen-Q1                   &  0.218951 &  0.258541 \\
+	betw-cen-Q2                   &  0.279669 &  0.287165 \\
+	betw-cen-Q3                   &  0.301748 &  0.318560 \\
+	closn-cen-min                 &  0.624655 &  0.655586 \\
+	closn-cen-max                 &  0.173873 &  0.133887 \\
+	closn-cen-mean                &  0.207912 &  0.213296 \\
+	closn-cen-var                 &  0.314402 &  0.278856 \\
+	closn-cen-skew                &  0.632935 &  0.644506 \\
+	closn-cen-kurt                &  0.378105 &  0.406279 \\
+	closn-cen-Q1                  &  0.201472 &  0.208680 \\
+	closn-cen-Q2                  &  0.176633 &  0.169898 \\
+	closn-cen-Q3                  &  0.171113 &  0.163435 \\
+	distmap-max                   &  0.214351 &  0.238227 \\
+	distmap-mean                  &  0.159154 &  0.202216 \\
+	distmap-var                   &  0.192272 &  0.214220 \\
+	distmap-skew                  &  0.152714 &  0.107110 \\
+	distmap-kurt                  &  0.137994 &  0.084026 \\
+	distmap-Q1                    &  0.201472 &  0.208680 \\
+	distmap-Q2                    &  0.176633 &  0.169898 \\
+	distmap-Q3                    &  0.171113 &  0.163435 \\
+	\label{tab:results-stats}
+\end{longtable}
+
+
+
+\begin{longtable}{lrr}
+	\caption[Corrected p-values]{ \small Corrected p-values using Bonferroni method}\\
+	\toprule
+	{} &         uncond &           cond \\
+	feature                       &                &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                    &   1.000000e+00 &   1.000000e+00 \\
+	level\_convex\_area             &   1.000000e+00 &   1.000000e+00 \\
+	level\_eccentricity            &   3.203350e-08 &   5.274459e-22 \\
+	level\_equivalent\_diameter     &   1.000000e+00 &   1.000000e+00 \\
+	level\_euler\_number            &   1.051357e-22 &   1.114460e-13 \\
+	level\_extent                  &   4.541127e-06 &   1.922426e-03 \\
+	level\_filled\_area             &   1.000000e+00 &   1.000000e+00 \\
+	level\_major\_axis\_length       &   1.060657e-03 &   1.058078e-04 \\
+	level\_minor\_axis\_length       &   4.758482e-01 &   3.395852e-01 \\
+	level\_orientation             &   1.000000e+00 &   1.000000e+00 \\
+	level\_perimeter               &   2.148826e-01 &   1.000000e+00 \\
+	level\_solidity                &   2.649796e-05 &   2.124674e-04 \\
+	level\_hu\_moment\_0             &   4.074087e-01 &   6.589815e-03 \\
+	level\_hu\_moment\_1             &   9.779487e-06 &   1.816326e-15 \\
+	level\_hu\_moment\_2             &   2.649796e-05 &   1.922426e-03 \\
+	level\_hu\_moment\_3             &   1.060657e-03 &   4.646614e-01 \\
+	level\_hu\_moment\_4             &   1.000000e+00 &   2.495058e-05 \\
+	level\_hu\_moment\_5             &   2.969827e-01 &   1.747566e-02 \\
+	level\_hu\_moment\_6             &   3.173520e-02 &   1.000000e+00 \\
+	level\_centroid\_x              &  2.720185e-250 &  1.263132e-285 \\
+	level\_centroid\_y              &  4.022221e-313 &  2.723494e-314 \\
+	number\_of\_artifacts           &  1.768827e-102 &   4.055502e-63 \\
+	number\_of\_powerups            &   3.503463e-06 &   1.500697e-01 \\
+	number\_of\_weapons             &   1.735132e-68 &   4.330549e-26 \\
+	number\_of\_ammunitions         &   5.282114e-60 &   2.739392e-83 \\
+	number\_of\_keys                &   0.000000e+00 &   0.000000e+00 \\
+	number\_of\_monsters            &  1.874772e-124 &  4.438253e-155 \\
+	number\_of\_obstacles           &  3.544692e-127 &   1.020608e-89 \\
+	number\_of\_decorations         &  1.422909e-321 &  4.121210e-291 \\
+	walkable\_area                 &   1.000000e+00 &   1.000000e+00 \\
+	walkable\_percentage           &   1.000000e+00 &   2.092123e-01 \\
+	start\_location\_x\_px           &   4.085103e-24 &   2.123218e-11 \\
+	start\_location\_y\_px           &  3.028440e-132 &   9.750062e-68 \\
+	artifacts\_per\_walkable\_area   &  1.297132e-144 &   8.624320e-71 \\
+	powerups\_per\_walkable\_area    &   6.130510e-14 &   5.296084e-02 \\
+	weapons\_per\_walkable\_area     &   1.249309e-73 &   2.653075e-26 \\
+	ammunitions\_per\_walkable\_area &   2.496041e-74 &   4.829900e-92 \\
+	keys\_per\_walkable\_area        &   0.000000e+00 &   0.000000e+00 \\
+	monsters\_per\_walkable\_area    &  2.341589e-168 &  8.331551e-165 \\
+	obstacles\_per\_walkable\_area   &  2.346143e-209 &  7.877455e-126 \\
+	decorations\_per\_walkable\_area &   0.000000e+00 &   0.000000e+00 \\
+	nodes                         &   8.834832e-14 &   2.130799e-10 \\
+	avg-path-length               &   7.611113e-13 &   7.638737e-10 \\
+	diameter-mean                 &   8.430551e-10 &   9.359119e-08 \\
+	art-points                    &   1.117706e-04 &   1.650707e-07 \\
+	assortativity-mean            &   5.053350e-80 &   1.523040e-90 \\
+	betw-cen-min                  &   1.000000e+00 &   1.000000e+00 \\
+	betw-cen-max                  &   8.086915e-66 &   1.434635e-55 \\
+	betw-cen-mean                 &   3.542549e-64 &   2.070974e-68 \\
+	betw-cen-var                  &   4.891902e-55 &   5.050308e-59 \\
+	betw-cen-skew                 &   3.829013e-28 &   3.017244e-25 \\
+	betw-cen-kurt                 &   2.227206e-20 &   8.710051e-19 \\
+	betw-cen-Q1                   &   3.848983e-21 &   4.810963e-30 \\
+	betw-cen-Q2                   &   1.379923e-35 &   1.804461e-37 \\
+	betw-cen-Q3                   &   1.034416e-41 &   1.644635e-46 \\
+	closn-cen-min                 &  1.911063e-184 &  1.371244e-202 \\
+	closn-cen-max                 &   1.082671e-12 &   8.660043e-07 \\
+	closn-cen-mean                &   6.820595e-19 &   6.777393e-20 \\
+	closn-cen-var                 &   4.501303e-41 &   1.054396e-31 \\
+	closn-cen-skew                &  2.056190e-189 &  9.669788e-196 \\
+	closn-cen-kurt                &   1.760014e-66 &   9.755770e-77 \\
+	closn-cen-Q1                  &   1.235166e-17 &   5.717695e-19 \\
+	closn-cen-Q2                  &   3.740492e-13 &   5.455660e-12 \\
+	closn-cen-Q3                  &   3.081734e-12 &   5.768903e-11 \\
+	distmap-max                   &   3.438308e-20 &   3.017244e-25 \\
+	distmap-mean                  &   2.362809e-10 &   1.046636e-17 \\
+	distmap-var                   &   6.608149e-16 &   4.399457e-20 \\
+	distmap-skew                  &   2.146329e-09 &   1.012498e-03 \\
+	distmap-kurt                  &   2.362741e-07 &   1.267447e-01 \\
+	distmap-Q1                    &   1.235166e-17 &   5.717695e-19 \\
+	distmap-Q2                    &   3.740492e-13 &   5.455660e-12 \\
+	distmap-Q3                    &   3.081734e-12 &   5.768903e-11 \\
+	\label{tab:results-pvalues}
+\end{longtable}
+
+
+\section{Graphical results for non-input features}
 \paragraph{} We omit results for features that are not informative in our specific context such as features calculated on floor basis, since the dataset we used only consisted on one-floor levels and they would match the corresponding level based features.
 
 
-
-% Results for level_hu_moment_2 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_2.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_2.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_2.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 2]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 2. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_2}
-\end{figure}
-
-% Results for distmap-Q2 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-Q2.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-Q2.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-Q2.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature distmap-Q2]{ Results of the experiments 1 (first row) and 2 (second row) for the feature distmap-Q2. Refer to the results section for further descriptions. }
-	\label{fig:appendix_distmap-Q2}
-\end{figure}
-\newpage 
-
-
-% Results for level_hu_moment_0 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_0.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_0.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_0.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 0]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 0. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_0}
-\end{figure}
-
-% Results for betw-cen-max 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-max.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-max.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-max.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-max]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-max. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-max}
-\end{figure}
-\newpage 
-
-
-% Results for level_hu_moment_3 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_3.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_3.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_3.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 3]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 3. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_3}
-\end{figure}
-
-% Results for walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_walkable_area}
-\end{figure}
-\newpage 
-
-
-% Results for level_extent 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_extent.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_extent.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_extent.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore extent]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore extent. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_extent}
-\end{figure}
-
-% Results for distmap-max 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-max.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-max.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-max.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature distmap-max]{ Results of the experiments 1 (first row) and 2 (second row) for the feature distmap-max. Refer to the results section for further descriptions. }
-	\label{fig:appendix_distmap-max}
-\end{figure}
-\newpage 
-
-
-% Results for betw-cen-mean 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-mean.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-mean.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-mean.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-mean]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-mean. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-mean}
-\end{figure}
-
-% Results for number_of_weapons 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_weapons.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_weapons.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_weapons.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore weapons]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore weapons. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_weapons}
-\end{figure}
-\newpage 
-
-
-% Results for number_of_monsters 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_monsters.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_monsters.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_monsters.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore monsters]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore monsters. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_monsters}
-\end{figure}
-
-% Results for distmap-Q3 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-Q3.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-Q3.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-Q3.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature distmap-Q3]{ Results of the experiments 1 (first row) and 2 (second row) for the feature distmap-Q3. Refer to the results section for further descriptions. }
-	\label{fig:appendix_distmap-Q3}
-\end{figure}
-\newpage 
-
-
-% Results for betw-cen-Q1 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-Q1.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-Q1.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-Q1.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-Q1]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-Q1. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-Q1}
-\end{figure}
-
-% Results for keys_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_keys_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_keys_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_keys_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature keys\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature keys\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_keys_per_walkable_area}
-\end{figure}
-\newpage 
-
-
-% Results for obstacles_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_obstacles_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_obstacles_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_obstacles_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature obstacles\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature obstacles\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_obstacles_per_walkable_area}
-\end{figure}
-
-% Results for distmap-mean 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-mean.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-mean.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-mean.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature distmap-mean]{ Results of the experiments 1 (first row) and 2 (second row) for the feature distmap-mean. Refer to the results section for further descriptions. }
-	\label{fig:appendix_distmap-mean}
-\end{figure}
-\newpage 
-
-
-% Results for number_of_obstacles 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_obstacles.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_obstacles.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_obstacles.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore obstacles]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore obstacles. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_obstacles}
-\end{figure}
-
-% Results for level_eccentricity 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_eccentricity.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_eccentricity.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_eccentricity.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore eccentricity]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore eccentricity. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_eccentricity}
-\end{figure}
-\newpage 
-
-
-% Results for art-points 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_art-points.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_art-points.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_art-points.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature art-points]{ Results of the experiments 1 (first row) and 2 (second row) for the feature art-points. Refer to the results section for further descriptions. }
-	\label{fig:appendix_art-points}
-\end{figure}
-
-% Results for betw-cen-Q2 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-Q2.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-Q2.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-Q2.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-Q2]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-Q2. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-Q2}
-\end{figure}
-\newpage 
-
-
-% Results for level_bbox_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_bbox_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_bbox_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_bbox_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore bbox\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore bbox\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_bbox_area}
-\end{figure}
-
-% Results for closn-cen-Q1 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-Q1.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-Q1.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-Q1.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-Q1]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-Q1. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-Q1}
-\end{figure}
-\newpage 
-
-
-% Results for number_of_decorations 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_decorations.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_decorations.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_decorations.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore decorations]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore decorations. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_decorations}
-\end{figure}
-
-% Results for level_centroid_x 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_centroid_x.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_centroid_x.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_centroid_x.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore centroid\textunderscore x]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore centroid\textunderscore x. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_centroid_x}
-\end{figure}
-\newpage 
-
-
-% Results for avg-path-length 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_avg-path-length.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_avg-path-length.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_avg-path-length.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature avg-path-length]{ Results of the experiments 1 (first row) and 2 (second row) for the feature avg-path-length. Refer to the results section for further descriptions. }
-	\label{fig:appendix_avg-path-length}
-\end{figure}
-
-% Results for level_perimeter 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_perimeter.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_perimeter.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_perimeter.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore perimeter]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore perimeter. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_perimeter}
-\end{figure}
-\newpage 
-
-
-% Results for level_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_area}
-\end{figure}
-
-% Results for diameter-mean 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_diameter-mean.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_diameter-mean.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_diameter-mean.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature diameter-mean]{ Results of the experiments 1 (first row) and 2 (second row) for the feature diameter-mean. Refer to the results section for further descriptions. }
-	\label{fig:appendix_diameter-mean}
-\end{figure}
-\newpage 
-
-
-% Results for artifacts_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_artifacts_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_artifacts_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_artifacts_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature artifacts\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature artifacts\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_artifacts_per_walkable_area}
-\end{figure}
-
-% Results for betw-cen-skew 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-skew.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-skew.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-skew.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-skew]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-skew. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-skew}
-\end{figure}
-\newpage 
-
-
-% Results for closn-cen-skew 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-skew.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-skew.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-skew.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-skew]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-skew. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-skew}
-\end{figure}
-
-% Results for closn-cen-Q3 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-Q3.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-Q3.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-Q3.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-Q3]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-Q3. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-Q3}
-\end{figure}
-\newpage 
-
-
-% Results for number_of_ammunitions 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_ammunitions.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_ammunitions.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_ammunitions.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore ammunitions]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore ammunitions. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_ammunitions}
-\end{figure}
-
-% Results for assortativity-mean 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_assortativity-mean.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_assortativity-mean.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_assortativity-mean.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature assortativity-mean]{ Results of the experiments 1 (first row) and 2 (second row) for the feature assortativity-mean. Refer to the results section for further descriptions. }
-	\label{fig:appendix_assortativity-mean}
-\end{figure}
-\newpage 
-
-
-% Results for closn-cen-var 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-var.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-var.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-var.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-var]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-var. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-var}
-\end{figure}
-
-% Results for level_hu_moment_5 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_5.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_5.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_5.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 5]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 5. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_5}
-\end{figure}
-\newpage 
-
-
-% Results for level_filled_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_filled_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_filled_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_filled_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore filled\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore filled\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_filled_area}
-\end{figure}
-
-% Results for closn-cen-Q2 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-Q2.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-Q2.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-Q2.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-Q2]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-Q2. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-Q2}
-\end{figure}
-\newpage 
-
-
-% Results for level_convex_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_convex_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_convex_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_convex_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore convex\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore convex\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_convex_area}
-\end{figure}
-
-% Results for level_centroid_y 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_centroid_y.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_centroid_y.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_centroid_y.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore centroid\textunderscore y]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore centroid\textunderscore y. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_centroid_y}
-\end{figure}
-\newpage 
-
-
-% Results for level_hu_moment_1 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_1.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_1.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_1.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 1]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 1. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_1}
-\end{figure}
-
-% Results for start_location_x_px 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_start_location_x_px.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_start_location_x_px.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_start_location_x_px.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature start\textunderscore location\textunderscore x\textunderscore px]{ Results of the experiments 1 (first row) and 2 (second row) for the feature start\textunderscore location\textunderscore x\textunderscore px. Refer to the results section for further descriptions. }
-	\label{fig:appendix_start_location_x_px}
-\end{figure}
-\newpage 
-
-
-% Results for monsters_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_monsters_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_monsters_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_monsters_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature monsters\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature monsters\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_monsters_per_walkable_area}
-\end{figure}
-
-% Results for closn-cen-max 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-max.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-max.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-max.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-max]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-max. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-max}
-\end{figure}
-\newpage 
-
-
-% Results for start_location_y_px 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_start_location_y_px.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_start_location_y_px.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_start_location_y_px.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature start\textunderscore location\textunderscore y\textunderscore px]{ Results of the experiments 1 (first row) and 2 (second row) for the feature start\textunderscore location\textunderscore y\textunderscore px. Refer to the results section for further descriptions. }
-	\label{fig:appendix_start_location_y_px}
-\end{figure}
-
-% Results for level_hu_moment_4 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_4.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_4.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_4.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 4]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 4. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_4}
-\end{figure}
-\newpage 
-
-
-% Results for decorations_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_decorations_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_decorations_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_decorations_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature decorations\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature decorations\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_decorations_per_walkable_area}
-\end{figure}
-
-% Results for weapons_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_weapons_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_weapons_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_weapons_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature weapons\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature weapons\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_weapons_per_walkable_area}
-\end{figure}
-\newpage 
-
-
-% Results for ammunitions_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_ammunitions_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_ammunitions_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_ammunitions_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature ammunitions\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature ammunitions\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_ammunitions_per_walkable_area}
-\end{figure}
-
-% Results for number_of_powerups 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_powerups.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_powerups.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_powerups.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore powerups]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore powerups. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_powerups}
-\end{figure}
-\newpage 
-
-
-% Results for walkable_percentage 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_walkable_percentage.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_walkable_percentage.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_walkable_percentage.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature walkable\textunderscore percentage]{ Results of the experiments 1 (first row) and 2 (second row) for the feature walkable\textunderscore percentage. Refer to the results section for further descriptions. }
-	\label{fig:appendix_walkable_percentage}
-\end{figure}
-
-% Results for level_hu_moment_6 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_hu_moment_6.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_hu_moment_6.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_hu_moment_6.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore hu\textunderscore moment\textunderscore 6]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore hu\textunderscore moment\textunderscore 6. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_hu_moment_6}
-\end{figure}
-\newpage 
-
-
-% Results for powerups_per_walkable_area 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_powerups_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_powerups_per_walkable_area.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_powerups_per_walkable_area.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature powerups\textunderscore per\textunderscore walkable\textunderscore area]{ Results of the experiments 1 (first row) and 2 (second row) for the feature powerups\textunderscore per\textunderscore walkable\textunderscore area. Refer to the results section for further descriptions. }
-	\label{fig:appendix_powerups_per_walkable_area}
-\end{figure}
-
-% Results for distmap-var 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-var.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-var.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-var.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature distmap-var]{ Results of the experiments 1 (first row) and 2 (second row) for the feature distmap-var. Refer to the results section for further descriptions. }
-	\label{fig:appendix_distmap-var}
-\end{figure}
-\newpage 
-
-
-% Results for number_of_keys 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_keys.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_keys.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_keys.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore keys]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore keys. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_keys}
-\end{figure}
-
-% Results for level_euler_number 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_euler_number.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_euler_number.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_euler_number.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore euler\textunderscore number]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore euler\textunderscore number. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_euler_number}
-\end{figure}
-\newpage 
-
-
-% Results for closn-cen-min 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-min.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-min.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-min.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-min]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-min. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-min}
-\end{figure}
-
-% Results for distmap-Q1 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_distmap-Q1.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_distmap-Q1.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_distmap-Q1.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature distmap-Q1]{ Results of the experiments 1 (first row) and 2 (second row) for the feature distmap-Q1. Refer to the results section for further descriptions. }
-	\label{fig:appendix_distmap-Q1}
-\end{figure}
-\newpage 
-
-
-% Results for betw-cen-Q3 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-Q3.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-Q3.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-Q3.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-Q3]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-Q3. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-Q3}
-\end{figure}
-
-% Results for betw-cen-min 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-min.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-min.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-min.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-min]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-min. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-min}
-\end{figure}
-\newpage 
-
-
-% Results for betw-cen-kurt 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-kurt.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-kurt.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-kurt.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-kurt]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-kurt. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-kurt}
-\end{figure}
-
-% Results for closn-cen-mean 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-mean.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-mean.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-mean.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-mean]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-mean. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-mean}
-\end{figure}
-\newpage 
-
-
-% Results for closn-cen-kurt 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_closn-cen-kurt.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_closn-cen-kurt.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_closn-cen-kurt.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature closn-cen-kurt]{ Results of the experiments 1 (first row) and 2 (second row) for the feature closn-cen-kurt. Refer to the results section for further descriptions. }
-	\label{fig:appendix_closn-cen-kurt}
-\end{figure}
-
-% Results for number_of_artifacts 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_number_of_artifacts.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_number_of_artifacts.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_number_of_artifacts.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature number\textunderscore of\textunderscore artifacts]{ Results of the experiments 1 (first row) and 2 (second row) for the feature number\textunderscore of\textunderscore artifacts. Refer to the results section for further descriptions. }
-	\label{fig:appendix_number_of_artifacts}
-\end{figure}
-\newpage 
-
-
-% Results for betw-cen-var 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_betw-cen-var.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_betw-cen-var.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_betw-cen-var.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature betw-cen-var]{ Results of the experiments 1 (first row) and 2 (second row) for the feature betw-cen-var. Refer to the results section for further descriptions. }
-	\label{fig:appendix_betw-cen-var}
-\end{figure}
-
-% Results for level_orientation 
-\begin{figure}[h!]
-	\centering
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp1/1v1_level_orientation.pdf}
-	\end{minipage}
-	
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-12k/1v1_level_orientation.pdf}
-	\end{minipage}
-	\begin{minipage}{0.4\linewidth}
-		\includegraphics[width=\linewidth]{results/exp2-26k/1v1_level_orientation.pdf}
-	\end{minipage}
-	
-	\caption[ Results: Feature level\textunderscore orientation]{ Results of the experiments 1 (first row) and 2 (second row) for the feature level\textunderscore orientation. Refer to the results section for further descriptions. }
-	\label{fig:appendix_level_orientation}
-\end{figure}

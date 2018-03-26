@@ -33,8 +33,8 @@ In selecting which numerical features $Y$ to use as network input we followed so
 \paragraph{} We selected a subset of features that reasonably satisfied these properties by comparing the feature values of a small number of visually different level sets. An example of level set and the corresponding values for the selected features is shown on figure~\ref{fig:feature_selection}. A summary of the feature we used in our experiment is:
 \begin{itemize}
 	\item \textit{level equivalent diameter}: Diameter of the circle having the same area as the level.
-	\item \textit{level major axis length}: Length of the longest axis of the level, independently from the rotation.
-	\item \textit{level minor axis length}: Length of the shortest axis of the level, independently from the rotation.
+	\item \textit{level major axis length}: Length of the longest axis of the level, independent from the rotation.
+	\item \textit{level minor axis length}: Length of the shortest axis of the level, independent from the rotation.
 	\item \textit{level solidity}: Ratio between the area of the level and its convex hull. It's a metric of the level convexity.
 	\item \textit{nodes (number of rooms)}: Count of the rooms in the room adjacency graph.
 	\item \textit{distmap skewness}: Skewness of the distribution of each pixel distance from the closest wall. This metric is visually related to the balance between large and small areas.
@@ -146,7 +146,8 @@ For each level in the dataset we sampled one level from the unconditional networ
 where $F_{G}(x)$ and $F_{T}(x)$ are the empirical distribution functions of the generated and true features, respectively. The tests have been corrected using the Bonferroni correction using a family-wise error rate (significance for the entire experiment) of 0.05; in correcting p-values we also considered the tests of experiment 2.   %TODO: Scrivi dove andare a leggere i risultati
 
 \subsection{Experiment 2: Addition of input features}
-In the second experiment we tested if the addition of features to the network input can have some effect on the generation of the samples. For doing this, we replicated the experiment one using the conditional network, then we compared the results with those obtained from the unconditional network. For each level in the dataset we sampled one level, using the true feature vector as input and %TODO: remove this if it's unfeasible
+\label{sec:experiment-2}
+In the second experiment we tested if the addition of features to the network input can have some effect on the generation of the samples. For doing this, we replicated the experiment one using the conditional network, then we compared the results with those obtained from the unconditional network. For each level in the dataset we sampled one level, using the true feature vector as input and
 the same noise vectors used in experiment one. We then proceeded as in experiment one in testing the true and generated distributions of features. \\
 For comparing the results of the unconditional and conditional networks we clustered the features in four groups, each one corresponding to a possible case: \\
 \begin{enumerate}
