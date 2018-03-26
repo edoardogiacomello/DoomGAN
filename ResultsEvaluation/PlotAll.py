@@ -43,7 +43,7 @@ def load_results_from_files(in_folder, mode='numpy'):
         return pd.concat({'true':pd_true, 'gen':pd_gen}, axis=1)
 
 
-def plot_all(cumulative=True):
+def plot_all(cumulative=True, line_styles=['-.', ':']):
     """
     Plots the cdf or pdf for all the features of a network, drawing a line for each subfolder found in input_feature.
     Each subfolder name has to match the pattern "[0-9] - (a-Z)*", for example "1 - Mynetwork". In this case "Mynetwork"
@@ -76,10 +76,10 @@ def plot_all(cumulative=True):
             # If it's the first network for this feature then plot the true distribution
             try:
                 if fold_id == 0:
-                    axt = sb.kdeplot(tc, label="True", ls="--", cumulative=cumulative)
+                    axt = sb.kdeplot(tc, label="True", ls="-", cumulative=cumulative)
                     xlabel.append(fname)
 
-                sb.kdeplot(gc, label=names[fold_id], cumulative=cumulative)
+                sb.kdeplot(gc, label=names[fold_id], ls=line_styles[fold_id-1], cumulative=cumulative)
 
                 # STATISTICAL TESTS
                 w_stat, w_pvalue = wilcoxon(tc, gc)
@@ -117,7 +117,7 @@ def plot_all(cumulative=True):
             for stat in tests_results[n_id]:
                 writer.writerow(stat)
 
-def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', name_format="test_uncorrected_pvalues_{}.csv", exclude_uninformative_features=True, rejected = 'R', not_rejected = 'N'):
+def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bonferroni', name_format="test_uncorrected_pvalues_{}.csv", exclude_uninformative_features=True, rejected = 'R', not_rejected = 'N'):
     """
         Generate text for showing the results associated to the plotted files.
     Loads the stat_test_result for every network and generate a table, highlighting the result if the pvalue is smaller than alpha
@@ -140,8 +140,8 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
 
     for name in names:
         test_result_path = output_files + name_format.format(name)
-        loaded = pd.read_csv(test_result_path, header=0, index_col=0, comment='#', delimiter=',', usecols=['feature','KS-pvalue','KS-stat'])
-        loaded.rename(columns= {'KS-pvalue': name, 'KS-stat': name+'-s'}, inplace=True)
+        loaded = pd.read_csv(test_result_path, header=0, index_col=0, comment='#', delimiter=',', usecols=['feature','{}-pvalue'.format(stat),'{}-stat'.format(stat)])
+        loaded.rename(columns= {'{}-pvalue'.format(stat): name, '{}-stat'.format(stat): name+'-s'}, inplace=True)
         tests_results.append(loaded[name])
         tests_stats.append(loaded[name+'-s'])
 
@@ -207,7 +207,7 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
 
     results_uncond = results.loc[:,uncond_columns] # equivalent to results[uncond_columns] but supports assignment
     results_cond = results.drop(uncond_columns, axis=1)
-    if len(results_uncond.columns) == 1:
+    if len(results_uncond.columns) == 1 and len(results_cond.columns) > 1:
         # Duplicating the cond column for each uncond column then dropping the original one
         for i, uc in enumerate(results_cond.columns):
             results_uncond.insert(loc=i+1, column='{}{}'.format(uncond_columns[0], i),
@@ -241,11 +241,11 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
 
     with open(output_files + 'tabular_results.tex', 'w') as out:
         caption_results_input_feats_short = "Test results for input features"
-        caption_results_input_feats = "Kolmogorov-Smirnov test results for input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test".format(alpha, correction_method.capitalize())
+        caption_results_input_feats = "{}-test results for input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network".format(stat, alpha, correction_method.capitalize())
         caption_results_other_feats_short = "Test results for non input features"
-        caption_results_other_feats = "Kolmogorov-Smirnov test results for non-input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test".format(alpha, correction_method.capitalize())
-        caption_data_s_short = "KS statistic values"
-        caption_data_s = "KS statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data"
+        caption_results_other_feats = "{}-test results for non-input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network".format(stat, alpha, correction_method.capitalize())
+        caption_data_s_short = "{} statistic values".format(stat)
+        caption_data_s = "{} statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data".format(stat)
         caption_corr_pv_short = "Corrected p-values"
         caption_corr_pv = "Corrected p-values using {} method".format(correction_method.capitalize())
         caption_f1_features_short = "Features belonging to the F1 group"
@@ -257,14 +257,14 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
         caption_f4_features_short = "Features belonging to the F4 group"
         caption_f4_features = "Features that belong to group F4 in at least one test. Group F4 contains the features for which the null hypotesis is not rejected for the unconditioned network and rejected for the conditioned network."
 
-        out.write(results_input_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_results_input_feats_short, caption_results_input_feats), 1))
-        out.write(results_other_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_results_other_feats_short, caption_results_other_feats), 1))
-        out.write(data_s.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_data_s_short, caption_data_s), 1))
-        out.write(corr_pv.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_corr_pv_short, caption_corr_pv), 1))
-        out.write(f1_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f1_features_short, caption_f1_features), 1))
-        out.write(f2_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f2_features_short, caption_f2_features), 1))
-        out.write(f3_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f3_features_short, caption_f3_features), 1))
-        out.write(f4_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f4_features_short, caption_f4_features), 1))
+        out.write(results_input_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-input-features}}\n'.format(caption_results_input_feats_short, caption_results_input_feats), 1))
+        out.write(results_other_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-other-features}}\n'.format(caption_results_other_feats_short, caption_results_other_feats), 1))
+        out.write(data_s.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-stats}}\n'.format(caption_data_s_short, caption_data_s), 1))
+        out.write(corr_pv.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-pvalues}}\n'.format(caption_corr_pv_short, caption_corr_pv), 1))
+        out.write(f1_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f1-features}}\n'.format(caption_f1_features_short, caption_f1_features), 1))
+        out.write(f2_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f2-features}}\n'.format(caption_f2_features_short, caption_f2_features), 1))
+        out.write(f3_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f3-features}}\n'.format(caption_f3_features_short, caption_f3_features), 1))
+        out.write(f4_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f4-features}}\n'.format(caption_f4_features_short, caption_f4_features), 1))
 
 
 
@@ -276,6 +276,6 @@ def generate_latex_table(alpha, uncond_columns, correction_method='bonferroni', 
 
 
 if __name__ == '__main__':
-    #plot_all(cumulative=True)
-    generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni' )
+    plot_all(cumulative=True)
+    generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS')
 
