@@ -117,7 +117,7 @@ def plot_all(cumulative=True, line_styles=['-.', ':']):
             for stat in tests_results[n_id]:
                 writer.writerow(stat)
 
-def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bonferroni', name_format="test_uncorrected_pvalues_{}.csv", exclude_uninformative_features=True, rejected = 'R', not_rejected = 'N'):
+def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bonferroni', name_format="test_uncorrected_pvalues_{}.csv", exclude_uninformative_features=True, rejected = 'R', not_rejected = 'N', merge_tables=True):
     """
         Generate text for showing the results associated to the plotted files.
     Loads the stat_test_result for every network and generate a table, highlighting the result if the pvalue is smaller than alpha
@@ -224,8 +224,12 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
         feature_labels["{}-vs-{}".format(uncond_col, cond_col)] = results_for_labels[[uncond_col, cond_col]].apply(label_features, args=(uncond_col, cond_col), axis=1)
     results = results.applymap(lambda x: rejected if x else not_rejected)
     results = results.apply(higlight_minimum_distance, axis=1, args=(minimum_stats,))
+    if merge_tables:
+        results=pd.concat([results, feature_labels.rename(columns={feature_labels.columns[0]:'Group'})], axis=1)
     results_input_feats = results[results.index.isin(arch_wf.features)]
     results_other_feats = results[~results.index.isin(arch_wf.features)]
+
+
 
     f1_features = feature_labels[(feature_labels=='F1').any(axis=1)] # Bad features
     f2_features = feature_labels[(feature_labels=='F2').any(axis=1)] # Improved if some features are in input
@@ -249,13 +253,13 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
         caption_corr_pv_short = "Corrected p-values"
         caption_corr_pv = "Corrected p-values using {} method".format(correction_method.capitalize())
         caption_f1_features_short = "Features belonging to the F1 group"
-        caption_f1_features = "Features that belong to group F1 in at least one test. Group F1 contains the features for which the null hypotesis is rejected for both the unconditioned and conditioned network."
+        caption_f1_features = "Features that belong to group F1. Group F1 contains the features for which the null hypotesis is rejected for both the unconditioned and conditioned network."
         caption_f2_features_short = "Features belonging to the F2 group"
-        caption_f2_features = "Features that belong to group F2 in at least one test. Group F2 contains the features for which the null hypotesis is rejected for the unconditioned network and not rejected for the conditioned network."
+        caption_f2_features = "Features that belong to group F2. Group F2 contains the features for which the null hypotesis is rejected for the unconditioned network and not rejected for the conditioned network."
         caption_f3_features_short = "Features belonging to the F3 group"
-        caption_f3_features = "Features that belong to group F3 in at least one test. Group F3 contains the features for which the null hypotesis is not rejected for both the unconditioned and conditioned network."
+        caption_f3_features = "Features that belong to group F3. Group F3 contains the features for which the null hypotesis is not rejected for both the unconditioned and conditioned network."
         caption_f4_features_short = "Features belonging to the F4 group"
-        caption_f4_features = "Features that belong to group F4 in at least one test. Group F4 contains the features for which the null hypotesis is not rejected for the unconditioned network and rejected for the conditioned network."
+        caption_f4_features = "Features that belong to group F4. Group F4 contains the features for which the null hypotesis is not rejected for the unconditioned network and rejected for the conditioned network."
 
         out.write(results_input_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_results_input_feats_short, caption_results_input_feats), 1).replace('\end{longtable}', ' \\label{tab:results-input-features}\n \end{longtable}', 1))
         out.write(results_other_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-other-features}}\n'.format(caption_results_other_feats_short, caption_results_other_feats), 1).replace('\end{longtable}', ' \\label{tab:results-input-features}\n \end{longtable}', 1))
@@ -277,5 +281,5 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
 
 if __name__ == '__main__':
     #plot_all(cumulative=True)
-    generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS')
+    generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS', merge_tables=True)
 

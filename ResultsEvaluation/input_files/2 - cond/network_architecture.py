@@ -8,6 +8,10 @@ features = ['level_equivalent_diameter',
             'distmap-skew',
             'distmap-kurt']
 #features = []
+
+# SEED OF THE NETWORK
+seed = 123456789
+
 # Define here which maps to use (you can find a list in /WAD_Parser/Dictionaries/Features.py )
 maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap']
 
