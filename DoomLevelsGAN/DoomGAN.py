@@ -318,7 +318,7 @@ class DoomGAN(object):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def load_dataset(self, batch_size=None, shuffle=True):
+    def load_dataset(self, batch_size=None, shuffle=True, dont_batch=False):
         """
         Loads both training and validation .TFRecords datasets from self.config.dataset_path pointing to a .meta file.
         :return: A tuple of dataset iterators (Training, Validation)
@@ -339,9 +339,9 @@ class DoomGAN(object):
             "Ignoring {} samples, remainder of {} samples with a batch size of {}.".format(train_remainder, train_set_size,
                                                                                            batch_size))
         train_set = train_set.shuffle(buffer_size=train_set_size*100) if shuffle else train_set
-        train_set = train_set.skip(train_remainder)
-        train_set = train_set.shuffle(buffer_size=(train_set_size-train_remainder)*100)  if shuffle else train_set
-        train_set = train_set.batch(batch_size)
+        train_set = train_set.skip(train_remainder) if not dont_batch else train_set
+        train_set = train_set.shuffle(buffer_size=(train_set_size-train_remainder)*100) if shuffle else train_set
+        train_set = train_set.batch(batch_size) if not dont_batch else train_set.batch(train_set_size)
         train_iter = train_set.make_initializable_iterator()
 
         if os.path.isfile(validation_path):
@@ -352,9 +352,9 @@ class DoomGAN(object):
                                                                                                validation_set_size,
                                                                                                batch_size))
             validation_set = validation_set.shuffle(buffer_size=validation_set_size * 100) if shuffle else validation_set
-            validation_set = validation_set.skip(validation_remainder)
+            validation_set = validation_set.skip(validation_remainder) if not dont_batch else validation_set
             validation_set = validation_set.shuffle(buffer_size=(validation_set_size - validation_remainder) * 100) if shuffle else validation_set
-            validation_set = validation_set.batch(batch_size)
+            validation_set = validation_set.batch(batch_size) if not dont_batch else validation_set.batch(validation_set_size)
             validation_iter = validation_set.make_initializable_iterator()
 
             return train_iter, validation_iter
@@ -895,9 +895,8 @@ class DoomGAN(object):
 
     def get_samples_by_name(self, names):
         """ get a dictionary of names (path_json field) and associates a true sample for each value"""
-        self.load_dataset()
         # Loop through the true dataset
-        train_set_iter, valid_set_iter = self.load_dataset()
+        train_set_iter, valid_set_iter = self.load_dataset(shuffle=False, dont_batch=True)
         self.session.run([train_set_iter.initializer])
         next_batch = train_set_iter.get_next()
         while True:

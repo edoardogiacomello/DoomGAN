@@ -241,9 +241,9 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
 
     with open(output_files + 'tabular_results.tex', 'w') as out:
         caption_results_input_feats_short = "Test results for input features"
-        caption_results_input_feats = "{}-test results for input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network".format(stat, alpha, correction_method.capitalize())
+        caption_results_input_feats = "{}-test results for input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An asterisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network".format(stat, alpha, correction_method.capitalize())
         caption_results_other_feats_short = "Test results for non input features"
-        caption_results_other_feats = "{}-test results for non-input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network".format(stat, alpha, correction_method.capitalize())
+        caption_results_other_feats = "{}-test results for non-input features, using a significance level of {} and the {} correction method. Results are indicated with R if the null hypotesis can be rejected or with N otherwise. An asterisk indicates the network that performed better (has the minimum KS distance) if the null hypothesis is rejected in every network".format(stat, alpha, correction_method.capitalize())
         caption_data_s_short = "{} statistic values".format(stat)
         caption_data_s = "{} statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data".format(stat)
         caption_corr_pv_short = "Corrected p-values"
@@ -257,14 +257,14 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
         caption_f4_features_short = "Features belonging to the F4 group"
         caption_f4_features = "Features that belong to group F4 in at least one test. Group F4 contains the features for which the null hypotesis is not rejected for the unconditioned network and rejected for the conditioned network."
 
-        out.write(results_input_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-input-features}}\n'.format(caption_results_input_feats_short, caption_results_input_feats), 1))
-        out.write(results_other_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-other-features}}\n'.format(caption_results_other_feats_short, caption_results_other_feats), 1))
-        out.write(data_s.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-stats}}\n'.format(caption_data_s_short, caption_data_s), 1))
-        out.write(corr_pv.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-pvalues}}\n'.format(caption_corr_pv_short, caption_corr_pv), 1))
-        out.write(f1_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f1-features}}\n'.format(caption_f1_features_short, caption_f1_features), 1))
-        out.write(f2_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f2-features}}\n'.format(caption_f2_features_short, caption_f2_features), 1))
-        out.write(f3_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f3-features}}\n'.format(caption_f3_features_short, caption_f3_features), 1))
-        out.write(f4_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-f4-features}}\n'.format(caption_f4_features_short, caption_f4_features), 1))
+        out.write(results_input_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_results_input_feats_short, caption_results_input_feats), 1).replace('\end{longtable}', ' \\label{tab:results-input-features}\n \end{longtable}', 1))
+        out.write(results_other_feats.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n \\label{{tab:results-other-features}}\n'.format(caption_results_other_feats_short, caption_results_other_feats), 1).replace('\end{longtable}', ' \\label{tab:results-input-features}\n \end{longtable}', 1))
+        out.write(data_s.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_data_s_short, caption_data_s), 1).replace('\end{longtable}', ' \\label{tab:results-stats}\n \end{longtable}', 1))
+        out.write(corr_pv.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_corr_pv_short, caption_corr_pv), 1).replace('\end{longtable}', ' \\label{tab:results-pvalues}\n \end{longtable}', 1))
+        out.write(f1_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f1_features_short, caption_f1_features), 1).replace('\end{longtable}', ' \\label{tab:results-f1-features}\n \end{longtable}', 1))
+        out.write(f2_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f2_features_short, caption_f2_features), 1).replace('\end{longtable}', ' \\label{tab:results-f2-features}\n \end{longtable}', 1))
+        out.write(f3_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f3_features_short, caption_f3_features), 1).replace('\end{longtable}', ' \\label{tab:results-f3-features}\n \end{longtable}', 1))
+        out.write(f4_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f4_features_short, caption_f4_features), 1).replace('\end{longtable}', ' \\label{tab:results-f4-features}\n \end{longtable}', 1))
 
 
 
@@ -276,6 +276,6 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
 
 
 if __name__ == '__main__':
-    plot_all(cumulative=True)
+    #plot_all(cumulative=True)
     generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS')
 

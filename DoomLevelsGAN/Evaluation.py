@@ -1,15 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
-#import DoomLevelsGAN.DoomGAN as nn
 import DoomLevelsGAN.network_architecture as arch
 from WAD_Parser.Dictionaries import Features as all_features
 from scipy.stats import wilcoxon, ttest_ind, mannwhitneyu
 import os
 import json
 
+input_features = arch.features
+oth_features = [f for f in all_features.features_for_evaluation if f not in input_features]
 
-def generate_results_and_save(samples_per_map):
+def generate_results_and_save(samples_per_map, reuse_z=False):
     """
     Loads the network and generates <samples_for_map> features for every map in the training set.
     Results are saved into the artifacts folder.
@@ -18,14 +19,31 @@ def generate_results_and_save(samples_per_map):
     """
     import DoomLevelsGAN.DoomGAN as nn
     if samples_per_map == 1:
-        
-        names, true_features, oth_true_features, generated_features, oth_gen_features, noise = nn.gan.evaluate_samples_distribution(n=samples_per_map)
-        np.save(nn.FLAGS.ref_sample_folder+'results_names.npy', names)
-        np.save(nn.FLAGS.ref_sample_folder+'results_true.npy', true_features)
-        np.save(nn.FLAGS.ref_sample_folder+'results_true_oth.npy', oth_true_features)
-        np.save(nn.FLAGS.ref_sample_folder+'results_gen.npy', generated_features)
-        np.save(nn.FLAGS.ref_sample_folder+'results_gen_oth.npy', oth_gen_features)
-        np.save(nn.FLAGS.ref_sample_folder+'results_noise.npy', noise)
+        if reuse_z:
+            # Load the noise vector
+            z_override = np.loadtxt(nn.FLAGS.ref_sample_folder + 'results_noise.csv', delimiter=',', dtype=np.float32, skiprows=1)
+        else:
+            z_override = None
+
+        names, true_features, oth_true_features, generated_features, oth_gen_features, noise = nn.gan.evaluate_samples_distribution(n=samples_per_map, z_override=z_override)
+        # HEADER GENERATION
+        names_header = 'sample_path'
+        in_header = ','.join(input_features)
+        oth_header = ','.join(oth_features)
+        noise_header = ','.join(["z{}".format(i) for i in range(noise.shape[1])])
+
+        np.savetxt(nn.FLAGS.ref_sample_folder + 'results_{}.csv'.format("names"), names, fmt="%s", delimiter=',', header=names_header,
+                   comments='')
+        np.savetxt(nn.FLAGS.ref_sample_folder + 'results_{}.csv'.format("true"), true_features, delimiter=',', header=in_header,
+                   comments='')
+        np.savetxt(nn.FLAGS.ref_sample_folder + 'results_{}.csv'.format("true_oth"), oth_true_features.astype(np.float32), delimiter=',', header=oth_header,
+                   comments='')
+        np.savetxt(nn.FLAGS.ref_sample_folder + 'results_{}.csv'.format("gen"), generated_features.squeeze().astype(np.float32), delimiter=',', header=in_header,
+                   comments='')
+        np.savetxt(nn.FLAGS.ref_sample_folder + 'results_{}.csv'.format("gen_oth"), oth_gen_features.squeeze().astype(np.float32), delimiter=',', header=oth_header,
+                   comments='')
+        np.savetxt(nn.FLAGS.ref_sample_folder + 'results_{}.csv'.format("noise"), noise.astype(np.float32), delimiter=',', header=noise_header, comments='')
+
     else:
         percent_dict = load_level_subset()
         true_samples = dict()
@@ -144,7 +162,7 @@ def load_level_subset():
         percent_dict = json.load(jin)
     return percent_dict
 
-def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
+def distribution_visualization_1vN(n, markers=['+','o', 's', 'd', '.'], colors=['c','r','g','b', 'm','gray']):
     """ Plots a graph for each input feature, showing the generated sample distribution around the true feature for
     the samples that are positioned at the (25, 50, 75)th percentiles. """
     import DoomLevelsGAN.DoomGAN as nn
@@ -179,10 +197,10 @@ def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
             samp = generated[np.where(names == name)][0]
             true_value = true_samples[name][fname]
             values = samp[fname]
-            #axt = sb.rugplot([np.mean(values)], height=1, ls="-", linewidth=0.75, color=colors[p])
-            axt = sb.rugplot(true_value, height=1, ls="--", linewidth=0.75, label="True_{}".format(pname), color=colors[p])
-            sb.kdeplot(values, ax=axt, ls="-", label="Generated_{}".format(pname), color=colors[p])
-            axt.set_xlabel("{}".format(fname))
+            #axt = sb.rugplot([np.mean(values)], height=1, ls="-", linewidth=0.75, marker=colors[p])
+            axt = sb.rugplot(true_value, height=1, ls="--", linewidth=0.75, label="True_{}".format(pname), color=colors[p], marker=markers[p])
+            sb.kdeplot(values, ax=axt, ls="-", label="Generated_{}".format(pname), color=colors[p], marker=markers[p])
+            axt.set_xlabel("{}".format(fname), fontsize=16)
 
         plt.title("{} generated samples distribution from every quartile of feature \"{}\"".format(n, fname))
         fig.canvas.set_window_title("{}".format("{}".format(fname)))
@@ -191,4 +209,8 @@ def distribution_visualization_1vN(n, colors=['c','r','g','b', 'm','gray',]):
         fig.savefig(output_graph_folder + '1v{}_{}.pdf'.format(n, fname))
 
 
-distribution_visualization_1v1()
+if __name__ == '__main__':
+    pass
+    generate_results_and_save(1, False)
+    # generate_results_and_save(1000)
+    #distribution_visualization_1vN(1000)
