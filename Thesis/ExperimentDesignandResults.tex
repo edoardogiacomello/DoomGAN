@@ -58,57 +58,10 @@ In selecting which numerical features $Y$ to use as network input we followed so
 		\hline
 		\textbf{Run Name} & \textbf{Iterations} & \textbf{Features} & \textbf{Maps} & \textbf{D Layers (filters)} & \textbf{G Layers (filters)} \\
 		\hline
-		26k & 26000 & 
-		\begin{itemize}
-			\raggedright
-			\small
-			\item[] level equivalent diameter
-			\item[] level major axis length
-			\item[] level minor axis length
-			\item[] level solidity
-			\item[] nodes
-			\item[] distmap-skew
-			\item[] distmap-kurt
-		\end{itemize}
-		 & 
-		 	\begin{itemize}
-		 	\raggedright
-		 	\small
-		 	\item[] floormap
-		 	\item[] heightmap
-		 	\item[] wallmap
-		 	\item[] thingsmap
-		 \end{itemize}
-		 & 4 (1024, 512, 256, 128) & 4 (128, 256, 512, 1024)\\
 		
-		\hline
 		
-		12k & 12000 & 
-		\begin{itemize}
-			\raggedright
-			\small
-			\item[] level equivalent diameter
-			\item[] level major axis length
-			\item[] level minor axis length
-			\item[] level solidity
-			\item[] nodes
-			\item[] distmap-skew
-			\item[] distmap-kurt
-		\end{itemize}
-		& 
-		\begin{itemize}
-			\raggedright
-			\small
-			\item[] floormap
-			\item[] heightmap
-			\item[] wallmap
-			\item[] thingsmap
-		\end{itemize}
-		& 4 (1024, 512, 256, 128) & 4 (128, 256, 512, 1024)\\
 		
-		\hline
-		
-		unconditional & 15000 & 
+		unconditional & 36000 & 
 		No features
 		& 
 		\begin{itemize}
@@ -123,6 +76,30 @@ In selecting which numerical features $Y$ to use as network input we followed so
 		
 		\hline
 	
+		conditional & 36000 & 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] level equivalent diameter
+			\item[] level major axis length
+			\item[] level minor axis length
+			\item[] level solidity
+			\item[] nodes
+			\item[] distmap-skew
+			\item[] distmap-kurt
+		\end{itemize}
+		& 
+		\begin{itemize}
+			\raggedright
+			\small
+			\item[] floormap
+			\item[] heightmap
+			\item[] wallmap
+			\item[] thingsmap
+		\end{itemize}
+		& 4 (1024, 512, 256, 128) & 4 (128, 256, 512, 1024)\\
+		
+		\hline
 		
 	\end{tabularx}
 	\caption[ Trained Models ]{ Trained networks. }
