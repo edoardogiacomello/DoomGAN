@@ -16,6 +16,8 @@ from scipy.stats import ttest_ind, wilcoxon, mannwhitneyu, ks_2samp
 input_files = './input_files/'
 output_files = './output_files/'
 
+to_exclude = [f for f in Features.features_for_evaluation if f.startswith("floors_") or f=='level_bbox_area']
+
 def load_results_from_files(in_folder, mode='numpy'):
     assert mode in {'numpy', 'pandas'}, "Please specify a mode that is either 'numpy' or 'pandas'"
 
@@ -130,7 +132,6 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
     :param not_rejected:
     :return:
     """
-    to_exclude = [f for f in Features.features_for_evaluation if f.startswith("floors_") or f=='level_bbox_area']
     in_folders = sorted([f + '/' for f in glob.glob(input_files + "*") if os.path.isdir(f)])
     names = [str.split(os.path.split(f)[0], ' - ')[-1] for f in in_folders]
     tests_results = list()
@@ -271,15 +272,76 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
         out.write(f4_features.to_latex(longtable=True).replace('\n', '\n \\caption[{}]{{ \\small {}}}\\\\\n'.format(caption_f4_features_short, caption_f4_features), 1).replace('\end{longtable}', ' \\label{tab:results-f4-features}\n \end{longtable}', 1))
 
 
+def generate_latex_figures():
+    import itertools
+    def grouper(iterable, n, fillvalue=None):
+        "Collect data into fixed-length chunks or blocks"
+        # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+        args = [iter(iterable)] * n
+        return itertools.zip_longest(fillvalue=fillvalue, *args)
+
+    latex=""
+    template = """\\begin{{minipage}}[b]{{0.45\\linewidth}}
+        \\centering
+        \\includegraphics[width=\\linewidth]{{results/exp1-2/{file}.pdf}} 
+        \\label{{fig:results-input-{file}}}
+    \\end{{minipage}}"""
+
+    for feature in arch_wf.features:
+        keys = {'feat':feature.replace("_", "\\_"), 'file':feature}
+        latex += '\n'+ template.format(**keys)
 
 
 
 
+    with open(output_files+"figures_input.tex", 'w') as out:
+        out.write(latex)
+    latex_oth = ""
+    feat_other = [f for f in Features.features_for_evaluation if f not in arch_wf.features and f not in to_exclude]
+    # Iterate over the figures
+    for feat_group in grouper(feat_other, 6):
+        latex_oth += "\\begin{figure}[ht]\n"
+        # Iterate over the rows
+        for row in grouper(feat_group, 2):
+            latex_row = """\\begin{{minipage}}[b]{{0.45\\linewidth}}
+        \\centering
+        \\includegraphics[width=\\linewidth]{{results/exp1-2/{file1}.pdf}} 
+        \\label{{fig:results-noninput-{file1}}}
+    \\end{{minipage}}
+    \\begin{{minipage}}[b]{{0.45\\linewidth}}
+        \\centering
+        \\includegraphics[width=\\linewidth]{{results/exp1-2/{file2}.pdf}} 
+        \\label{{fig:results-noninput-{file2}}}
+    \\end{{minipage}} \n \n
+                 """
+            keys = {'file1':row[0], 'file2':row[1]}
+            latex_oth += latex_row.format(**keys)
+        latex_oth += "\\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: " + \
+                         "Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}" + \
+                         "\n\\end{figure}"
 
+
+    with open(output_files + "figures_noninput.tex", 'w') as out:
+        out.write(latex_oth)
+
+
+
+def plot_tensorboard_from_csv(name_format="run_{net}_{run}-tag-{metric}.csv"):
+    raise NotImplementedError()
+    cond_loss_train = pd.read_csv("./input_tensorflow_results/run_cond_train-tag-critic_loss.csv" , header=0, comment='#', delimiter=',').rename(columns={'Value': 'Training'})
+    cond_loss_valid = pd.read_csv("./input_tensorflow_results/run_cond_validation-tag-critic_loss.csv"    , header=0, comment='#', delimiter=',').rename(columns={'Value': 'Validation'})
+
+    uncond_loss_train =   pd.read_csv("./input_tensorflow_results/run_uncond_train-tag-critic_loss.csv"   , header=0, comment='#', delimiter=',')
+    uncond_loss_valid = pd.read_csv("./input_tensorflow_results/run_uncond_validation-tag-critic_loss.csv"  , header=0, comment='#', delimiter=',')
+
+    cond_train = pd.concat([cond_loss_train, cond_loss_valid], axis=1)
+
+    ### WIP - NOT WORKING
 
 
 
 if __name__ == '__main__':
-    #plot_all(cumulative=True)
+    plot_all(cumulative=False)
     generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS', merge_tables=True)
-
+    generate_latex_figures()
+    #plot_tensorboard_from_csv()
