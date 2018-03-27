@@ -9,71 +9,71 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {1.1}{\ignorespaces Pix2Pix example from \citeauthor {image-to-image}}}{21}{figure.caption.7}
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Pix2Pix example from \citeauthor {image-to-image}}}{21}{figure.caption.8}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Layers from DCGAN, \citeauthor {gan:dcgan}}}{24}{figure.caption.12}
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Layers from DCGAN, \citeauthor {gan:dcgan}}}{24}{figure.caption.14}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Samples from WGAN-GP, \citeauthor {wgangp}}}{25}{figure.caption.15}
-\defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.1}{\ignorespaces A simple level showing sectors and linedefs}}{31}{figure.caption.41}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.2}{\ignorespaces DoomDataset Size distribution}}{48}{figure.caption.65}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Samples from WGAN-GP, \citeauthor {wgangp}}}{25}{figure.caption.17}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.1}{\ignorespaces System Overview: Generative Model Structure}}{50}{figure.caption.68}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces A simple level showing sectors and linedefs}}{31}{figure.caption.43}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Use Case: Model Optimization}}{51}{figure.caption.72}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Use Case: Validation and Sample Evaluation}}{52}{figure.caption.74}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Use Case: Sampling or Generation}}{53}{figure.caption.76}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.5}{\ignorespaces System Overview: Data Flow Diagram}}{54}{figure.caption.77}
+\contentsline {figure}{\numberline {3.2}{\ignorespaces DoomDataset Size distribution}}{48}{figure.caption.67}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {5.1}{\ignorespaces Example of feature values}}{62}{figure.caption.107}
+\contentsline {figure}{\numberline {4.1}{\ignorespaces System Overview: Generative Model Structure}}{50}{figure.caption.70}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Use Case: Model Optimization}}{51}{figure.caption.74}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Use Case: Validation and Sample Evaluation}}{52}{figure.caption.76}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Use Case: Sampling or Generation}}{53}{figure.caption.78}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.5}{\ignorespaces System Overview: Data Flow Diagram}}{54}{figure.caption.79}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Unconditional Network Loss}}{66}{figure.caption.112}
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Example of feature values}}{62}{figure.caption.108}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.2}{\ignorespaces Conditional Network Loss}}{66}{figure.caption.112}
+\addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.3}{\ignorespaces Sample Evaluation Metrics: Entropy}}{67}{figure.caption.113}
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Unconditional Network Loss}}{66}{figure.caption.114}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.4}{\ignorespaces Sample Evaluation Metrics: Entropy (Floormap)}}{67}{figure.caption.113}
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Conditional Network Loss}}{66}{figure.caption.114}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.5}{\ignorespaces Sample Evaluation Metrics: Entropy (HeightMap)}}{67}{figure.caption.113}
+\contentsline {figure}{\numberline {6.3}{\ignorespaces Sample Evaluation Metrics: Entropy}}{67}{figure.caption.115}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.6}{\ignorespaces Sample Evaluation Metrics: Entropy (WallMap)}}{67}{figure.caption.113}
+\contentsline {figure}{\numberline {6.4}{\ignorespaces Sample Evaluation Metrics: Entropy (Floormap)}}{67}{figure.caption.115}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.7}{\ignorespaces Sample Evaluation Metrics: Entropy (ThingsMap)}}{67}{figure.caption.113}
+\contentsline {figure}{\numberline {6.5}{\ignorespaces Sample Evaluation Metrics: Entropy (HeightMap)}}{67}{figure.caption.115}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.8}{\ignorespaces Sample Evaluation Metrics: Mean Structural Similarity Index}}{68}{figure.caption.114}
+\contentsline {figure}{\numberline {6.6}{\ignorespaces Sample Evaluation Metrics: Entropy (WallMap)}}{67}{figure.caption.115}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.9}{\ignorespaces Sample Evaluation Metrics: Encoding Error (Floormap)}}{68}{figure.caption.115}
+\contentsline {figure}{\numberline {6.7}{\ignorespaces Sample Evaluation Metrics: Entropy (ThingsMap)}}{67}{figure.caption.115}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.10}{\ignorespaces Sample Evaluation Metrics: Encoding Error (HeightMap)}}{68}{figure.caption.115}
+\contentsline {figure}{\numberline {6.8}{\ignorespaces Sample Evaluation Metrics: Mean Structural Similarity Index}}{68}{figure.caption.116}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.11}{\ignorespaces Sample Evaluation Metrics: Encoding Error (WallMap)}}{68}{figure.caption.115}
+\contentsline {figure}{\numberline {6.9}{\ignorespaces Sample Evaluation Metrics: Encoding Error (Floormap)}}{68}{figure.caption.117}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.12}{\ignorespaces Sample Evaluation Metrics: Encoding Error (ThingsMap)}}{68}{figure.caption.115}
+\contentsline {figure}{\numberline {6.10}{\ignorespaces Sample Evaluation Metrics: Encoding Error (HeightMap)}}{68}{figure.caption.117}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.13}{\ignorespaces Sample Evaluation Metrics: Mean Corner Error (FloorMap)}}{69}{figure.caption.116}
+\contentsline {figure}{\numberline {6.11}{\ignorespaces Sample Evaluation Metrics: Encoding Error (WallMap)}}{68}{figure.caption.117}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.14}{\ignorespaces Sample Evaluation Metrics: Mean Corner Error (WallMap)}}{69}{figure.caption.116}
+\contentsline {figure}{\numberline {6.12}{\ignorespaces Sample Evaluation Metrics: Encoding Error (ThingsMap)}}{68}{figure.caption.117}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.15}{\ignorespaces Graphical results for experiments 1 and 2: Cumulative Distributions}}{73}{figure.caption.122}
+\contentsline {figure}{\numberline {6.13}{\ignorespaces Sample Evaluation Metrics: Mean Corner Error (FloorMap)}}{69}{figure.caption.118}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.16}{\ignorespaces Graphical results for experiments 1 and 2: Probability Densities}}{74}{figure.caption.123}
+\contentsline {figure}{\numberline {6.14}{\ignorespaces Sample Evaluation Metrics: Mean Corner Error (WallMap)}}{69}{figure.caption.118}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {6.17}{\ignorespaces Graphical results for experiments 3: Generated features distribution vs true percentiles}}{76}{figure.caption.125}
+\contentsline {figure}{\numberline {6.15}{\ignorespaces Graphical results for experiments 1 and 2: Cumulative Distributions}}{73}{figure.caption.124}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.16}{\ignorespaces Graphical results for experiments 1 and 2: Probability Densities}}{74}{figure.caption.125}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.17}{\ignorespaces Graphical results for experiments 3: Generated features distribution vs true percentiles}}{76}{figure.caption.127}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
@@ -81,24 +81,24 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.1}{\ignorespaces Graphical results for experiments 1 and 2}}{90}{figure.caption.162}
+\contentsline {figure}{\numberline {B.1}{\ignorespaces Graphical results for experiments 1 and 2}}{90}{figure.caption.164}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.2}{\ignorespaces Graphical results for experiments 1 and 2}}{91}{figure.caption.163}
+\contentsline {figure}{\numberline {B.2}{\ignorespaces Graphical results for experiments 1 and 2}}{91}{figure.caption.165}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.3}{\ignorespaces Graphical results for experiments 1 and 2}}{92}{figure.caption.164}
+\contentsline {figure}{\numberline {B.3}{\ignorespaces Graphical results for experiments 1 and 2}}{92}{figure.caption.166}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.4}{\ignorespaces Graphical results for experiments 1 and 2}}{93}{figure.caption.165}
+\contentsline {figure}{\numberline {B.4}{\ignorespaces Graphical results for experiments 1 and 2}}{93}{figure.caption.167}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.5}{\ignorespaces Graphical results for experiments 1 and 2}}{94}{figure.caption.166}
+\contentsline {figure}{\numberline {B.5}{\ignorespaces Graphical results for experiments 1 and 2}}{94}{figure.caption.168}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.6}{\ignorespaces Graphical results for experiments 1 and 2}}{95}{figure.caption.167}
+\contentsline {figure}{\numberline {B.6}{\ignorespaces Graphical results for experiments 1 and 2}}{95}{figure.caption.169}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.7}{\ignorespaces Graphical results for experiments 1 and 2}}{96}{figure.caption.168}
+\contentsline {figure}{\numberline {B.7}{\ignorespaces Graphical results for experiments 1 and 2}}{96}{figure.caption.170}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.8}{\ignorespaces Graphical results for experiments 1 and 2}}{97}{figure.caption.169}
+\contentsline {figure}{\numberline {B.8}{\ignorespaces Graphical results for experiments 1 and 2}}{97}{figure.caption.171}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.9}{\ignorespaces Graphical results for experiments 1 and 2}}{98}{figure.caption.170}
+\contentsline {figure}{\numberline {B.9}{\ignorespaces Graphical results for experiments 1 and 2}}{98}{figure.caption.172}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.10}{\ignorespaces Graphical results for experiments 1 and 2}}{99}{figure.caption.171}
+\contentsline {figure}{\numberline {B.10}{\ignorespaces Graphical results for experiments 1 and 2}}{99}{figure.caption.173}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {B.11}{\ignorespaces Graphical results for experiments 1 and 2}}{100}{figure.caption.172}
+\contentsline {figure}{\numberline {B.11}{\ignorespaces Graphical results for experiments 1 and 2}}{100}{figure.caption.174}

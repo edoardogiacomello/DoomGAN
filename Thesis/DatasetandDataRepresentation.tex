@@ -1,7 +1,8 @@
 \chapter{Dataset and Data Representation}
+\label{ch:dataset}
 \paragraph{}
-This chapter describes of the dataset structure the model is trained and evaluated with, as well as an overview of the processes required to generate the dataset itself.
-In section~\ref{sec:Sources} a reference to the data sources is given, then the focus of section~\ref{sec:WAD} is on how data is natively encoded for the game engine in order to give some hints on what are the difficulties to face in converting to and from that format in an automatic way. Section~\ref{sec:TargetFormat} describes in detail what data is provided with the dataset, how levels are converted from the native format and what features are extracted in order to provide an input for the neural network. Lastly, section~\ref{sec:DatasetOrganization} gives an overview of how the data is provided and organized in the resulting dataset.
+This chapter describes of the dataset structure the model is trained and evaluated with, as well an overview of the processes required to generate the dataset itself.
+Section~\ref{sec:Sources} gives a reference to the data sources, then section~\ref{sec:WAD} shows how data is natively encoded for the game engine in order to give some hints on what are the difficulties to face in converting to and from that format in an automatic way. Section~\ref{sec:TargetFormat} describes in detail what data is provided with the dataset, how levels are converted from the native format and what features are extracted in order to provide an input for the neural network. Lastly, section~\ref{sec:DatasetOrganization} gives an overview of how the data is provided and organized in the resulting dataset.
  
 \section{Data Sources}
 \label{sec:Sources}
@@ -605,4 +606,4 @@ In this section we analyse how the level dimensions in \gls{MU} are distributed 
 
 \newpage
 \section{Summary}
-In this chapter we proposed a setting for describing the structure and the features of DOOM levels, analysing the WAD file format and exploiting its properties to extract useful data. Inspired by the work of \citeauthor{VGLC} in \citetitle{VGLC} we produced a dataset of more than 9000 DOOM levels for extending the previous work and providing a ready-to-use database for future works on video-game levels. In doing so, we developed a new system for converting WAD files into a data format that is compatible with our needs, while also trying to preserve the textual format provided by the previous work for backward compatibility. 
+In this chapter we proposed a setting for describing the structure and the features of DOOM levels, analysing the WAD file format and exploiting its properties to extract useful data. Inspired by the work of \citeauthor{VGLC} in \citetitle{VGLC} we produced a dataset of more than 9000 DOOM levels for extending the previous work and providing a ready-to-use database for future works on video-game levels. In doing so, we developed a new system for converting WAD files into a data format that is compatible with our needs, while also trying to preserve the textual format provided by the previous work for backward compatibility. In the next chapter we describe our system from an high level perspective, showing how the dataset is used to generate new levels.
