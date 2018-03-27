@@ -66,7 +66,7 @@
 \BOOKMARK [2][-]{subsection.5.2.3}{Experiment 3: Controlling the generation}{section.5.2}% 66
 \BOOKMARK [1][-]{section.5.3}{Summary}{chapter.5}% 67
 \BOOKMARK [0][-]{chapter.6}{Results}{}% 68
-\BOOKMARK [1][-]{section.6.1}{Training Results}{chapter.6}% 69
+\BOOKMARK [1][-]{section.6.1}{Training and Sample Metrics}{chapter.6}% 69
 \BOOKMARK [1][-]{section.6.2}{Experiment Results}{chapter.6}% 70
 \BOOKMARK [2][-]{subsection.6.2.1}{Results of experiments 1 and 2}{section.6.2}% 71
 \BOOKMARK [2][-]{subsection.6.2.2}{Graphical results for Experiments 1 and 2}{section.6.2}% 72
@@ -75,12 +75,13 @@
 \BOOKMARK [1][-]{section.6.4}{Summary}{chapter.6}% 75
 \BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 76
 \BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 77
-\BOOKMARK [1][-]{section.7.2}{Conclusions}{chapter.7}% 78
-\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 79
-\BOOKMARK [2][-]{subsection.7.3.1}{Open Problems}{section.7.3}% 80
-\BOOKMARK [2][-]{subsection.7.3.2}{Possible Applications and future develops}{section.7.3}% 81
-\BOOKMARK [0][-]{chapter.8}{Appendix}{}% 82
-\BOOKMARK [1][-]{section.8.1}{Training Progress}{chapter.8}% 83
-\BOOKMARK [1][-]{section.8.2}{KS Statistic values and corrected p-values}{chapter.8}% 84
-\BOOKMARK [1][-]{section.8.3}{Graphical results for non-input features}{chapter.8}% 85
-\BOOKMARK [0][-]{section*.142}{Glossary}{}% 86
+\BOOKMARK [2][-]{subsection.7.1.1}{Sample Evaluation Metrics}{section.7.1}% 78
+\BOOKMARK [2][-]{subsection.7.1.2}{Experiments Discussion}{section.7.1}% 79
+\BOOKMARK [2][-]{subsection.7.1.3}{Final Considerations}{section.7.1}% 80
+\BOOKMARK [1][-]{section.7.2}{Conclusions}{chapter.7}% 81
+\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 82
+\BOOKMARK [2][-]{subsection.7.3.1}{Open Problems}{section.7.3}% 83
+\BOOKMARK [2][-]{subsection.7.3.2}{Possible Applications and future develops}{section.7.3}% 84
+\BOOKMARK [0][-]{appendix.A}{KS Statistic values and corrected p-values}{}% 85
+\BOOKMARK [0][-]{appendix.B}{Graphical results for non-input features}{}% 86
+\BOOKMARK [0][-]{section*.173}{Glossary}{}% 87

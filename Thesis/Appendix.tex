@@ -1,7 +1,5 @@
-\chapter{Appendix}
-\section{Training Progress}
-
-\section{KS Statistic values and corrected p-values}
+\appendix
+\chapter{KS Statistic values and corrected p-values}
 
 \begin{longtable}{lrr}
 	\caption[KS statistic values]{ \small KS statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data}\\
@@ -91,8 +89,6 @@
 	distmap-Q3                    &  0.171113 &  0.163435 \\
 	\label{tab:results-stats}
 \end{longtable}
-
-
 
 \begin{longtable}{lrr}
 	\caption[Corrected p-values]{ \small Corrected p-values using Bonferroni method}\\
@@ -184,7 +180,421 @@
 \end{longtable}
 
 
-\section{Graphical results for non-input features}
+\chapter{Graphical results for non-input features}
 \paragraph{} We omit results for features that are not informative in our specific context such as features calculated on floor basis, since the dataset we used only consisted on one-floor levels and they would match the corresponding level based features.
-
+\label{sec:appendix-graphs}
+\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_area.pdf} 
+		\label{fig:results-noninput-level_area}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_convex_area.pdf} 
+		\label{fig:results-noninput-level_convex_area}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_eccentricity.pdf} 
+		\label{fig:results-noninput-level_eccentricity}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_euler_number.pdf} 
+		\label{fig:results-noninput-level_euler_number}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_extent.pdf} 
+		\label{fig:results-noninput-level_extent}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_filled_area.pdf} 
+		\label{fig:results-noninput-level_filled_area}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_orientation.pdf} 
+		\label{fig:results-noninput-level_orientation}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_perimeter.pdf} 
+		\label{fig:results-noninput-level_perimeter}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_0.pdf} 
+		\label{fig:results-noninput-level_hu_moment_0}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_1.pdf} 
+		\label{fig:results-noninput-level_hu_moment_1}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_2.pdf} 
+		\label{fig:results-noninput-level_hu_moment_2}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_3.pdf} 
+		\label{fig:results-noninput-level_hu_moment_3}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_4.pdf} 
+		\label{fig:results-noninput-level_hu_moment_4}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_5.pdf} 
+		\label{fig:results-noninput-level_hu_moment_5}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_hu_moment_6.pdf} 
+		\label{fig:results-noninput-level_hu_moment_6}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_centroid_x.pdf} 
+		\label{fig:results-noninput-level_centroid_x}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/level_centroid_y.pdf} 
+		\label{fig:results-noninput-level_centroid_y}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_artifacts.pdf} 
+		\label{fig:results-noninput-number_of_artifacts}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_powerups.pdf} 
+		\label{fig:results-noninput-number_of_powerups}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_weapons.pdf} 
+		\label{fig:results-noninput-number_of_weapons}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_ammunitions.pdf} 
+		\label{fig:results-noninput-number_of_ammunitions}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_keys.pdf} 
+		\label{fig:results-noninput-number_of_keys}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_monsters.pdf} 
+		\label{fig:results-noninput-number_of_monsters}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_obstacles.pdf} 
+		\label{fig:results-noninput-number_of_obstacles}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/number_of_decorations.pdf} 
+		\label{fig:results-noninput-number_of_decorations}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/walkable_area.pdf} 
+		\label{fig:results-noninput-walkable_area}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/walkable_percentage.pdf} 
+		\label{fig:results-noninput-walkable_percentage}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/start_location_x_px.pdf} 
+		\label{fig:results-noninput-start_location_x_px}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/start_location_y_px.pdf} 
+		\label{fig:results-noninput-start_location_y_px}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/artifacts_per_walkable_area.pdf} 
+		\label{fig:results-noninput-artifacts_per_walkable_area}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/powerups_per_walkable_area.pdf} 
+		\label{fig:results-noninput-powerups_per_walkable_area}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/weapons_per_walkable_area.pdf} 
+		\label{fig:results-noninput-weapons_per_walkable_area}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/ammunitions_per_walkable_area.pdf} 
+		\label{fig:results-noninput-ammunitions_per_walkable_area}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/keys_per_walkable_area.pdf} 
+		\label{fig:results-noninput-keys_per_walkable_area}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/monsters_per_walkable_area.pdf} 
+		\label{fig:results-noninput-monsters_per_walkable_area}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/obstacles_per_walkable_area.pdf} 
+		\label{fig:results-noninput-obstacles_per_walkable_area}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/decorations_per_walkable_area.pdf} 
+		\label{fig:results-noninput-decorations_per_walkable_area}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/avg-path-length.pdf} 
+		\label{fig:results-noninput-avg-path-length}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/diameter-mean.pdf} 
+		\label{fig:results-noninput-diameter-mean}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/art-points.pdf} 
+		\label{fig:results-noninput-art-points}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/assortativity-mean.pdf} 
+		\label{fig:results-noninput-assortativity-mean}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-min.pdf} 
+		\label{fig:results-noninput-betw-cen-min}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-max.pdf} 
+		\label{fig:results-noninput-betw-cen-max}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-mean.pdf} 
+		\label{fig:results-noninput-betw-cen-mean}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-var.pdf} 
+		\label{fig:results-noninput-betw-cen-var}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-skew.pdf} 
+		\label{fig:results-noninput-betw-cen-skew}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-kurt.pdf} 
+		\label{fig:results-noninput-betw-cen-kurt}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-Q1.pdf} 
+		\label{fig:results-noninput-betw-cen-Q1}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-Q2.pdf} 
+		\label{fig:results-noninput-betw-cen-Q2}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/betw-cen-Q3.pdf} 
+		\label{fig:results-noninput-betw-cen-Q3}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-min.pdf} 
+		\label{fig:results-noninput-closn-cen-min}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-max.pdf} 
+		\label{fig:results-noninput-closn-cen-max}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-mean.pdf} 
+		\label{fig:results-noninput-closn-cen-mean}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-var.pdf} 
+		\label{fig:results-noninput-closn-cen-var}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-skew.pdf} 
+		\label{fig:results-noninput-closn-cen-skew}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-kurt.pdf} 
+		\label{fig:results-noninput-closn-cen-kurt}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-Q1.pdf} 
+		\label{fig:results-noninput-closn-cen-Q1}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-Q2.pdf} 
+		\label{fig:results-noninput-closn-cen-Q2}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/closn-cen-Q3.pdf} 
+		\label{fig:results-noninput-closn-cen-Q3}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distmap-max.pdf} 
+		\label{fig:results-noninput-distmap-max}
+	\end{minipage} 
+	
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+	
+\end{figure}\begin{figure}[ht]
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distmap-mean.pdf} 
+		\label{fig:results-noninput-distmap-mean}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distmap-var.pdf} 
+		\label{fig:results-noninput-distmap-var}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distmap-Q1.pdf} 
+		\label{fig:results-noninput-distmap-Q1}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distmap-Q2.pdf} 
+		\label{fig:results-noninput-distmap-Q2}
+	\end{minipage} 
+	
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distmap-Q3.pdf} 
+		\label{fig:results-noninput-distmap-Q3}
+	\end{minipage}
+	
+	\caption[Graphical results for experiments 1 and 2]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each non-input feature.}
+\end{figure}
 

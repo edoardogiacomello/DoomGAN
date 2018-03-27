@@ -1,8 +1,119 @@
 \chapter{Results}
 \label{sec:results}
-\section{Training Results}
-%TODO: Add training results?
+\section{Training and Sample Metrics}
+\paragraph{} In this section we show the metrics that are calculated during the training phase of each network, including the losses and the Sample Evaluation Metrics described in section~\ref{sec:evaluation}.
 
+\begin{figure}[!htb] 
+	\begin{minipage}[b]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/uncond_loss.png} 
+		\caption[Unconditional Network Loss]: {Unconditional Network Loss for the Critic: Training loss (darker) and Validation Loss (brighter) both converge toward zero.}
+		\label{fig:train-uncond-loss}
+	\end{minipage}
+	
+	\begin{minipage}[b]{\linewidth}
+	\centering
+	\includegraphics[width=\linewidth]{results/train/cond_loss.png} 
+	\caption[Conditional Network Loss]: {Conditional Network Loss for the Critic: Training loss (darker) and Validation Loss (brighter) both converge toward zero.}
+	\label{fig:train-cond-loss}
+\end{minipage}
+\end{figure}
+
+\begin{figure}[!htb] 
+	\begin{minipage}[b]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/entropy.png} 
+		\caption[Sample Evaluation Metrics: Entropy]: {Sample Evaluation Metrics: Mean Entropy difference over all the maps (floormap, wallmap, thingsmap, heightmap). Unconditional (green) and Conditional (red) networks generate samples having similar mean entropy. }
+		\label{fig:train-entropy-mean}
+	\end{minipage}
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/entropy_floormap.png} 
+		\caption[Sample Evaluation Metrics: Entropy (Floormap)]: {Sample Evaluation Metrics: Entropy MAE calculated on FloorMap. Unconditional (green) and Conditional (red) networks generate samples having similar Floormap entropy.}
+		\label{fig:train-entropy-floormap}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/entropy_heightmap.png} 
+		\caption[Sample Evaluation Metrics: Entropy (HeightMap)]: {Sample Evaluation Metrics: Entropy MAE calculated on HeightMap. Conditional (red) network generate samples having slightly better HeightMap entropy than the Unconditional network (green).}
+		\label{fig:train-entropy-heightmap}
+	\end{minipage}
+
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/entropy_wallmap.png} 
+		\caption[Sample Evaluation Metrics: Entropy (WallMap)]: {Sample Evaluation Metrics: Entropy MAE calculated on WallMap. Unconditional (green) and Conditional (red) networks generate samples having similar WallMap entropy.}
+		\label{fig:train-entropy-wallmap}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/entropy_thingsmap.png} 
+		\caption[Sample Evaluation Metrics: Entropy (ThingsMap)]: {Sample Evaluation Metrics: Entropy MAE calculated on ThingsMap. Unconditional (green) and Conditional (red) networks generate samples having similar ThingsMap entropy.}
+		\label{fig:train-entropy-thingsmap}
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[!htb] 
+	\begin{minipage}[b]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/similarity.png} 
+		\caption[Sample Evaluation Metrics: Mean Structural Similarity Index]: {Sample Evaluation Metrics: Mean Structural Similarity over the samples. Conditional (red) networks generate samples being more similar to true ones than the Unconditional network (green).}
+		\label{fig:train-similarity}
+	\end{minipage}
+\end{figure}
+
+
+\begin{figure}[!htb] 
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/encoding_error_floormap.png} 
+		\caption[Sample Evaluation Metrics: Encoding Error (Floormap)]: {Sample Evaluation Metrics: Encoding Error calculated on FloorMap. Both Unconditional (green) and Conditional (red) networks learns the colour scheme for representing the floors.}
+		\label{fig:train-encoding_error-floormap}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/encoding_error_heightmap.png} 
+		\caption[Sample Evaluation Metrics: Encoding Error (HeightMap)]: {Sample Evaluation Metrics: Encoding Error calculated on HeightMap. Conditional (red) network is slightly more precise in representing the colour coding for the floor height than the Unconditional network (green).}
+		\label{fig:train-encoding-error-heightmap}
+	\end{minipage}
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/encoding_error_wallmap.png} 
+		\caption[Sample Evaluation Metrics: Encoding Error (WallMap)]: {Sample Evaluation Metrics: Encoding Error calculated on WallMap. Both Unconditional (green) and Conditional (red) networks learns the colour scheme for representing the walls.}
+		\label{fig:train-encoding-error-wallmap}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/encoding_error_thingsmap.png} 
+		\caption[Sample Evaluation Metrics: Encoding Error (ThingsMap)]: {Sample Evaluation Metrics: Encoding Error calculated on ThingsMap. Both Unconditional (green) and Conditional (red) networks learns the colour scheme for representing the game objects.}
+		\label{fig:train-encoding-error-thingsmap}
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[!htb] 
+	\begin{minipage}[b]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/floor_corner_error.png} 
+		\caption[Sample Evaluation Metrics: Mean Corner Error (FloorMap)]: {Sample Evaluation Metrics: Mean Corner Error over the FloorMap. Conditional (red) networks generate samples having a floor corner count closer to true levels than the Unconditional network (green).}
+		\label{fig:floor_corner_error}
+	\end{minipage}
+
+	\begin{minipage}[b]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/train/walls_corner_error.png} 
+		\caption[Sample Evaluation Metrics: Mean Corner Error (WallMap)]: {Sample Evaluation Metrics: Mean Corner Error over the WallMap. Conditional (red) networks generate samples having a wall corner count closer to true levels than the Unconditional network (green).}
+		\label{fig:wall_corner_error}
+	\end{minipage}
+\end{figure}
+
+
+\FloatBarrier
 \section{Experiment Results}
 \paragraph{}
 \subsection{Results of experiments 1 and 2}
@@ -117,66 +228,162 @@
 		distmap-Q3                    &      R &   R* &    F1 \\
 		\label{tab:results-other-features}
 	\end{longtable}
+
 \subsection{Graphical results for Experiments 1 and 2}
-%TODO: Go on from here
-\begin{figure}[ht] 
-	\label{fig:results-input-feats} 
-	\begin{minipage}[b]{0.5\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{results/exp1-2/level_equivalent_diameter.pdf} 
-		\caption[Results: Experiments 1 and 2, level\_equivalent\_diameter]{Results: Experiments 1 and 2, level\_equivalent\_diameter.} 
-		\vspace{4ex}
-	\end{minipage}%%
-	\begin{minipage}[b]{0.5\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{results/exp1-2/level_solidity.pdf} 
-		\caption[Results: Experiments 1 and 2, level\_equivalent\_diameter]{Results: Experiments 1 and 2, level\_equivalent\_diameter.} 
-		\vspace{4ex}
-	\end{minipage} 
-\end{figure}
+\paragraph{} Figure~\ref{fig:results-input-features} shows the cumulative distribution functions relative to the features considered in table~\ref{tab:results-input-features}. Another view of the same data is proposed in figure~\ref{fig:results-input-distr-features} where probability densities for the input features are shown.
 
-\begin{figure}[ht] 
-	\begin{minipage}[b]{0.5\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{results/exp1-2/level_major_axis_length.pdf} 
-		\caption{DFT, Initial condition} 
-		\vspace{4ex}
+\begin{figure}[h!] 
+    \begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\linewidth]{results/exp1-2/level_equivalent_diameter.pdf} 
+	\label{fig:results-input-level_equivalent_diameter}
 	\end{minipage}
-	\begin{minipage}[b]{0.5\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{results/exp1-2/level_minor_axis_length.pdf} 
-		\caption{DFT, rupture} 
-		\vspace{4ex}
-	\end{minipage} 
-\end{figure}
+	\hfil
+    \begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\linewidth]{results/exp1-2/level_solidity.pdf} 
+	\label{fig:results-input-level_solidity}
+	\end{minipage}
 
-\begin{figure}[ht] 
-	\begin{minipage}[b]{0.5\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{results/exp1-2/distmap-kurt.pdf} 
-		\caption{DFT, rupture} 
-		\vspace{4ex}
-	\end{minipage} 
-	\begin{minipage}[b]{0.5\linewidth}
+    \begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\linewidth]{results/exp1-2/level_major_axis_length.pdf} 
+	\label{fig:results-input-level_major_axis_length}
+\end{minipage}
+\hfil
+\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\linewidth]{results/exp1-2/level_minor_axis_length.pdf} 
+	\label{fig:results-input-level_minor_axis_length}
+\end{minipage}
+
+    \begin{minipage}[b]{0.45\linewidth}
 	\centering
 	\includegraphics[width=\linewidth]{results/exp1-2/distmap-skew.pdf} 
-	\caption{DFT, rupture} 
-	\vspace{4ex}
-	\end{minipage} 
-\end{figure}
-
-\begin{figure}[ht] 
+	\label{fig:results-input-distmap-skew}
+\end{minipage}
+\hfil
+\begin{minipage}[b]{0.45\linewidth}
 	\centering
-		\begin{minipage}[b]{0.5\linewidth}
+	\includegraphics[width=\linewidth]{results/exp1-2/distmap-kurt.pdf} 
+	\label{fig:results-input-distmap-kurt}
+\end{minipage}
+
+	\centering
+	\begin{minipage}[b]{0.45\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{results/exp1-2/nodes.pdf} 
-		\caption{DFT, rupture} 
-		\vspace{4ex}
-	\end{minipage} 
+		\label{fig:results-input-nodes}
+	\end{minipage}
+
+
+\caption[Graphical results for experiments 1 and 2: Cumulative Distributions]{Experiments 1 and 2: Cumulative distribution functions for true data, unconditional network and conditional network for each input feature.}
+\label{fig:results-input-features}
 \end{figure}
+
+\begin{figure}[h!] 
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/level_equivalent_diameter.pdf} 
+		\label{fig:results-input-distr-level_equivalent_diameter}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/level_solidity.pdf} 
+		\label{fig:results-input-distr-level_solidity}
+	\end{minipage}
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/level_major_axis_length.pdf} 
+		\label{fig:results-input-distr-level_major_axis_length}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/level_minor_axis_length.pdf} 
+		\label{fig:results-input-distr-level_minor_axis_length}
+	\end{minipage}
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/distmap-skew.pdf} 
+		\label{fig:results-input-distr-distmap-skew}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/distmap-kurt.pdf} 
+		\label{fig:results-input-distr-distmap-kurt}
+	\end{minipage}
+	
+	\centering
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp1-2/distr/nodes.pdf} 
+		\label{fig:results-input-distr-nodes}
+	\end{minipage}
+	
+	\caption[Graphical results for experiments 1 and 2: Probability Densities]{Experiments 1 and 2: Estimated probability density functions for true data, unconditional network and conditional network for each input feature.}
+	\label{fig:results-input-distr-features}
+	
+\end{figure}
+
+\FloatBarrier
 \subsection{Results of Experiment 3}
+\paragraph{} Results of Experiment 3 are shown in figure~\ref{fig:results-exp3-features}. Each figure shows a different input feature. The three vertical lines correspond to the values of the three quartiles that have been used to generate the three distributions of 1000 levels each. 
 
+\begin{figure}[h!] 
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/level_equivalent_diameter.pdf} 
+		\label{fig:results-exp3-level_equivalent_diameter}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/level_solidity.pdf} 
+		\label{fig:results-exp3-level_solidity}
+	\end{minipage}
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/level_major_axis_length.pdf} 
+		\label{fig:results-exp3-level_major_axis_length}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/level_minor_axis_length.pdf} 
+		\label{fig:results-exp3-level_minor_axis_length}
+	\end{minipage}
+	
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/distmap-skew.pdf} 
+		\label{fig:results-exp3-distmap-skew}
+	\end{minipage}
+	\hfil
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/distmap-kurt.pdf} 
+		\label{fig:results-exp3-distmap-kurt}
+	\end{minipage}
+	
+	\centering
+	\begin{minipage}[b]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{results/exp3/nodes.pdf} 
+		\label{fig:results-exp3-nodes}
+	\end{minipage}
 
+	
+	\caption[Graphical results for experiments 3: Generated features distribution vs true percentiles]{Experiments 3: Generated distributions for each true feature value in the cases of 25th (red, circles), 50th (green, squares) and 75th (blue, diamonds) percentiles.}
+	\label{fig:results-exp3-features}
+\end{figure}
 
 \section{Generated Samples}
+%TODO: Genera e mostra i livelli che hai selezionato?
 \section{Summary}
+\paragraph{} In this chapter we presented our results by first showing the quality difference in samples generated by the two networks, according to the evaluation metrics defined in section \ref{sec:evaluation} which don't depend on the level features. We then showed the results of the experiments we designed for testing the relation between the true and generated features and the impact of the input features in the conditional network. In the next chapter we discuss in detail the results highlighting the main facts that emerged from our analysis.

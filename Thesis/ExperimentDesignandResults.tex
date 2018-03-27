@@ -51,7 +51,6 @@ In selecting which numerical features $Y$ to use as network input we followed so
 \newpage
 \subsection{Trained Architectures}
 \paragraph{} In training the models we kept fixed the WGAN-GP architecture, learning hyperparameters, the kernel size and the stride, while we varied the input features and the number of layers. During the development of the system we tried several different architectures and networks, but we show only the ones we conducted our experiments upon. For example, in our earlier experiments we tried using a single multi-valued map, but the results were affected from too much noise and artefacts. In the hope of obtaining better quality samples we also tried adding more layers to the network: although it showed to learn faster, it soon made the architecture unstable and the generator collapsed. Table~\ref{tab:trained_models} shows the final models we used in our experiments:
-%TODO: CAMBIA QUESTA TABELLA CON LE NUOVE RETI
 
 \begin{table}[h!]
 	\begin{tabularx}{\textwidth}{| c | c | X | X | X | X |}
@@ -120,7 +119,7 @@ For each level in the dataset we sampled one level from the unconditional networ
 	\end{split}
 \end{equation}
 
-where $F_{G}(x)$ and $F_{T}(x)$ are the empirical distribution functions of the generated and true features, respectively. The tests have been corrected using the Bonferroni correction using a family-wise error rate (significance for the entire experiment) of 0.05; in correcting p-values we also considered the tests of experiment 2.   %TODO: Scrivi dove andare a leggere i risultati
+where $F_{G}(x)$ and $F_{T}(x)$ are the empirical distribution functions of the generated and true features, respectively. The tests have been corrected using the Bonferroni correction using a family-wise error rate (significance for the entire experiment) of 0.05; in correcting p-values we also considered the tests of experiment 2. Results are shown alongside the results of experiment 2 in tables \ref{tab:results-input-features} and \ref{tab:results-other-features}.
 
 \subsection{Experiment 2: Addition of input features}
 \label{sec:experiment-2}
@@ -134,15 +133,13 @@ For comparing the results of the unconditional and conditional networks we clust
 	\item \textbf{F4:} Features for which the null hypothesis cannot be rejected for the unconditional network (experiment 1) but is rejected for the conditional network.
 \end{enumerate}
 
-Only for the features in the group F3, we also consider the distance (KS-stats) between the true and generated feature distributions in order to discover which network better reflects the feature distribution. This is reported as a "*" in the results table %TODO: aggiungi table reference
+Only for the features in the group F3, we also consider the distance (KS-stats) between the true and generated feature distributions in order to discover which network better reflects the feature distribution. This is reported as a "*" in the results tables \ref{tab:results-input-features} and \ref{tab:results-other-features}.
 
 \subsection{Experiment 3: Controlling the generation}
-In the third experiment we studied the impact of the input features on the generated levels from a qualitative point of view. In particular, we selected a set of levels from the dataset according to their feature values: for each input feature we selected the levels that match the 25th, 50th and 75th percentiles of the feature distribution, obtaining a total of $3 * \vert y_{i} \vert = 21$ levels. We then sampled 1000 levels from the conditioned network for each selected input feature vector, obtaining 1000 generated feature vectors for each input level. For each input feature, we plotted the three selected input values and the corresponding generated feature distributions, showing how the generated level distribution changes with respect to a change in the input feature. \\
-Results of this experiment are shown in %TODO: Aggiungi reference
+In the third experiment we studied the impact of the input features on the generated levels from a qualitative point of view. In particular, we selected a set of levels from the dataset according to their feature values: for each input feature we selected the levels that match the 25th, 50th and 75th percentiles of the feature distribution, obtaining a total of $3 * \vert y_{i} \vert = 21$ levels. We then sampled 1000 levels from the conditioned network for each selected input feature vector, obtaining 1000 generated feature vectors for each input level. For each input feature, we plotted the three selected input values and the corresponding generated feature distributions, showing how the generated level distribution changes with respect to a change in the input feature. Results of this experiment are shown in figure~\ref{fig:results-exp3-features}.
 
-%TODO: Genera e mostra i livelli che hai selezionato?
-%TODO: nei risultati o considerazioni o qui: ovviamente questa cosa è lontana da dire che posso spostare le feature a piacimento, però mostra comunque l'effetto.
 
-%TODO: Scrivi summary e vedi se tenere i results come una sezione o un capitolo
+
+
 \section{Summary}
 \paragraph{} In this chapter we described the input levels selection and the input feature selection criteria for training our models, we then presented the final models for conducting the experiments. 
