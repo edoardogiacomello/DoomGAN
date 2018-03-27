@@ -9,29 +9,51 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Pix2Pix example from \citeauthor {image-to-image}}}{19}{figure.caption.7}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.1}{\ignorespaces A simple level showing sectors and linedefs}}{25}{figure.caption.29}
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Layers from DCGAN, \citeauthor {gan:dcgan}}}{22}{figure.caption.12}
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.2}{\ignorespaces DoomDataset Size distribution}}{30}{figure.caption.53}
-\defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.1}{\ignorespaces System Overview: Generative Model Structure}}{44}{figure.caption.56}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Use Case: Model Optimization}}{45}{figure.caption.60}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Use Case: Validation and Sample Evaluation}}{46}{figure.caption.62}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Use Case: Sampling or Generation}}{47}{figure.caption.64}
-\defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {4.5}{\ignorespaces System Overview: Data Flow Diagram}}{48}{figure.caption.65}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Samples from WGAN-GP, \citeauthor {wgangp}}}{23}{figure.caption.15}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.1}{\ignorespaces A simple level showing sectors and linedefs}}{29}{figure.caption.41}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.2}{\ignorespaces DoomDataset Size distribution}}{34}{figure.caption.65}
+\defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.1}{\ignorespaces System Overview: Generative Model Structure}}{48}{figure.caption.68}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Use Case: Model Optimization}}{49}{figure.caption.72}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Use Case: Validation and Sample Evaluation}}{50}{figure.caption.74}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Use Case: Sampling or Generation}}{51}{figure.caption.76}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.5}{\ignorespaces System Overview: Data Flow Diagram}}{52}{figure.caption.77}
+\defcounter {refsection}{0}\relax 
+\addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Example of feature values}}{60}{figure.caption.107}
+\defcounter {refsection}{0}\relax 
+\addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Results: Experiments 1 and 2, level\_equivalent\_diameter}}{65}{figure.caption.115}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Results: Experiments 1 and 2, level\_equivalent\_diameter}}{65}{figure.caption.115}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.3}{\ignorespaces DFT, Initial condition\relax }}{66}{figure.caption.116}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.4}{\ignorespaces DFT, rupture\relax }}{66}{figure.caption.116}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.5}{\ignorespaces DFT, rupture\relax }}{66}{figure.caption.117}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.6}{\ignorespaces DFT, rupture\relax }}{66}{figure.caption.117}
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {6.7}{\ignorespaces DFT, rupture\relax }}{67}{figure.caption.118}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 

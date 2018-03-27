@@ -1,0 +1,422 @@
+% For printing with the A5 format
+\documentclass[10pt,twoside,openright,english,italian]{report}% twoside!
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\begin{document}
+\begin{longtable}{llll}
+	\caption[Test results for input features]{Kolmogorov-Smirnov test results for input features, using a significance level of 0.05 and the Bonferroni correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test}\\
+	\toprule
+	{} & uncond & 12k & 26k \\
+	feature                   &        &     &     \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_equivalent\_diameter &     NR &  NR &  NR \\
+	level\_major\_axis\_length   &     R* &   R &   R \\
+	level\_minor\_axis\_length   &     NR &   R &  NR \\
+	level\_solidity            &     R* &   R &   R \\
+	nodes                     &     R* &   R &   R \\
+	distmap-skew              &      R &   R &  R* \\
+	distmap-kurt              &      R &   R &  R* \\
+\end{longtable}
+\begin{longtable}{llll}
+	\caption[Test results for non input features]{Kolmogorov-Smirnov test results for input features, using a significance level of 0.05 and the Bonferroni correction method. Results are indicated with R if the null hypotesis can be rejected or with NR otherwise. An astesisk indicates the network that performed better (has the minimum KS distance) if the test is rejected in every test}\\
+	\toprule
+	{} & uncond & 12k & 26k \\
+	feature                       &        &     &     \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                    &     NR &  NR &  NR \\
+	level\_convex\_area             &     NR &  NR &   R \\
+	level\_eccentricity            &     R* &   R &   R \\
+	level\_euler\_number            &      R &   R &  R* \\
+	level\_extent                  &     R* &   R &   R \\
+	level\_filled\_area             &     NR &  NR &  NR \\
+	level\_orientation             &     NR &  NR &  NR \\
+	level\_perimeter               &     NR &  NR &  NR \\
+	level\_hu\_moment\_0             &     NR &   R &  NR \\
+	level\_hu\_moment\_1             &     R* &   R &   R \\
+	level\_hu\_moment\_2             &      R &   R &  R* \\
+	level\_hu\_moment\_3             &      R &   R &  NR \\
+	level\_hu\_moment\_4             &     NR &   R &   R \\
+	level\_hu\_moment\_5             &     NR &   R &  NR \\
+	level\_hu\_moment\_6             &     NR &  NR &   R \\
+	level\_centroid\_x              &     R* &   R &   R \\
+	level\_centroid\_y              &     R* &   R &   R \\
+	number\_of\_artifacts           &     R* &   R &   R \\
+	number\_of\_powerups            &      R &   R &  R* \\
+	number\_of\_weapons             &      R &   R &  R* \\
+	number\_of\_ammunitions         &      R &  R* &   R \\
+	number\_of\_keys                &      R &   R &  R* \\
+	number\_of\_monsters            &      R &  R* &   R \\
+	number\_of\_obstacles           &      R &   R &  R* \\
+	number\_of\_decorations         &      R &   R &  R* \\
+	walkable\_area                 &     NR &  NR &  NR \\
+	walkable\_percentage           &      R &  NR &  NR \\
+	start\_location\_x\_px           &      R &  R* &   R \\
+	start\_location\_y\_px           &      R &  R* &   R \\
+	artifacts\_per\_walkable\_area   &     R* &   R &   R \\
+	powerups\_per\_walkable\_area    &      R &   R &  R* \\
+	weapons\_per\_walkable\_area     &     R* &   R &   R \\
+	ammunitions\_per\_walkable\_area &      R &   R &  R* \\
+	keys\_per\_walkable\_area        &      R &   R &  R* \\
+	monsters\_per\_walkable\_area    &     R* &   R &   R \\
+	obstacles\_per\_walkable\_area   &      R &   R &  R* \\
+	decorations\_per\_walkable\_area &      R &   R &  R* \\
+	avg-path-length               &     R* &   R &   R \\
+	diameter-mean                 &     R* &   R &   R \\
+	art-points                    &     R* &   R &   R \\
+	assortativity-mean            &     R* &   R &   R \\
+	betw-cen-min                  &     NR &  NR &  NR \\
+	betw-cen-max                  &      R &   R &  R* \\
+	betw-cen-mean                 &     R* &   R &   R \\
+	betw-cen-var                  &     R* &   R &   R \\
+	betw-cen-skew                 &     R* &   R &   R \\
+	betw-cen-kurt                 &     R* &   R &   R \\
+	betw-cen-Q1                   &     R* &   R &   R \\
+	betw-cen-Q2                   &     R* &   R &   R \\
+	betw-cen-Q3                   &     R* &   R &   R \\
+	closn-cen-min                 &     R* &   R &   R \\
+	closn-cen-max                 &      R &  R* &   R \\
+	closn-cen-mean                &      R &  R* &   R \\
+	closn-cen-var                 &      R &  R* &   R \\
+	closn-cen-skew                &      R &   R &  R* \\
+	closn-cen-kurt                &      R &   R &  R* \\
+	closn-cen-Q1                  &      R &  R* &   R \\
+	closn-cen-Q2                  &      R &  R* &   R \\
+	closn-cen-Q3                  &      R &  R* &   R \\
+	distmap-max                   &     R* &   R &   R \\
+	distmap-mean                  &     R* &   R &   R \\
+	distmap-var                   &     R* &   R &   R \\
+	distmap-Q1                    &      R &  R* &   R \\
+	distmap-Q2                    &      R &  R* &   R \\
+	distmap-Q3                    &      R &  R* &   R \\
+\end{longtable}
+\begin{longtable}{lrrr}
+	\caption[KS statistic values]{KS statistic values for the tests. The value is correlated with the distance of the cumulative distributions of the true and generated data}\\
+	\toprule
+	{} &  uncond-s &     12k-s &     26k-s \\
+	feature                       &           &           &           \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                    &  0.041360 &  0.033119 &  0.060773 \\
+	level\_convex\_area             &  0.053309 &  0.083717 &  0.112339 \\
+	level\_eccentricity            &  0.155331 &  0.255750 &  0.232044 \\
+	level\_equivalent\_diameter     &  0.041360 &  0.033119 &  0.060773 \\
+	level\_euler\_number            &  0.136949 &  0.242870 &  0.121547 \\
+	level\_extent                  &  0.158088 &  0.160074 &  0.206262 \\
+	level\_filled\_area             &  0.041360 &  0.035879 &  0.069061 \\
+	level\_major\_axis\_length       &  0.090074 &  0.104876 &  0.136280 \\
+	level\_minor\_axis\_length       &  0.065257 &  0.097516 &  0.049724 \\
+	level\_orientation             &  0.078125 &  0.075437 &  0.079190 \\
+	level\_perimeter               &  0.046875 &  0.071757 &  0.050645 \\
+	level\_solidity                &  0.144301 &  0.153634 &  0.245856 \\
+	level\_hu\_moment\_0             &  0.084559 &  0.103036 &  0.061694 \\
+	level\_hu\_moment\_1             &  0.128676 &  0.218951 &  0.187845 \\
+	level\_hu\_moment\_2             &  0.133272 &  0.105796 &  0.099448 \\
+	level\_hu\_moment\_3             &  0.114890 &  0.098436 &  0.083794 \\
+	level\_hu\_moment\_4             &  0.067096 &  0.101196 &  0.089319 \\
+	level\_hu\_moment\_5             &  0.061581 &  0.104876 &  0.075506 \\
+	level\_hu\_moment\_6             &  0.076287 &  0.067157 &  0.092081 \\
+	level\_centroid\_x              &  0.724265 &  0.800368 &  0.738490 \\
+	level\_centroid\_y              &  0.812500 &  0.864765 &  0.813076 \\
+	number\_of\_artifacts           &  0.420037 &  0.448942 &  0.436464 \\
+	number\_of\_powerups            &  0.117647 &  0.097516 &  0.086556 \\
+	number\_of\_weapons             &  0.318015 &  0.361546 &  0.303867 \\
+	number\_of\_ammunitions         &  0.415441 &  0.352346 &  0.402394 \\
+	number\_of\_keys                &  0.992647 &  0.947562 &  0.938306 \\
+	number\_of\_monsters            &  0.584559 &  0.527139 &  0.567219 \\
+	number\_of\_obstacles           &  0.531250 &  0.498620 &  0.460405 \\
+	number\_of\_decorations         &  0.856618 &  0.808648 &  0.779926 \\
+	walkable\_area                 &  0.043199 &  0.035879 &  0.062615 \\
+	walkable\_percentage           &  0.149816 &  0.067157 &  0.084715 \\
+	start\_location\_x\_px           &  0.232537 &  0.216191 &  0.274401 \\
+	start\_location\_y\_px           &  0.539522 &  0.515179 &  0.558932 \\
+	artifacts\_per\_walkable\_area   &  0.444853 &  0.521619 &  0.493554 \\
+	powerups\_per\_walkable\_area    &  0.130515 &  0.167433 &  0.129834 \\
+	weapons\_per\_walkable\_area     &  0.290441 &  0.366145 &  0.337017 \\
+	ammunitions\_per\_walkable\_area &  0.399816 &  0.408464 &  0.398711 \\
+	keys\_per\_walkable\_area        &  0.976103 &  0.969641 &  0.945672 \\
+	monsters\_per\_walkable\_area    &  0.574449 &  0.602576 &  0.590239 \\
+	obstacles\_per\_walkable\_area   &  0.568015 &  0.624655 &  0.562615 \\
+	decorations\_per\_walkable\_area &  0.893382 &  0.900644 &  0.857274 \\
+	nodes                         &  0.149816 &  0.165593 &  0.150092 \\
+	avg-path-length               &  0.163603 &  0.172033 &  0.183241 \\
+	diameter-mean                 &  0.147978 &  0.158234 &  0.173112 \\
+	art-points                    &  0.128676 &  0.134315 &  0.151934 \\
+	assortativity-mean            &  0.413963 &  0.489173 &  0.459486 \\
+	betw-cen-min                  &  0.008272 &  0.009200 &  0.008287 \\
+	betw-cen-max                  &  0.357537 &  0.367985 &  0.340700 \\
+	betw-cen-mean                 &  0.360294 &  0.391904 &  0.385820 \\
+	betw-cen-var                  &  0.347782 &  0.384615 &  0.383828 \\
+	betw-cen-skew                 &  0.206801 &  0.227231 &  0.224678 \\
+	betw-cen-kurt                 &  0.181066 &  0.206992 &  0.194291 \\
+	betw-cen-Q1                   &  0.227022 &  0.255750 &  0.281768 \\
+	betw-cen-Q2                   &  0.255515 &  0.290708 &  0.291897 \\
+	betw-cen-Q3                   &  0.284007 &  0.318307 &  0.334254 \\
+	closn-cen-min                 &  0.630515 &  0.665133 &  0.659300 \\
+	closn-cen-max                 &  0.170956 &  0.140754 &  0.160221 \\
+	closn-cen-mean                &  0.219669 &  0.208832 &  0.248619 \\
+	closn-cen-var                 &  0.349798 &  0.302632 &  0.303992 \\
+	closn-cen-skew                &  0.642463 &  0.648574 &  0.620626 \\
+	closn-cen-kurt                &  0.388787 &  0.395584 &  0.348066 \\
+	closn-cen-Q1                  &  0.217831 &  0.199632 &  0.226519 \\
+	closn-cen-Q2                  &  0.188419 &  0.165593 &  0.189687 \\
+	closn-cen-Q3                  &  0.171875 &  0.163753 &  0.187845 \\
+	distmap-max                   &  0.194853 &  0.240110 &  0.242173 \\
+	distmap-mean                  &  0.156250 &  0.188592 &  0.218232 \\
+	distmap-var                   &  0.187500 &  0.223551 &  0.240331 \\
+	distmap-skew                  &  0.173713 &  0.160074 &  0.134438 \\
+	distmap-kurt                  &  0.160846 &  0.128795 &  0.107735 \\
+	distmap-Q1                    &  0.217831 &  0.199632 &  0.226519 \\
+	distmap-Q2                    &  0.188419 &  0.165593 &  0.189687 \\
+	distmap-Q3                    &  0.171875 &  0.163753 &  0.187845 \\
+\end{longtable}
+\begin{longtable}{lrrr}
+	\caption[Corrected p-values]{Corrected p-values using Bonferroni method}\\
+	\toprule
+	{} &         uncond &            12k &            26k \\
+	feature                       &                &                &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                    &   1.000000e+00 &   1.000000e+00 &   1.000000e+00 \\
+	level\_convex\_area             &   1.000000e+00 &   6.521077e-02 &   1.387788e-04 \\
+	level\_eccentricity            &   4.320014e-10 &   8.901167e-30 &   3.092849e-24 \\
+	level\_equivalent\_diameter     &   1.000000e+00 &   1.000000e+00 &   1.000000e+00 \\
+	level\_euler\_number            &   1.590063e-07 &   1.031910e-26 &   1.305171e-05 \\
+	level\_extent                  &   1.670159e-10 &   8.556037e-11 &   7.541724e-19 \\
+	level\_filled\_area             &   1.000000e+00 &   1.000000e+00 &   7.669466e-01 \\
+	level\_major\_axis\_length       &   1.921535e-02 &   8.133969e-04 &   2.017779e-07 \\
+	level\_minor\_axis\_length       &   1.000000e+00 &   4.178571e-03 &   1.000000e+00 \\
+	level\_orientation             &   1.751665e-01 &   2.773760e-01 &   1.475488e-01 \\
+	level\_perimeter               &   1.000000e+00 &   5.029380e-01 &   1.000000e+00 \\
+	level\_solidity                &   1.635963e-08 &   7.873971e-10 &   2.206481e-27 \\
+	level\_hu\_moment\_0             &   5.540882e-02 &   1.238311e-03 &   1.000000e+00 \\
+	level\_hu\_moment\_1             &   1.781486e-06 &   1.924491e-21 &   2.174605e-15 \\
+	level\_hu\_moment\_2             &   4.740990e-07 &   6.573966e-04 &   2.778633e-03 \\
+	level\_hu\_moment\_3             &   7.152997e-05 &   3.427787e-03 &   6.474752e-02 \\
+	level\_hu\_moment\_4             &   1.000000e+00 &   1.871226e-03 &   2.266163e-02 \\
+	level\_hu\_moment\_5             &   1.000000e+00 &   8.133969e-04 &   2.757750e-01 \\
+	level\_hu\_moment\_6             &   2.393368e-01 &   1.000000e+00 &   1.307410e-02 \\
+	level\_centroid\_x              &  4.362837e-249 &  3.207131e-304 &  1.508260e-258 \\
+	level\_centroid\_y              &  7.612533e-314 &   0.000000e+00 &  1.027808e-313 \\
+	number\_of\_artifacts           &   7.918781e-83 &   9.789783e-95 &   2.215291e-89 \\
+	number\_of\_powerups            &   3.534036e-05 &   4.178571e-03 &   3.862734e-02 \\
+	number\_of\_weapons             &   7.230792e-47 &   6.145909e-61 &   1.385222e-42 \\
+	number\_of\_ammunitions         &   5.399199e-81 &   8.360619e-58 &   9.324682e-76 \\
+	number\_of\_keys                &   0.000000e+00 &   0.000000e+00 &   0.000000e+00 \\
+	number\_of\_monsters            &  9.231542e-162 &  3.733882e-131 &  6.082999e-152 \\
+	number\_of\_obstacles           &  2.359676e-133 &  3.390310e-117 &   1.287048e-99 \\
+	number\_of\_decorations         &   0.000000e+00 &  1.411132e-310 &  1.531726e-288 \\
+	walkable\_area                 &   1.000000e+00 &   1.000000e+00 &   1.000000e+00 \\
+	walkable\_percentage           &   2.748866e-09 &   1.000000e+00 &   5.460789e-02 \\
+	start\_location\_x\_px           &   2.158051e-24 &   7.200095e-21 &   1.837483e-34 \\
+	start\_location\_y\_px           &  1.388994e-137 &  3.311636e-125 &  1.710381e-147 \\
+	artifacts\_per\_walkable\_area   &   4.448933e-93 &  2.159223e-128 &  1.083267e-114 \\
+	powerups\_per\_walkable\_area    &   1.054964e-06 &   6.056057e-12 &   1.326051e-06 \\
+	weapons\_per\_walkable\_area     &   7.441534e-39 &   1.554080e-62 &   1.032779e-52 \\
+	ammunitions\_per\_walkable\_area &   6.545174e-75 &   3.553626e-78 &   2.378115e-74 \\
+	keys\_per\_walkable\_area        &   0.000000e+00 &   0.000000e+00 &   0.000000e+00 \\
+	monsters\_per\_walkable\_area    &  3.643351e-156 &  8.109307e-172 &  1.208614e-164 \\
+	obstacles\_per\_walkable\_area   &  1.180054e-152 &  9.555317e-185 &  1.835923e-149 \\
+	decorations\_per\_walkable\_area &   0.000000e+00 &   0.000000e+00 &   0.000000e+00 \\
+	nodes                         &   2.748866e-09 &   1.187289e-11 &   2.626054e-09 \\
+	avg-path-length               &   2.374199e-11 &   1.089281e-12 &   1.418514e-14 \\
+	diameter-mean                 &   5.018660e-09 &   1.628234e-10 &   7.455760e-13 \\
+	art-points                    &   1.781486e-06 &   3.552306e-07 &   1.426106e-09 \\
+	assortativity-mean            &   4.262388e-75 &  2.510803e-105 &   2.154326e-92 \\
+	betw-cen-min                  &   1.000000e+00 &   1.000000e+00 &   1.000000e+00 \\
+	betw-cen-max                  &   1.282959e-59 &   3.523504e-63 &   6.668948e-54 \\
+	betw-cen-mean                 &   1.455239e-60 &   7.490509e-72 &   1.575693e-69 \\
+	betw-cen-var                  &   2.906018e-51 &   9.308564e-63 &   8.690155e-62 \\
+	betw-cen-skew                 &   5.417629e-19 &   3.323813e-23 &   1.242238e-22 \\
+	betw-cen-kurt                 &   3.169205e-14 &   5.186992e-19 &   1.456109e-16 \\
+	betw-cen-Q1                   &   3.502721e-23 &   8.901167e-30 &   2.047165e-36 \\
+	betw-cen-Q2                   &   9.512396e-30 &   6.829603e-39 &   3.476995e-39 \\
+	betw-cen-Q3                   &   4.332587e-37 &   6.523895e-47 &   7.906463e-52 \\
+	closn-cen-min                 &  1.983187e-188 &  1.173072e-209 &  8.817274e-206 \\
+	closn-cen-max                 &   1.587365e-12 &   5.073558e-08 &   8.335901e-11 \\
+	closn-cen-mean                &   1.297213e-21 &   2.238006e-19 &   4.926538e-28 \\
+	closn-cen-var                 &   7.088757e-52 &   2.614206e-38 &   3.185294e-38 \\
+	closn-cen-skew                &  1.079650e-195 &  2.812833e-199 &  3.485319e-182 \\
+	closn-cen-kurt                &   9.328707e-71 &   3.103328e-73 &   2.543045e-56 \\
+	closn-cen-Q1                  &   3.141186e-21 &   1.389400e-17 &   4.989920e-23 \\
+	closn-cen-Q2                  &   1.597577e-15 &   1.187289e-11 &   1.013772e-15 \\
+	closn-cen-Q3                  &   1.122511e-12 &   2.310428e-11 &   2.174605e-15 \\
+	distmap-max                   &   1.061200e-16 &   4.463344e-26 &   1.587061e-26 \\
+	distmap-mean                  &   3.152944e-10 &   1.540912e-15 &   2.851869e-21 \\
+	distmap-var                   &   2.335995e-15 &   2.056487e-22 &   4.209108e-26 \\
+	distmap-skew                  &   5.582101e-13 &   8.556037e-11 &   3.487710e-07 \\
+	distmap-kurt                  &   6.349924e-11 &   1.751731e-06 &   4.220230e-04 \\
+	distmap-Q1                    &   3.141186e-21 &   1.389400e-17 &   4.989920e-23 \\
+	distmap-Q2                    &   1.597577e-15 &   1.187289e-11 &   1.013772e-15 \\
+	distmap-Q3                    &   1.122511e-12 &   2.310428e-11 &   2.174605e-15 \\
+\end{longtable}
+\begin{longtable}{lll}
+	\caption[Features belonging to the F1 group]{Features that belong to group F1 in at least one test. Group F1 contains the features for which the null hypotesis is rejected for both the unconditioned and conditioned network.}\\
+	\toprule
+	{} & uncond0-vs-12k & uncond1-vs-26k \\
+	feature                       &                &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_eccentricity            &             F1 &             F1 \\
+	level\_euler\_number            &             F1 &             F1 \\
+	level\_extent                  &             F1 &             F1 \\
+	level\_major\_axis\_length       &             F1 &             F1 \\
+	level\_solidity                &             F1 &             F1 \\
+	level\_hu\_moment\_1             &             F1 &             F1 \\
+	level\_hu\_moment\_2             &             F1 &             F1 \\
+	level\_hu\_moment\_3             &             F1 &             F2 \\
+	level\_centroid\_x              &             F1 &             F1 \\
+	level\_centroid\_y              &             F1 &             F1 \\
+	number\_of\_artifacts           &             F1 &             F1 \\
+	number\_of\_powerups            &             F1 &             F1 \\
+	number\_of\_weapons             &             F1 &             F1 \\
+	number\_of\_ammunitions         &             F1 &             F1 \\
+	number\_of\_keys                &             F1 &             F1 \\
+	number\_of\_monsters            &             F1 &             F1 \\
+	number\_of\_obstacles           &             F1 &             F1 \\
+	number\_of\_decorations         &             F1 &             F1 \\
+	start\_location\_x\_px           &             F1 &             F1 \\
+	start\_location\_y\_px           &             F1 &             F1 \\
+	artifacts\_per\_walkable\_area   &             F1 &             F1 \\
+	powerups\_per\_walkable\_area    &             F1 &             F1 \\
+	weapons\_per\_walkable\_area     &             F1 &             F1 \\
+	ammunitions\_per\_walkable\_area &             F1 &             F1 \\
+	keys\_per\_walkable\_area        &             F1 &             F1 \\
+	monsters\_per\_walkable\_area    &             F1 &             F1 \\
+	obstacles\_per\_walkable\_area   &             F1 &             F1 \\
+	decorations\_per\_walkable\_area &             F1 &             F1 \\
+	nodes                         &             F1 &             F1 \\
+	avg-path-length               &             F1 &             F1 \\
+	diameter-mean                 &             F1 &             F1 \\
+	art-points                    &             F1 &             F1 \\
+	assortativity-mean            &             F1 &             F1 \\
+	betw-cen-max                  &             F1 &             F1 \\
+	betw-cen-mean                 &             F1 &             F1 \\
+	betw-cen-var                  &             F1 &             F1 \\
+	betw-cen-skew                 &             F1 &             F1 \\
+	betw-cen-kurt                 &             F1 &             F1 \\
+	betw-cen-Q1                   &             F1 &             F1 \\
+	betw-cen-Q2                   &             F1 &             F1 \\
+	betw-cen-Q3                   &             F1 &             F1 \\
+	closn-cen-min                 &             F1 &             F1 \\
+	closn-cen-max                 &             F1 &             F1 \\
+	closn-cen-mean                &             F1 &             F1 \\
+	closn-cen-var                 &             F1 &             F1 \\
+	closn-cen-skew                &             F1 &             F1 \\
+	closn-cen-kurt                &             F1 &             F1 \\
+	closn-cen-Q1                  &             F1 &             F1 \\
+	closn-cen-Q2                  &             F1 &             F1 \\
+	closn-cen-Q3                  &             F1 &             F1 \\
+	distmap-max                   &             F1 &             F1 \\
+	distmap-mean                  &             F1 &             F1 \\
+	distmap-var                   &             F1 &             F1 \\
+	distmap-skew                  &             F1 &             F1 \\
+	distmap-kurt                  &             F1 &             F1 \\
+	distmap-Q1                    &             F1 &             F1 \\
+	distmap-Q2                    &             F1 &             F1 \\
+	distmap-Q3                    &             F1 &             F1 \\
+\end{longtable}
+\begin{longtable}{lll}
+	\caption[Features belonging to the F2 group]{Features that belong to group F1 in at least one test. Group F1 contains the features for which the null hypotesis is rejected for the unconditioned network and not rejected for the conditioned network.}\\
+	\toprule
+	{} & uncond0-vs-12k & uncond1-vs-26k \\
+	feature             &                &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_hu\_moment\_3   &             F1 &             F2 \\
+	walkable\_percentage &             F2 &             F2 \\
+\end{longtable}
+\begin{longtable}{lll}
+	\caption[Features belonging to the F3 group]{Features that belong to group F1 in at least one test. Group F1 contains the features for which the null hypotesis is not rejected for both the unconditioned and conditioned network.}\\
+	\toprule
+	{} & uncond0-vs-12k & uncond1-vs-26k \\
+	feature                   &                &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_area                &             F3 &             F3 \\
+	level\_convex\_area         &             F3 &             F4 \\
+	level\_equivalent\_diameter &             F3 &             F3 \\
+	level\_filled\_area         &             F3 &             F3 \\
+	level\_minor\_axis\_length   &             F4 &             F3 \\
+	level\_orientation         &             F3 &             F3 \\
+	level\_perimeter           &             F3 &             F3 \\
+	level\_hu\_moment\_0         &             F4 &             F3 \\
+	level\_hu\_moment\_5         &             F4 &             F3 \\
+	level\_hu\_moment\_6         &             F3 &             F4 \\
+	walkable\_area             &             F3 &             F3 \\
+	betw-cen-min              &             F3 &             F3 \\
+\end{longtable}
+\begin{longtable}{lll}
+	\caption[Features belonging to the F4 group]{Features that belong to group F1 in at least one test. Group F1 contains the features for which the null hypotesis is not rejected for the unconditioned network and rejected for the conditioned network.}\\
+	\toprule
+	{} & uncond0-vs-12k & uncond1-vs-26k \\
+	feature                 &                &                \\
+	\midrule
+	\endhead
+	\midrule
+	\multicolumn{3}{r}{{Continued on next page}} \\
+	\midrule
+	\endfoot
+	
+	\bottomrule
+	\endlastfoot
+	level\_convex\_area       &             F3 &             F4 \\
+	level\_minor\_axis\_length &             F4 &             F3 \\
+	level\_hu\_moment\_0       &             F4 &             F3 \\
+	level\_hu\_moment\_4       &             F4 &             F4 \\
+	level\_hu\_moment\_5       &             F4 &             F3 \\
+	level\_hu\_moment\_6       &             F3 &             F4 \\
+\end{longtable}
+
+\end{document}

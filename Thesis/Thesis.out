@@ -2,73 +2,85 @@
 \BOOKMARK [0][-]{chapter*.2}{Estratto in lingua Italiana}{}% 2
 \BOOKMARK [0][-]{chapter*.3}{Acknowledgments}{}% 3
 \BOOKMARK [0][-]{chapter.1}{Introduction}{}% 4
-\BOOKMARK [1][-]{section.1.1}{Background: Level Design}{chapter.1}% 5
-\BOOKMARK [1][-]{section.1.2}{Related Work}{chapter.1}% 6
-\BOOKMARK [2][-]{subsection.1.2.1}{Procedurally Generated Content}{section.1.2}% 7
-\BOOKMARK [2][-]{subsection.1.2.2}{Procedural Content Generation via Machine Learning \(PCGML\)}{section.1.2}% 8
-\BOOKMARK [2][-]{subsection.1.2.3}{Video Game Level Corpus}{section.1.2}% 9
-\BOOKMARK [2][-]{subsection.1.2.4}{Generative Adversarial Networks}{section.1.2}% 10
-\BOOKMARK [1][-]{section.1.3}{Scope}{chapter.1}% 11
-\BOOKMARK [1][-]{section.1.4}{Thesis Structure}{chapter.1}% 12
-\BOOKMARK [1][-]{section.1.5}{Summary}{chapter.1}% 13
-\BOOKMARK [0][-]{chapter.2}{Towards learn-based level generation}{}% 14
-\BOOKMARK [1][-]{section.2.1}{Generative Adversarial Networks}{chapter.2}% 15
-\BOOKMARK [2][-]{subsection.2.1.1}{Overview}{section.2.1}% 16
-\BOOKMARK [2][-]{subsection.2.1.2}{Deep Convolutional GAN}{section.2.1}% 17
-\BOOKMARK [2][-]{subsection.2.1.3}{Wesserstein GAN}{section.2.1}% 18
-\BOOKMARK [2][-]{subsection.2.1.4}{Wesserstein GAN with Gradient Penalty}{section.2.1}% 19
-\BOOKMARK [1][-]{section.2.2}{Game of choice: DOOM}{chapter.2}% 20
-\BOOKMARK [2][-]{subsection.2.2.1}{Description}{section.2.2}% 21
-\BOOKMARK [2][-]{subsection.2.2.2}{Motivation}{section.2.2}% 22
-\BOOKMARK [1][-]{section.2.3}{General Considerations}{chapter.2}% 23
-\BOOKMARK [1][-]{section.2.4}{Summary}{chapter.2}% 24
-\BOOKMARK [0][-]{chapter.3}{Dataset and Data Representation}{}% 25
-\BOOKMARK [1][-]{section.3.1}{Data Sources}{chapter.3}% 26
-\BOOKMARK [1][-]{section.3.2}{Source Data Format: WAD Files}{chapter.3}% 27
-\BOOKMARK [2][-]{subsection.3.2.1}{Overview}{section.3.2}% 28
-\BOOKMARK [2][-]{subsection.3.2.2}{Doom Level Format}{section.3.2}% 29
-\BOOKMARK [2][-]{subsection.3.2.3}{Conversion issues}{section.3.2}% 30
-\BOOKMARK [1][-]{section.3.3}{Target Data Format: Feature Maps and Vectors}{chapter.3}% 31
-\BOOKMARK [2][-]{subsection.3.3.1}{Level Description and Motivation}{section.3.3}% 32
-\BOOKMARK [2][-]{subsection.3.3.2}{Feature Maps}{section.3.3}% 33
-\BOOKMARK [2][-]{subsection.3.3.3}{Graph Representation}{section.3.3}% 34
-\BOOKMARK [2][-]{subsection.3.3.4}{Text Representation}{section.3.3}% 35
-\BOOKMARK [2][-]{subsection.3.3.5}{Scalar Features}{section.3.3}% 36
-\BOOKMARK [1][-]{section.3.4}{Dataset Organization}{chapter.3}% 37
-\BOOKMARK [2][-]{subsection.3.4.1}{Overview}{section.3.4}% 38
-\BOOKMARK [2][-]{subsection.3.4.2}{Full Dataset and Filtered Dataset}{section.3.4}% 39
-\BOOKMARK [2][-]{subsection.3.4.3}{Level Size Statistics}{section.3.4}% 40
-\BOOKMARK [1][-]{section.3.5}{Summary}{chapter.3}% 41
-\BOOKMARK [0][-]{chapter.4}{System Design and Overview}{}% 42
-\BOOKMARK [1][-]{section.4.1}{Generative Model Structure}{chapter.4}% 43
-\BOOKMARK [1][-]{section.4.2}{Use Cases}{chapter.4}% 44
-\BOOKMARK [2][-]{subsection.4.2.1}{Use Case: Model Optimization \(Training\)}{section.4.2}% 45
-\BOOKMARK [2][-]{subsection.4.2.2}{Use Case: Model Validation and Sample Evaluation}{section.4.2}% 46
-\BOOKMARK [2][-]{subsection.4.2.3}{Use Case: Sampling or Generation}{section.4.2}% 47
-\BOOKMARK [1][-]{section.4.3}{Data Flow}{chapter.4}% 48
-\BOOKMARK [1][-]{section.4.4}{WAD Editor and Feature Extractor}{chapter.4}% 49
-\BOOKMARK [2][-]{subsection.4.4.1}{Reading and Writing}{section.4.4}% 50
-\BOOKMARK [2][-]{subsection.4.4.2}{Feature Extraction}{section.4.4}% 51
-\BOOKMARK [1][-]{section.4.5}{Summary}{chapter.4}% 52
-\BOOKMARK [0][-]{chapter.5}{Experiment Design and Results}{}% 53
-\BOOKMARK [1][-]{section.5.1}{Neural Network Architecture and Training Algorithm}{chapter.5}% 54
-\BOOKMARK [2][-]{subsection.5.1.1}{Network Architecture}{section.5.1}% 55
-\BOOKMARK [1][-]{section.5.2}{Input selection, Metrics and Sample Method}{chapter.5}% 56
-\BOOKMARK [2][-]{subsection.5.2.1}{Input data}{section.5.2}% 57
-\BOOKMARK [2][-]{subsection.5.2.2}{Evaluation metrics}{section.5.2}% 58
-\BOOKMARK [2][-]{subsection.5.2.3}{Sampling the network}{section.5.2}% 59
-\BOOKMARK [1][-]{section.5.3}{Results}{chapter.5}% 60
-\BOOKMARK [2][-]{subsection.5.3.1}{Resulting Model}{section.5.3}% 61
-\BOOKMARK [1][-]{section.5.4}{Generated Samples}{chapter.5}% 62
-\BOOKMARK [1][-]{section.5.5}{In-Game Demonstration}{chapter.5}% 63
-\BOOKMARK [1][-]{section.5.6}{Summary}{chapter.5}% 64
-\BOOKMARK [0][-]{chapter.6}{Results Evaluation and Conclusions}{}% 65
-\BOOKMARK [1][-]{section.6.1}{Results Evaluation}{chapter.6}% 66
-\BOOKMARK [2][-]{subsection.6.1.1}{Samples Evaluation}{section.6.1}% 67
-\BOOKMARK [2][-]{subsection.6.1.2}{Loss of accuracy}{section.6.1}% 68
-\BOOKMARK [1][-]{section.6.2}{Summary}{chapter.6}% 69
-\BOOKMARK [0][-]{chapter.7}{Future Work}{}% 70
-\BOOKMARK [1][-]{section.7.1}{Open Problems}{chapter.7}% 71
-\BOOKMARK [1][-]{section.7.2}{Possible Applications and future develops}{chapter.7}% 72
-\BOOKMARK [0][-]{chapter.8}{Appendix}{}% 73
-\BOOKMARK [0][-]{section*.91}{Glossary}{}% 74
+\BOOKMARK [1][-]{section.1.1}{Background}{chapter.1}% 5
+\BOOKMARK [2][-]{subsection.1.1.1}{Level Design}{section.1.1}% 6
+\BOOKMARK [2][-]{subsection.1.1.2}{Procedurally Generated Content}{section.1.1}% 7
+\BOOKMARK [2][-]{subsection.1.1.3}{Procedural Content Generation via Machine Learning \(PCGML\)}{section.1.1}% 8
+\BOOKMARK [1][-]{section.1.2}{Scope}{chapter.1}% 9
+\BOOKMARK [1][-]{section.1.3}{Related Work}{chapter.1}% 10
+\BOOKMARK [2][-]{subsection.1.3.1}{PCGML in Video-Games}{section.1.3}% 11
+\BOOKMARK [2][-]{subsection.1.3.2}{Video Game Level Corpus}{section.1.3}% 12
+\BOOKMARK [2][-]{subsection.1.3.3}{Generative Adversarial Networks}{section.1.3}% 13
+\BOOKMARK [1][-]{section.1.4}{Thesis Structure}{chapter.1}% 14
+\BOOKMARK [1][-]{section.1.5}{Summary}{chapter.1}% 15
+\BOOKMARK [0][-]{chapter.2}{Theory and Motivation}{}% 16
+\BOOKMARK [1][-]{section.2.1}{Theoretical Background}{chapter.2}% 17
+\BOOKMARK [2][-]{subsection.2.1.1}{Overview}{section.2.1}% 18
+\BOOKMARK [2][-]{subsection.2.1.2}{Deep Convolutional GAN \(DCGAN\)}{section.2.1}% 19
+\BOOKMARK [2][-]{subsection.2.1.3}{Wasserstein GAN}{section.2.1}% 20
+\BOOKMARK [2][-]{subsection.2.1.4}{Wasserstein GAN with Gradient Penalty}{section.2.1}% 21
+\BOOKMARK [1][-]{section.2.2}{Game of choice: DOOM}{chapter.2}% 22
+\BOOKMARK [2][-]{subsection.2.2.1}{Description}{section.2.2}% 23
+\BOOKMARK [2][-]{subsection.2.2.2}{Motivation}{section.2.2}% 24
+\BOOKMARK [1][-]{section.2.3}{Summary}{chapter.2}% 25
+\BOOKMARK [0][-]{chapter.3}{Dataset and Data Representation}{}% 26
+\BOOKMARK [1][-]{section.3.1}{Data Sources}{chapter.3}% 27
+\BOOKMARK [1][-]{section.3.2}{Source Data Format: WAD Files}{chapter.3}% 28
+\BOOKMARK [2][-]{subsection.3.2.1}{Overview}{section.3.2}% 29
+\BOOKMARK [2][-]{subsection.3.2.2}{Doom Level Format}{section.3.2}% 30
+\BOOKMARK [2][-]{subsection.3.2.3}{Conversion issues}{section.3.2}% 31
+\BOOKMARK [1][-]{section.3.3}{Target Data Format: Feature Maps and Vectors}{chapter.3}% 32
+\BOOKMARK [2][-]{subsection.3.3.1}{Level Description and Motivation}{section.3.3}% 33
+\BOOKMARK [2][-]{subsection.3.3.2}{Feature Maps}{section.3.3}% 34
+\BOOKMARK [2][-]{subsection.3.3.3}{Graph Representation}{section.3.3}% 35
+\BOOKMARK [2][-]{subsection.3.3.4}{Text Representation}{section.3.3}% 36
+\BOOKMARK [2][-]{subsection.3.3.5}{Scalar Features}{section.3.3}% 37
+\BOOKMARK [1][-]{section.3.4}{Dataset Organization}{chapter.3}% 38
+\BOOKMARK [2][-]{subsection.3.4.1}{Overview}{section.3.4}% 39
+\BOOKMARK [2][-]{subsection.3.4.2}{Full Dataset and Filtered Dataset}{section.3.4}% 40
+\BOOKMARK [2][-]{subsection.3.4.3}{Level Size Statistics}{section.3.4}% 41
+\BOOKMARK [1][-]{section.3.5}{Summary}{chapter.3}% 42
+\BOOKMARK [0][-]{chapter.4}{System Design and Overview}{}% 43
+\BOOKMARK [1][-]{section.4.1}{Generative Model Structure}{chapter.4}% 44
+\BOOKMARK [1][-]{section.4.2}{Use Cases}{chapter.4}% 45
+\BOOKMARK [2][-]{subsection.4.2.1}{Use Case: Model Optimization \(Training\)}{section.4.2}% 46
+\BOOKMARK [2][-]{subsection.4.2.2}{Use Case: Sample Evaluation}{section.4.2}% 47
+\BOOKMARK [2][-]{subsection.4.2.3}{Use Case: Sampling or Generation}{section.4.2}% 48
+\BOOKMARK [1][-]{section.4.3}{Data Flow}{chapter.4}% 49
+\BOOKMARK [1][-]{section.4.4}{WAD Editor and Feature Extractor}{chapter.4}% 50
+\BOOKMARK [1][-]{section.4.5}{Neural Network Architecture and Training Algorithm}{chapter.4}% 51
+\BOOKMARK [2][-]{subsection.4.5.1}{Network Architecture}{section.4.5}% 52
+\BOOKMARK [2][-]{subsection.4.5.2}{Sample Evaluation metrics}{section.4.5}% 53
+\BOOKMARK [2][-]{subsection.4.5.3}{Reading and Writing}{section.4.5}% 54
+\BOOKMARK [2][-]{subsection.4.5.4}{Feature Extraction}{section.4.5}% 55
+\BOOKMARK [1][-]{section.4.6}{Summary}{chapter.4}% 56
+\BOOKMARK [0][-]{chapter.5}{Experiment Design}{}% 57
+\BOOKMARK [1][-]{section.5.1}{Experiment setup}{chapter.5}% 58
+\BOOKMARK [2][-]{subsection.5.1.1}{Input Levels Selection}{section.5.1}% 59
+\BOOKMARK [2][-]{subsection.5.1.2}{Framework Evaluation}{section.5.1}% 60
+\BOOKMARK [2][-]{subsection.5.1.3}{Feature Selection}{section.5.1}% 61
+\BOOKMARK [2][-]{subsection.5.1.4}{Trained Architectures}{section.5.1}% 62
+\BOOKMARK [1][-]{section.5.2}{Experiments description}{chapter.5}% 63
+\BOOKMARK [2][-]{subsection.5.2.1}{Experiment 1: Unconditional generation}{section.5.2}% 64
+\BOOKMARK [2][-]{subsection.5.2.2}{Experiment 2: Addition of input features}{section.5.2}% 65
+\BOOKMARK [2][-]{subsection.5.2.3}{Experiment 3: Controlling the generation}{section.5.2}% 66
+\BOOKMARK [1][-]{section.5.3}{Summary}{chapter.5}% 67
+\BOOKMARK [0][-]{chapter.6}{Results}{}% 68
+\BOOKMARK [1][-]{section.6.1}{Training Results}{chapter.6}% 69
+\BOOKMARK [1][-]{section.6.2}{Experiment Results}{chapter.6}% 70
+\BOOKMARK [2][-]{subsection.6.2.1}{Results of experiments 1 and 2}{section.6.2}% 71
+\BOOKMARK [2][-]{subsection.6.2.2}{Graphical results for Experiments 1 and 2}{section.6.2}% 72
+\BOOKMARK [2][-]{subsection.6.2.3}{Results of Experiment 3}{section.6.2}% 73
+\BOOKMARK [1][-]{section.6.3}{Generated Samples}{chapter.6}% 74
+\BOOKMARK [1][-]{section.6.4}{Summary}{chapter.6}% 75
+\BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 76
+\BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 77
+\BOOKMARK [1][-]{section.7.2}{Conclusions}{chapter.7}% 78
+\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 79
+\BOOKMARK [2][-]{subsection.7.3.1}{Open Problems}{section.7.3}% 80
+\BOOKMARK [2][-]{subsection.7.3.2}{Possible Applications and future develops}{section.7.3}% 81
+\BOOKMARK [0][-]{chapter.8}{Appendix}{}% 82
+\BOOKMARK [1][-]{section.8.1}{Training Progress}{chapter.8}% 83
+\BOOKMARK [1][-]{section.8.2}{KS Statistic values and corrected p-values}{chapter.8}% 84
+\BOOKMARK [1][-]{section.8.3}{Graphical results for non-input features}{chapter.8}% 85
+\BOOKMARK [0][-]{section*.142}{Glossary}{}% 86
