@@ -369,9 +369,9 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{85}{section*.140}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Conclusions}{85}{section.7.2}
-\defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{85}{section*.141}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {7.2}Conclusions}{85}{section.7.2}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{85}{section*.142}
 \defcounter {refsection}{0}\relax 
@@ -397,11 +397,11 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{86}{section*.151}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.3.2}Possible Applications and future develops}{86}{subsection.7.3.2}
+\contentsline {subsection}{\numberline {7.3.2}Possible Applications and future develops}{87}{subsection.7.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Augmenting input data}{86}{section*.152}
+\contentsline {subsubsection}{Augmenting input data}{87}{section*.152}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{86}{section*.153}
+\contentsline {paragraph}{}{87}{section*.153}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsubsection}{Better samples to WAD conversion}{87}{section*.154}
 \defcounter {refsection}{0}\relax 
