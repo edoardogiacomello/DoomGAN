@@ -1,30 +1,30 @@
 \chapter{Experiment Design}
 \label{ch:experiment}
-\paragraph{} This chapter describe the experiment we conducted using the system described in chapter~\ref{ch:system_design}. Section~\ref{sec:experimentdesign} shows the preliminary steps for preparing the system to our experiments, such as the selection of the input levels and the features. Section~\ref{sec:trainednets} shows the trained networks we used in our experiments and \ref{sec:experiments} describes the three experiment we set up in order to study the trained networks.
+\paragraph{} This chapter describe the experiments we conducted using the system described in chapter~\ref{ch:system_design}. Section~\ref{sec:experimentdesign} shows the preliminary steps for preparing the system to our experiments, such as the selection of the input levels and the features. Section~\ref{sec:trainednets} shows the trained model structure we used in our experiments and \ref{sec:experiments} detail the three experiments we set up in order to study the trained networks.
 
 \section{Experiment setup}
 \label{sec:experimentdesign}
-\paragraph{} This section explains what choices have been made before training the models in order to conduct the experiments. In particular we had to select which data to use with the neural network given our technological constraints, the network input features and how to evaluate our approach.
+\paragraph{} This section explains what choices we made before training the models in order to conduct the experiments. In particular we had to select which data to use given our technological constraints, the network input features and how to evaluate our models.
 
 \subsection{Input Levels Selection}
 \label{sec:InputSelection}
-\paragraph{} For preparing our experiments we filtered the DoomDataset by taking only the samples up to 128x128 in size and which had exactly 1 "floor". This led to a dataset of about 1000 samples, which are then augmented by rotation during the training process. This is motivated from the fact that even if the level orientation does not affect playability, using levels with more floors could lead the network to learn a correlation between floors (and how to arrange them inside the map) which could potentially be misleading or be just enforced by the sample size or the way the editor arranged them on the level coordinate space. Moreover, using only one-floor levels helped in reducing smaller artefacts that appeared as very small floors in resulting output.
+\paragraph{} For preparing our experiments we filtered the DoomDataset by taking only the samples up to 128x128 in size and which had exactly one "floor". This led to a dataset of 1088 samples, which are then augmented by rotation during the training process. This is motivated from the fact that even if the level orientation does not affect playability, using levels with more floors could lead the network to learn a correlation between floors (and how to arrange them inside the map) which could potentially be misleading or be just enforced by the sample size or the way the editor arranged them on the level coordinate space. Moreover, using only one-floor levels helped in reducing artefacts that appeared as very small floors in resulting output.
 
 \subsection{Feature Selection}
 In selecting which numerical features $Y$ to use as network input we followed some assumption and criteria:
 \begin{enumerate}
-	\item \textit{Reconstructability:} In order to be able to analyse the resulting network, it is possible to use only features that can be reconstructed from the network output images with reasonable loss of information. For example, features what depends on the WAD representation of the level such as the number of sectors are too much dependant both on the editor used to build the level, and the algorithm we use to convert back images to WAD. On the contrary, features based on the Feature Maps are a better choice since they are evaluated using the same algorithm.
-	\item \textit{Visibility:} In order to be selected as an input, a feature has to have a visual impact on the samples. While in principle neural networks can extract complex and possibly inscrutable structure in the data, we decided to use only features that can have a visual feedback on the Feature Maps.
-	\item \textit{Robustness:} Other than having a visual impact on the samples, a good feature must be robust to noise in the feature maps, in other words it must not change greatly for small variation in the pixel colour the images. 
+	\item \textit{Reconstructability:} In order to be able to analyse the resulting network, it is possible to use only features that can be reconstructed from the network output images with reasonable loss of information. For example, features what depends on the WAD representation of the level such as the number of sectors are too much dependant both on the editor used to build the level, and the algorithm we use to convert back images to WAD. On the contrary, features based on the level morphology in the generated images are a better choice since they are evaluated using the same algorithm.
+	\item \textit{Visibility:} In order to be selected as an input, a feature has to have a visual impact on the samples. While in principle neural networks can extract complex and possibly inscrutable structure in the data, we found it reasonable to use only features that can have a visual feedback on the Feature Maps.
+	\item \textit{Robustness:} Other than having a visual impact on the samples, a good feature must be robust to noise in the feature maps, in other words it must not change greatly for colour variation of a few pixels in the images. 
 \end{enumerate}
 
 
-\paragraph{} We selected a subset of features that reasonably satisfied these properties by comparing the feature values of a small number of visually different level sets. An example of level set and the corresponding values for the selected features is shown on figure~\ref{fig:feature_selection}. A summary of the feature we used in our experiment is:
+\paragraph{} We selected a subset of features that reasonably satisfied these properties by comparing the feature values of visually different levels. An example of level set and the corresponding values for the selected features is shown on figure~\ref{fig:feature_selection}. \\* A summary of the feature we used in our experiment is:
 \begin{itemize}
 	\item \textit{level equivalent diameter}: Diameter of the circle having the same area as the level.
 	\item \textit{level major axis length}: Length of the longest axis of the level, independent from the rotation.
 	\item \textit{level minor axis length}: Length of the shortest axis of the level, independent from the rotation.
-	\item \textit{level solidity}: Ratio between the area of the level and its convex hull. It's a metric of the level convexity.
+	\item \textit{level solidity}: Ratio between the area of the level and its convex hull. It is related on how much the is convex.
 	\item \textit{nodes (number of rooms)}: Count of the rooms in the room adjacency graph.
 	\item \textit{distmap skewness}: Skewness of the distribution of each pixel distance from the closest wall. This metric is visually related to the balance between large and small areas.
 	\item \textit{distmap kurtosis}: Kurtosis of the distribution of each pixel distance from the closest wall. This metric is visually related to the presence of both very large and very small areas, or area size variety.
@@ -39,13 +39,13 @@ In selecting which numerical features $Y$ to use as network input we followed so
 
 \subsection{Framework Evaluation}
 \label{sec:modelevaluation}
-\paragraph{} In order to evaluate the feasibility of our approach on the problem of level generation, we designed a set of experiments to test some of the settings that are possible to use with our framework. 
-All the experiments involve comparing the distribution of true data and the one generated from the neural network, according to the features that is possible to calculate from the images generated from different models. In generating the models, we first trained a neural network without input features so that the generator is only controlled by the noise vector $Z$. We then added a set of features to our architecture and used it to train a network using the same random initialization. Details on the network we produced are shown in table~\ref{tab:trained_models}.
+\paragraph{} In order to evaluate the feasibility of our approach to the problem of level generation, we designed a set of experiments for testing the impact of input features on the generative model. 
+All the experiments involve comparing the distribution of true data and the one generated from the neural network, in particular only features that is possible to extract from the generated samples have been considered. In generating the models, we first trained a neural network without input features so that the generator is only controlled by the noise vector $Z$. We then added a set of features to our architecture and used it to train a network using the same random initialization. Details on the network we produced are shown in table~\ref{tab:trained_models}.
 
 \newpage
 \subsection{Trained Architectures}
 \label{sec:trainednets}
-\paragraph{} In training the models we kept fixed the WGAN-GP architecture, learning hyperparameters, the kernel size and the stride, while we varied the input features and the number of layers. During the development of the system we tried several different architectures and networks, but we show only the ones we conducted our experiments upon. For example, in our earlier experiments we tried using a single multi-valued map, but the results were affected from too much noise and artefacts. In the hope of obtaining better quality samples we also tried adding more layers to the network: although it showed to learn faster, it soon made the architecture unstable and the generator collapsed. Table~\ref{tab:trained_models} shows the final models we used in our experiments:
+\paragraph{} In training the models we kept fixed the WGAN-GP architecture, learning hyperparameters, the number of layers, the kernel size and the stride, while we varied the input features. During the development of the system we tried several different architectures and networks, but we show only the ones we conducted our experiments upon. For example, in our earlier experiments we tried using a single multi-valued map, but the results were affected from too much noise and artefacts. In the hope of obtaining better quality samples we also tried adding more layers to the network: although it showed to learn faster at the beginning, the architecture became unstable and the generator collapsed as soon it reached a quality comparable with the networks we present here. Table~\ref{tab:trained_models} shows the final models we used in our experiments:
 
 \begin{table}[h!]
 	\begin{tabularx}{\textwidth}{| c | c | X | X | X | X |}
@@ -102,10 +102,10 @@ All the experiments involve comparing the distribution of true data and the one 
 
 \section{Experiments description}
 \label{sec:experiments}
-For assessing the capabilities of the networks we trained in relation to the problem of level generation we designed three experiments, which are described in the following paragraphs. Since the second experiment depends on the result of the first one, the results are showed together.
+For assessing the capabilities of the networks in relation to the problem of level generation we designed three experiments, which are described in the following paragraphs. Since the second experiment depends on the result of the first one, the results are showed together in chapter \ref{sec:results}.
 
 \subsection{Experiment 1: Unconditional generation}
-In the first experiment we tested the ability of the "unconditional" network to generate levels that exhibit similar features to the original levels. 
+In the first experiment we tested the ability of the "unconditional" network to generate levels that exhibit  features similar to the original ones. 
 For each level in the dataset we sampled one level from the unconditional network using random noise as input, we extracted the features from the generated level and we compared the distribution of the dataset with the distribution of the generated features. For comparing the true and generated feature distributions we used the \textit{Two-tailed Kolmogorov-Smirnov Statistical Test} \cite{KS-test} that utilizes a statistic calculated as the distance  between the empirical distribution functions of the two samples. The problem we solved with \textit{KS} can be resumed as: \\
 
 \begin{equation}
@@ -121,18 +121,18 @@ where $F_{G}(x)$ and $F_{T}(x)$ are the empirical distribution functions of the 
 \label{sec:experiment-2}
 In the second experiment we tested if the addition of features to the network input can have some effect on the generation of the samples. For doing this, we replicated the experiment one using the conditional network, then we compared the results with those obtained from the unconditional network. For each level in the dataset we sampled one level, using the true feature vector as input and
 the same noise vectors used in experiment one. We then proceeded as in experiment one in testing the true and generated distributions of features. \\
-For comparing the results of the unconditional and conditional networks we clustered the features in four groups, each one corresponding to a possible case: \\
-\begin{enumerate}
+For easily comparing the results of the unconditional and conditional networks we clustered the features in four groups, each one corresponding to a possible case: \\
+\begin{itemize}
 	\item \textbf{F1:} Features for which the null hypothesis is rejected in both the unconditional and conditional networks. 
 	\item \textbf{F2:} Features for which the null hypothesis is rejected for the unconditional network (experiment 1) but cannot be rejected for the conditional network. 
 	\item \textbf{F3:} Features for which the null hypothesis cannot be rejected for both the unconditional  and conditional network.
 	\item \textbf{F4:} Features for which the null hypothesis cannot be rejected for the unconditional network (experiment 1) but is rejected for the conditional network.
-\end{enumerate}
+\end{itemize}
 
-Only for the features in the group F3, we also consider the distance (KS-stats) between the true and generated feature distributions in order to discover which network better reflects the feature distribution. This is reported as a "*" in the results tables \ref{tab:results-input-features} and \ref{tab:results-other-features}.
+Only for the features in the group F3, we also consider the distance (KS-stats) between the true and generated feature distributions in order to discover which network better reflects the feature distribution. This is reported as an asterisk \textit{(*)} in the results tables \ref{tab:results-input-features} and \ref{tab:results-other-features}, while values of the statistic are shown in Appendix~\ref{sec:app-ks}.
 
 \subsection{Experiment 3: Controlling the generation}
 In the third experiment we studied the impact of the input features on the generated levels from a qualitative point of view. In particular, we selected a set of levels from the dataset according to their feature values: for each input feature we selected the levels that match the 25th, 50th and 75th percentiles of the feature distribution, obtaining a total of $3 * \vert y_{i} \vert = 21$ levels. We then sampled 1000 levels from the conditioned network for each selected input feature vector, obtaining 1000 generated feature vectors for each input level. For each input feature, we plotted the three selected input values and the corresponding generated feature distributions, showing how the generated level distribution changes with respect to a change in the input feature. Results of this experiment are shown in figure~\ref{fig:results-exp3-features}.
 
 \section{Summary}
-\paragraph{} In this chapter we described the input selection for our trained models, consisting in levels up to 128 pixels and having one floor. We then described the general principles we used to select the input features for the conditional network, and lastly we proceeded to define our experiments. In the next chapter we show the results we obtained, while in the following one we discuss the results and present our conclusions.
+\paragraph{} In this chapter we described the input selection for our trained models, resulting in 1088 levels up to 128 pixels and having one floor. We then described the general principles we used to select the input features for the conditional network, selecting 7 representative features. We then proceeded to define three experiments for testing the two network capabilities and the effects of controlling the conditional network with the input features. In the next chapter we show the results we obtained, while in the following one we discuss the results and present our conclusions.
