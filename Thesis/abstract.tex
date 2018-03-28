@@ -1,10 +1,20 @@
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
+%
+This work studies the feasibility of level generation for First Person Shooter games using Generative Adversarial Networks in the setting of Procedural Content Generation via Machine Learning (PCGML).
+As the Procedural Content Generation becomes a widely used technique in developing video-games, many researchers explored new paradigms for generating game content based on generative models that learn from existing content. So far, few work has been done in applying these novel techniques to games that allows a two-dimensional exploration of the levels rather than a one-directional traversal that is typical of platform games. Our study proposes as a starting point in applying Generative Neural Networks to the problem of generating this type of two-dimensional levels, using DOOM as our sample game. 
+In this work, we first expand the existing Video Game Level Corpus proposing a dataset of 9000 DOOM levels collected from the community and we design a system for extracting a set of features and representing the levels as images and tiled representation. We then introduce some of the main issues in applying existing techniques to this particular domain, selecting a set of measures that help in assessing the perceived sample quality in our case. We train two different models which differ from the presence of input features and we design a set of experiments to evaluate the impact of the input features on the generated levels. In addition, we study the possibility of controlling the level generation by acting on the network inputs. Our results show the advantages of adding the level features as a network input from both the point of view of sample quality and learned feature distribution, indicating our method as a viable option for being utilized as an automatic tool for level generation which doesn't require particular domain expertise.
 
-\foreignlanguage{italian}{
 \chapter*{Estratto in lingua Italiana}
 \addcontentsline{toc}{chapter}{Estratto in lingua Italiana}
-}
+\selectlanguage{italian}
+
+Questo lavoro analizza la fattibilit\`a della generazione di livelli per videogiochi "Sparatutto" utilizzando le Reti Antagoniste Generative (GAN), nel contesto della Generazione Procedurale di contenuti attraverso l'apprendimento automatico (PCGML).
+Con la crescente applicazione di tecniche di Generazione Procedurale nell'industra videoludica, molti ricercatori stanno esplorando nuovi paradigmi per generare nuovi contenuti utilizzando modelli che apprendono da contenuto pre-esistente. Fino ad ora, poco \`e stato realizzato in merito all'applicazione di questo nuovo paradigma a giochi che permettono un'esplorazione bi-dimensionale dei livelli, in contrapposizione al classico attraversamento monodirezionale tipico dei giochi "Platform". Il nostro studio si pone come punto di partenza per l'applicazione delle Reti Antagoniste Generative al problema della generazione di questo tipo di livelli bi-dimensionali, in particolare utilizzando il gioco DOOM come riferimento.
+Come primo passo, proponiamo un dataset di 9000 livelli di DOOM collezionati dalla comunit\`a di videogiocatori in aggiunta a quelli gi\`a forniti dal Video Game Level Corpus, progettando un sistema per estrarre automaticamente un insieme di caratteristiche descrittive dei livelli e convertire gli stessi in immagini. Proseguiamo evidenziando le principali difficolt\`a nell'applicare tecniche esistenti al nostro dominio applicativo, selezionando un insieme di misure che agevolano la valutazione oggettiva della qualit\`a dei livelli generati per il nostro tipo di dati. Ottimiziamo quindi due reti diverse, che differiscono per la presenza in ingresso delle caratteristiche dei livelli e definiamo un insieme di esperimenti per valutare l'impatto che gli input aggiuntivi hanno sulla generazione dei livelli. Inoltre, analizziamo la possibilit\`a di controllare la generazione dei livelli agendo sugli input aggiunti alla rete. I risultati ottenuti mostrano i vantaggi dell'aggiunta delle caratteristiche dei livelli come input alla rete, sia da un punto di vista della qualit\`a dei campioni generati che dalle distribuzioni apprese, indicando che il nostro metodo pu\`o essere utilizzato come una opzione valida per generare livelli senza la necessit\`a di particolare esperienza nel dominio applicativo.
+ 
+
+
 
 
 \selectlanguage{english}

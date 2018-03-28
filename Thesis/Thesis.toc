@@ -9,6 +9,8 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{Estratto in lingua Italiana}{5}{chapter*.2}
 \defcounter {refsection}{0}\relax 
+\select@language {italian}
+\defcounter {refsection}{0}\relax 
 \select@language {english}
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{Acknowledgments}{9}{chapter*.3}
