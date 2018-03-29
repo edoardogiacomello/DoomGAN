@@ -72,16 +72,18 @@
 \BOOKMARK [2][-]{subsection.6.2.2}{Graphical results for Experiments 1 and 2}{section.6.2}% 72
 \BOOKMARK [2][-]{subsection.6.2.3}{Results of Experiment 3}{section.6.2}% 73
 \BOOKMARK [1][-]{section.6.3}{Generated Samples}{chapter.6}% 74
-\BOOKMARK [1][-]{section.6.4}{Summary}{chapter.6}% 75
-\BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 76
-\BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 77
-\BOOKMARK [2][-]{subsection.7.1.1}{Sample Evaluation Metrics}{section.7.1}% 78
-\BOOKMARK [2][-]{subsection.7.1.2}{Experiments Discussion}{section.7.1}% 79
-\BOOKMARK [2][-]{subsection.7.1.3}{Final Considerations}{section.7.1}% 80
-\BOOKMARK [1][-]{section.7.2}{Conclusions}{chapter.7}% 81
-\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 82
-\BOOKMARK [2][-]{subsection.7.3.1}{Open Problems}{section.7.3}% 83
-\BOOKMARK [2][-]{subsection.7.3.2}{Possible Applications and future develops}{section.7.3}% 84
-\BOOKMARK [0][-]{appendix.A}{Test Statistics Values and Corrected p-values}{}% 85
-\BOOKMARK [0][-]{appendix.B}{Graphical results for non-input features}{}% 86
-\BOOKMARK [0][-]{section*.175}{Glossary}{}% 87
+\BOOKMARK [2][-]{subsection.6.3.1}{Unconditional Network}{section.6.3}% 75
+\BOOKMARK [2][-]{subsection.6.3.2}{Conditional Network}{section.6.3}% 76
+\BOOKMARK [1][-]{section.6.4}{Summary}{chapter.6}% 77
+\BOOKMARK [0][-]{chapter.7}{Results Evaluation and Conclusions}{}% 78
+\BOOKMARK [1][-]{section.7.1}{Results Evaluation}{chapter.7}% 79
+\BOOKMARK [2][-]{subsection.7.1.1}{Sample Evaluation Metrics}{section.7.1}% 80
+\BOOKMARK [2][-]{subsection.7.1.2}{Experiments Discussion}{section.7.1}% 81
+\BOOKMARK [2][-]{subsection.7.1.3}{Final Considerations}{section.7.1}% 82
+\BOOKMARK [1][-]{section.7.2}{Conclusions}{chapter.7}% 83
+\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 84
+\BOOKMARK [2][-]{subsection.7.3.1}{Open Problems}{section.7.3}% 85
+\BOOKMARK [2][-]{subsection.7.3.2}{Possible Applications and future develops}{section.7.3}% 86
+\BOOKMARK [0][-]{appendix.A}{Test Statistics Values and Corrected p-values}{}% 87
+\BOOKMARK [0][-]{appendix.B}{Graphical results for non-input features}{}% 88
+\BOOKMARK [0][-]{section*.182}{Glossary}{}% 89
