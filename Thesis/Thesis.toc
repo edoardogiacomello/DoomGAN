@@ -433,9 +433,9 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsubsection}{Possible Applications}{90}{section*.169}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {A}Test Statistics Values and Corrected p-values}{91}{appendix.A}
+\contentsline {chapter}{\numberline {A}Appendix: Test Statistics Values and Corrected p-values}{91}{appendix.A}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {B}Graphical results for non-input features}{95}{appendix.B}
+\contentsline {chapter}{\numberline {B}Appendix: Graphical results for non-input features}{95}{appendix.B}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{95}{section*.170}
 \defcounter {refsection}{0}\relax 
