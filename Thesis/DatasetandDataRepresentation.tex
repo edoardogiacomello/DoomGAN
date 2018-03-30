@@ -111,7 +111,7 @@ Some other difficulties came with the necessity to render wad files as images an
 \subsection{Level Description and Motivation}
 \paragraph{}Levels are read as a structured object by a module we wrote for the purpose of providing developers and designers a programmatic way to access, analyse and edit DOOM WAD files, instead of using visual authoring software. This allows to automatise some tasks that would be very long to accomplish with standard editors or tools and also offers developers the possibility to write custom editor and scripts. \\*
 In order to provide the most complete set of information possible every level is converted to a set of images, called \glspl{featuremap} in this work, a tiled representation in textual format that is an extension of the one used in \textit{VGLC} \cite{VGLC}, a graph representation and a set of textual and scalar features that contains both the \gls{WAD} meta-data and the level features and metrics calculated either on the WAD representation (sectors, subsectors, linedefs, etc), the \gls{featuremap} representation or the graph representation of the level. A detailed list and explanation of each feature is provided in section~\ref{features}. \\*
-The choice of these representations have been made primarily for the need of having a data format that the generator model can easily work on. In particular, convolutional neural netoworks are designed to work well with bi-dimensional or tri-dimensional data such as (multi-channel) images, for this reason the image representation arose naturally. The text representation is provided mainly for consistency with the data format given in \cite{VGLC}, even if our representation uses two characters per tile instead of one. Finally, scalar and graph representation have been collected for the need of quantifying and summarising some properties and having a more abstract representation of a level, which can be very helpful in the case this data had to be used in other works.
+The choice of these representations have been made primarily for the need of having a data format that the generator model can easily work on. In particular, convolutional neural networks are designed to work well with bi-dimensional or tri-dimensional data such as (multi-channel) images, for this reason the image representation arose naturally. The text representation is provided mainly for consistency with the data format given in \cite{VGLC}, even if our representation uses two characters per tile instead of one. Finally, scalar and graph representation have been collected for the need of quantifying and summarising some properties and having a more abstract representation of a level, which can be very helpful in the case this data had to be used in other works.
 
 \subsection{Feature Maps}
 \paragraph{} \glspl{featuremap} are a set of images each of them describing a different aspect of the level. In particular we used for each \gls{featuremap} a grayscale 8-bit image in which each pixel can assume values between 0 an 255. This allowed to obtain a good degree of precision while still maintaining a reasonable dataset size. \\*
@@ -346,7 +346,7 @@ A text representation is also available, following the work of \citeauthor{VGLC}
 		"T" &	["teleport","walkable","destination"]		 & & \\
 		":" &	["decorative","walkable"]		 & & \\
 		"L" &	["door","locked"]		 & & \\
-		"t" &	["teleport","source","activatable"]	 &	 & \\
+		"t" &	["teleport","source",activatable"]	 &	 & \\
 		"+" &	["door","walkable","activatable"]		 & & \\
 		"\textgreater" &	["exit","activatable"]		 & & \\
 		\hline
@@ -517,8 +517,7 @@ Each level is annotated with 176 numerical and textual features which are divide
 
 \section{Dataset Organization}
 \label{sec:DatasetOrganization}
-\subsection{Overview}
-This section will describe how the dataset is stored and how it can be used for future works. \\* 
+This section describes how the dataset is stored and how it can be used for future works. \\* 
 Since the dataset has been created primarily for instructing a neural network to generate new levels, the choices in data formats and data representation have been made to increase re-usability and flexibility in data manipulation. In particular the full dataset is stored first as a set of files indexed by a JSON dictionary, but for various reason that will be explained more in depth in  chapter~\ref{sec:InputSelection} in our work we only used a subset of levels stored as a separated archive.
 % Full dataset ha dimensioni reali, i tfrecords sono compressi e filtrati, etc.
 \subsection{Full Dataset and Filtered Dataset}
@@ -604,4 +603,4 @@ In this section we analyse how the level dimensions in \gls{MU} are distributed 
 
 \newpage
 \section{Summary}
-In this chapter we proposed a setting for describing the structure and the features of DOOM levels, analysing the WAD file format and exploiting its properties to extract useful data. Inspired by the work of \citeauthor{VGLC} in \citetitle{VGLC} we produced a dataset of more than 9000 DOOM levels for extending the previous work and providing a ready-to-use database for future works on video-game levels. In doing so, we developed a new system for converting WAD files into a data format that is compatible with our needs, while also trying to preserve the textual format provided by the previous work for backward compatibility. In the next chapter we describe our system from an high level perspective, showing how the dataset is used to generate new levels.
+In this chapter we proposed a setting for describing the structure and the features of DOOM levels, analysing the WAD file format and exploiting its properties to extract useful data. Inspired by the work of \citeauthor{VGLC} in \citetitle{VGLC} we produced a dataset of more than 9000 DOOM levels for extending previous work and providing a ready-to-use database for future works on video-game levels. In doing so, we developed a new system for converting WAD files into a data format that is compatible with our needs, while also trying to preserve the textual format provided by the previous work for backward compatibility. In the next chapter we describe our system from an high level perspective, showing how the dataset is used to generate new levels.

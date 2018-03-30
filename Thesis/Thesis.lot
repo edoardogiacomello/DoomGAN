@@ -15,58 +15,58 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.1}{\ignorespaces WAD File structure\relax }}{35}{table.caption.34}
+\contentsline {table}{\numberline {3.1}{\ignorespaces WAD File structure\relax }}{33}{table.caption.31}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.2}{\ignorespaces ThingsMap Encoding (1 of 3)\relax }}{39}{table.caption.52}
+\contentsline {table}{\numberline {3.2}{\ignorespaces ThingsMap Encoding (1 of 3)\relax }}{37}{table.caption.49}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.3}{\ignorespaces ThingsMap Encoding (2 of 3)\relax }}{40}{table.caption.53}
+\contentsline {table}{\numberline {3.3}{\ignorespaces ThingsMap Encoding (2 of 3)\relax }}{38}{table.caption.50}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.4}{\ignorespaces ThingsMap Encoding (3 of 3)\relax }}{41}{table.caption.54}
+\contentsline {table}{\numberline {3.4}{\ignorespaces ThingsMap Encoding (3 of 3)\relax }}{39}{table.caption.51}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.5}{\ignorespaces TriggerMap Encoding}}{42}{table.caption.56}
+\contentsline {table}{\numberline {3.5}{\ignorespaces TriggerMap Encoding}}{40}{table.caption.53}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.6}{\ignorespaces Textual Representation Encoding}}{42}{table.caption.58}
+\contentsline {table}{\numberline {3.6}{\ignorespaces Textual Representation Encoding}}{40}{table.caption.55}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.7}{\ignorespaces Features: IDArchive Metadata }}{43}{table.caption.59}
+\contentsline {table}{\numberline {3.7}{\ignorespaces Features: IDArchive Metadata }}{41}{table.caption.56}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.8}{\ignorespaces Features: WAD-extracted }}{44}{table.caption.60}
+\contentsline {table}{\numberline {3.8}{\ignorespaces Features: WAD-extracted }}{42}{table.caption.57}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.9}{\ignorespaces Features: PNG-extracted (1 of 2) }}{45}{table.caption.61}
+\contentsline {table}{\numberline {3.9}{\ignorespaces Features: PNG-extracted (1 of 2) }}{43}{table.caption.58}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.10}{\ignorespaces Features: PNG-extracted (2 of 2) }}{46}{table.caption.62}
+\contentsline {table}{\numberline {3.10}{\ignorespaces Features: PNG-extracted (2 of 2) }}{44}{table.caption.59}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.11}{\ignorespaces Features: Graph }}{47}{table.caption.63}
+\contentsline {table}{\numberline {3.11}{\ignorespaces Features: Graph }}{45}{table.caption.60}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.12}{\ignorespaces Percentiles of level width and height distributions }}{49}{table.caption.67}
-\defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.1}{\ignorespaces Training Algorithm Operations\relax }}{58}{table.caption.89}
+\contentsline {table}{\numberline {3.12}{\ignorespaces Percentiles of level width and height distributions }}{47}{table.caption.64}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {5.1}{\ignorespaces Trained Models }}{65}{table.caption.112}
+\contentsline {table}{\numberline {4.1}{\ignorespaces Training Algorithm Operations\relax }}{56}{table.caption.86}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {6.1}{\ignorespaces Test results for input features}}{74}{table.6.1}
+\contentsline {table}{\numberline {5.1}{\ignorespaces Trained Models }}{63}{table.caption.109}
+\defcounter {refsection}{0}\relax 
+\addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {6.1}{\ignorespaces Test results for input features}}{72}{table.6.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {6.2}{\ignorespaces Test results for non input features}}{72}{table.6.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {6.2}{\ignorespaces Test results for non input features}}{73}{table.6.2}
 \defcounter {refsection}{0}\relax 
 \contentsline {table}{\numberline {6.2}{\ignorespaces Test results for non input features}}{74}{table.6.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {6.2}{\ignorespaces Test results for non input features}}{75}{table.6.2}
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {6.2}{\ignorespaces Test results for non input features}}{76}{table.6.2}
-\defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {A.1}{\ignorespaces KS statistic values}}{91}{table.A.1}
+\contentsline {table}{\numberline {A.1}{\ignorespaces KS statistic values}}{89}{table.A.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {A.1}{\ignorespaces KS statistic values}}{92}{table.A.1}
+\contentsline {table}{\numberline {A.1}{\ignorespaces KS statistic values}}{90}{table.A.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {A.2}{\ignorespaces Corrected p-values}}{93}{table.A.2}
+\contentsline {table}{\numberline {A.2}{\ignorespaces Corrected p-values}}{91}{table.A.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {A.2}{\ignorespaces Corrected p-values}}{94}{table.A.2}
+\contentsline {table}{\numberline {A.2}{\ignorespaces Corrected p-values}}{92}{table.A.2}
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }

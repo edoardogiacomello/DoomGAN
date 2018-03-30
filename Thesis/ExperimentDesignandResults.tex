@@ -1,6 +1,6 @@
 \chapter{Experiment Design}
 \label{ch:experiment}
-\paragraph{} This chapter describe the experiments we conducted using the system described in chapter~\ref{ch:system_design}. Section~\ref{sec:experimentdesign} shows the preliminary steps for preparing the system to our experiments, such as the selection of the input levels and the features. Section~\ref{sec:trainednets} shows the trained model structure we used in our experiments and \ref{sec:experiments} detail the three experiments we set up in order to study the trained networks.
+\paragraph{} This chapter describes the experiments we conducted using the system described in chapter~\ref{ch:system_design}. Section~\ref{sec:experimentdesign} shows the preliminary steps for preparing the system to our experiments, such as the selection of the input levels and the features. Section~\ref{sec:trainednets} shows the trained model structure we used in our experiments and \ref{sec:experiments} detail the three experiments we set up in order to study the trained networks.
 
 \section{Experiment setup}
 \label{sec:experimentdesign}
@@ -40,7 +40,7 @@ In selecting which numerical features $Y$ to use as network input we followed so
 \subsection{Framework Evaluation}
 \label{sec:modelevaluation}
 \paragraph{} In order to evaluate the feasibility of our approach to the problem of level generation, we designed a set of experiments for testing the impact of input features on the generative model. 
-All the experiments involve comparing the distribution of true data and the one generated from the neural network, in particular only features that is possible to extract from the generated samples have been considered. In generating the models, we first trained a neural network without input features so that the generator is only controlled by the noise vector $Z$. We then added a set of features to our architecture and used it to train a network using the same random initialization. Details on the network we produced are shown in table~\ref{tab:trained_models}.
+All the experiments involve comparing the distribution of true data and the one generated from the neural network, in particular only features that are informative according to our dataset have been considered. In generating the models, we first trained a neural network without input features so that the generator is only controlled by the noise vector $Z$. We then added a set of features to our architecture and used it to train a network using the same random initialization. Details on the network we produced are shown in table~\ref{tab:trained_models}.
 
 \newpage
 \subsection{Trained Architectures}
@@ -134,5 +134,6 @@ Only for the features in the group F3, we also consider the distance (KS-stats) 
 \subsection{Experiment 3: Controlling the generation}
 In the third experiment we studied the impact of the input features on the generated levels from a qualitative point of view. In particular, we selected a set of levels from the dataset according to their feature values: for each input feature we selected the levels that match the 25th, 50th and 75th percentiles of the feature distribution, obtaining a total of $3 * \vert y_{i} \vert = 21$ levels. We then sampled 1000 levels from the conditioned network for each selected input feature vector, obtaining 1000 generated feature vectors for each input level. For each input feature, we plotted the three selected input values and the corresponding generated feature distributions, showing how the generated level distribution changes with respect to a change in the input feature. Results of this experiment are shown in figure~\ref{fig:results-exp3-features}.
 
+\newpage
 \section{Summary}
 \paragraph{} In this chapter we described the input selection for our trained models, resulting in 1088 levels up to 128 pixels and having one floor. We then described the general principles we used to select the input features for the conditional network, selecting 7 representative features. We then proceeded to define three experiments for testing the two network capabilities and the effects of controlling the conditional network with the input features. In the next chapter we show the results we obtained, while in the following one we discuss the results and present our conclusions.
