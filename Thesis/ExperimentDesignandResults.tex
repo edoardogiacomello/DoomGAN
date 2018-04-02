@@ -100,6 +100,7 @@ All the experiments involve comparing the distribution of true data and the one 
 	\label{tab:trained_models}
 \end{table}	
 
+\newpage
 \section{Experiments description}
 \label{sec:experiments}
 For assessing the capabilities of the networks in relation to the problem of level generation we designed three experiments, which are described in the following paragraphs. Since the second experiment depends on the result of the first one, the results are showed together in chapter \ref{sec:results}.
@@ -134,6 +135,6 @@ Only for the features in the group F3, we also consider the distance (KS-stats) 
 \subsection{Experiment 3: Controlling the generation}
 In the third experiment we studied the impact of the input features on the generated levels from a qualitative point of view. In particular, we selected a set of levels from the dataset according to their feature values: for each input feature we selected the levels that match the 25th, 50th and 75th percentiles of the feature distribution, obtaining a total of $3 * \vert y_{i} \vert = 21$ levels. We then sampled 1000 levels from the conditioned network for each selected input feature vector, obtaining 1000 generated feature vectors for each input level. For each input feature, we plotted the three selected input values and the corresponding generated feature distributions, showing how the generated level distribution changes with respect to a change in the input feature. Results of this experiment are shown in figure~\ref{fig:results-exp3-features}.
 
-\newpage
+
 \section{Summary}
 \paragraph{} In this chapter we described the input selection for our trained models, resulting in 1088 levels up to 128 pixels and having one floor. We then described the general principles we used to select the input features for the conditional network, selecting 7 representative features. We then proceeded to define three experiments for testing the two network capabilities and the effects of controlling the conditional network with the input features. In the next chapter we show the results we obtained, while in the following one we discuss the results and present our conclusions.

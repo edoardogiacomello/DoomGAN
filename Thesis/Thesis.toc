@@ -195,9 +195,9 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{52}{section*.75}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.3}Data Flow}{53}{section.4.3}
+\contentsline {section}{\numberline {4.3}Data Flow}{54}{section.4.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{53}{section*.78}
+\contentsline {paragraph}{}{54}{section*.78}
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {4.4}Neural Network Architecture and Training Algorithm}{55}{section.4.4}
 \defcounter {refsection}{0}\relax 
@@ -281,13 +281,13 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{63}{section*.108}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Experiments description}{63}{section.5.2}
+\contentsline {section}{\numberline {5.2}Experiments description}{64}{section.5.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.1}Experiment 1: Unconditional generation}{63}{subsection.5.2.1}
+\contentsline {subsection}{\numberline {5.2.1}Experiment 1: Unconditional generation}{64}{subsection.5.2.1}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {5.2.2}Experiment 2: Addition of input features}{64}{subsection.5.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.3}Experiment 3: Controlling the generation}{64}{subsection.5.2.3}
+\contentsline {subsection}{\numberline {5.2.3}Experiment 3: Controlling the generation}{65}{subsection.5.2.3}
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {5.3}Summary}{65}{section.5.3}
 \defcounter {refsection}{0}\relax 
@@ -299,130 +299,130 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{67}{section*.111}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.2}Experiment Results}{72}{section.6.2}
+\contentsline {section}{\numberline {6.2}Experiment Results}{74}{section.6.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{72}{section*.117}
+\contentsline {paragraph}{}{74}{section*.118}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.2.1}Results of experiments 1 and 2}{72}{subsection.6.2.1}
+\contentsline {subsection}{\numberline {6.2.1}Results of experiments 1 and 2}{74}{subsection.6.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{72}{section*.118}
+\contentsline {paragraph}{}{74}{section*.119}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Input Features}{72}{section*.119}
+\contentsline {subsubsection}{Input Features}{74}{section*.120}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Non-Input Features}{72}{section*.120}
+\contentsline {subsubsection}{Non-Input Features}{74}{section*.121}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.2.2}Graphical results for Experiments 1 and 2}{74}{subsection.6.2.2}
+\contentsline {subsection}{\numberline {6.2.2}Graphical results for Experiments 1 and 2}{76}{subsection.6.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{74}{section*.121}
+\contentsline {paragraph}{}{76}{section*.122}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.2.3}Results of Experiment 3}{77}{subsection.6.2.3}
+\contentsline {subsection}{\numberline {6.2.3}Results of Experiment 3}{79}{subsection.6.2.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{77}{section*.124}
+\contentsline {paragraph}{}{79}{section*.125}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.3}Generated Samples}{79}{section.6.3}
+\contentsline {section}{\numberline {6.3}Generated Samples}{81}{section.6.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{79}{section*.126}
+\contentsline {paragraph}{}{81}{section*.127}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.3.1}Unconditional Network}{79}{subsection.6.3.1}
+\contentsline {subsection}{\numberline {6.3.1}Unconditional Network}{81}{subsection.6.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {6.3.2}Conditional Network}{80}{subsection.6.3.2}
+\contentsline {subsection}{\numberline {6.3.2}Conditional Network}{82}{subsection.6.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{80}{figure.caption.131}
+\contentsline {paragraph}{}{82}{figure.caption.132}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {6.4}Summary}{82}{section.6.4}
+\contentsline {section}{\numberline {6.4}Results Evaluation}{84}{section.6.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{82}{section*.132}
+\contentsline {paragraph}{}{84}{section*.133}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {7}Results Evaluation and Conclusions}{83}{chapter.7}
+\contentsline {subsection}{\numberline {6.4.1}Sample Evaluation Metrics}{84}{subsection.6.4.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{83}{section*.133}
+\contentsline {paragraph}{}{84}{section*.134}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.1}Results Evaluation}{83}{section.7.1}
+\contentsline {paragraph}{}{84}{section*.135}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{83}{section*.134}
+\contentsline {paragraph}{}{84}{section*.136}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.1.1}Sample Evaluation Metrics}{83}{subsection.7.1.1}
-\defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{83}{section*.135}
-\defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{83}{section*.136}
-\defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{83}{section*.137}
+\contentsline {paragraph}{}{84}{section*.137}
 \defcounter {refsection}{0}\relax 
 \contentsline {paragraph}{}{84}{section*.138}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{84}{section*.139}
+\contentsline {subsection}{\numberline {6.4.2}Experiments Discussion}{85}{subsection.6.4.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.1.2}Experiments Discussion}{84}{subsection.7.1.2}
+\contentsline {paragraph}{}{85}{section*.139}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{84}{section*.140}
+\contentsline {paragraph}{}{85}{section*.140}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{84}{section*.141}
+\contentsline {paragraph}{}{85}{section*.141}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{84}{section*.142}
+\contentsline {paragraph}{}{85}{section*.142}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{84}{section*.143}
+\contentsline {subsection}{\numberline {6.4.3}Visual Acknowledgement}{86}{subsection.6.4.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.1.3}Final Considerations}{85}{subsection.7.1.3}
+\contentsline {paragraph}{}{86}{section*.143}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{85}{section*.144}
+\contentsline {section}{\numberline {6.5}Summary}{86}{section.6.5}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{85}{section*.145}
+\contentsline {paragraph}{}{86}{section*.144}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.2}Conclusions}{85}{section.7.2}
+\contentsline {chapter}{\numberline {7}Conclusions and Future Work}{87}{chapter.7}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{85}{section*.146}
+\contentsline {paragraph}{}{87}{section*.145}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {7.3}Future Work}{86}{section.7.3}
+\contentsline {section}{\numberline {7.1}Conclusions}{87}{section.7.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{86}{section*.147}
+\contentsline {paragraph}{}{87}{section*.146}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.3.1}Open Problems}{86}{subsection.7.3.1}
+\contentsline {paragraph}{}{87}{section*.147}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Data Availability}{86}{section*.148}
+\contentsline {section}{\numberline {7.2}Future Work}{88}{section.7.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{86}{section*.149}
+\contentsline {paragraph}{}{88}{section*.148}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Samples Evaluation}{86}{section*.150}
+\contentsline {subsection}{\numberline {7.2.1}Open Problems}{88}{subsection.7.2.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{86}{section*.151}
+\contentsline {subsubsection}{Data Availability}{88}{section*.149}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Loss of accuracy}{86}{section*.152}
+\contentsline {paragraph}{}{88}{section*.150}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{86}{section*.153}
+\contentsline {subsubsection}{Samples Evaluation}{88}{section*.151}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Improving Network Sampling}{87}{section*.154}
+\contentsline {paragraph}{}{88}{section*.152}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{87}{section*.155}
+\contentsline {subsubsection}{Loss of accuracy}{88}{section*.153}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {7.3.2}Possible Applications and future develops}{87}{subsection.7.3.2}
+\contentsline {paragraph}{}{88}{section*.154}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Augmenting input data}{87}{section*.156}
+\contentsline {subsubsection}{Improving Network Sampling}{88}{section*.155}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{87}{section*.157}
+\contentsline {paragraph}{}{88}{section*.156}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Improving samples to WAD conversion}{87}{section*.158}
+\contentsline {subsection}{\numberline {7.2.2}Possible Applications and future develops}{89}{subsection.7.2.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{87}{section*.159}
+\contentsline {subsubsection}{Augmenting input data}{89}{section*.157}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Sample interpolation and Style Transfer}{87}{section*.160}
+\contentsline {paragraph}{}{89}{section*.158}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{87}{section*.161}
+\contentsline {subsubsection}{Improving samples to WAD conversion}{89}{section*.159}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Tweaking the model}{87}{section*.162}
+\contentsline {paragraph}{}{89}{section*.160}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{87}{section*.163}
+\contentsline {subsubsection}{Sample interpolation and Style Transfer}{89}{section*.161}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Different architectures}{87}{section*.164}
+\contentsline {paragraph}{}{89}{section*.162}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{87}{section*.165}
+\contentsline {subsubsection}{Tweaking the model}{89}{section*.163}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{Possible Applications}{88}{section*.166}
+\contentsline {paragraph}{}{89}{section*.164}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {A}Appendix: Test Statistics Values and Corrected p-values}{89}{appendix.A}
+\contentsline {subsubsection}{Different architectures}{89}{section*.165}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {B}Appendix: Graphical results for non-input features}{93}{appendix.B}
+\contentsline {paragraph}{}{89}{section*.166}
 \defcounter {refsection}{0}\relax 
-\contentsline {paragraph}{}{93}{section*.167}
+\contentsline {subsubsection}{Possible Applications}{89}{section*.167}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{Glossary}{107}{section*.179}
+\contentsline {chapter}{\numberline {A}Appendix: Test Statistics Values and Corrected p-values}{91}{appendix.A}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {B}Appendix: Graphical results for non-input features}{95}{appendix.B}
+\defcounter {refsection}{0}\relax 
+\contentsline {paragraph}{}{95}{section*.168}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Glossary}{109}{section*.180}

@@ -10,13 +10,20 @@ import os
 import csv
 import glob
 from scipy.stats import ttest_ind, wilcoxon, mannwhitneyu, ks_2samp
-
+import itertools
 
 # PATS SPECIFICATION
 input_files = './input_files/'
 output_files = './output_files/'
 
 to_exclude = [f for f in Features.features_for_evaluation if f.startswith("floors_") or f=='level_bbox_area']
+
+
+def grouper(iterable, n, fillvalue=None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(fillvalue=fillvalue, *args)
 
 def load_results_from_files(in_folder, mode='numpy'):
     assert mode in {'numpy', 'pandas'}, "Please specify a mode that is either 'numpy' or 'pandas'"
@@ -273,12 +280,8 @@ def generate_latex_table(alpha, uncond_columns, stat='KS', correction_method='bo
 
 
 def generate_latex_figures():
-    import itertools
-    def grouper(iterable, n, fillvalue=None):
-        "Collect data into fixed-length chunks or blocks"
-        # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
-        args = [iter(iterable)] * n
-        return itertools.zip_longest(fillvalue=fillvalue, *args)
+
+
 
     latex=""
     template = """\\begin{{minipage}}[b]{{0.45\\linewidth}}
@@ -326,22 +329,96 @@ def generate_latex_figures():
 
 
 
-def plot_tensorboard_from_csv(name_format="run_{net}_{run}-tag-{metric}.csv"):
-    raise NotImplementedError()
-    cond_loss_train = pd.read_csv("./input_tensorflow_results/run_cond_train-tag-critic_loss.csv" , header=0, comment='#', delimiter=',').rename(columns={'Value': 'Training'})
-    cond_loss_valid = pd.read_csv("./input_tensorflow_results/run_cond_validation-tag-critic_loss.csv"    , header=0, comment='#', delimiter=',').rename(columns={'Value': 'Validation'})
+def plot_tensorboard_from_csv(run_one_name, run_two_name, run_one_path, run_two_path, graph_title, xlabel="Iterations", colors=['firebrick','royalblue']):
+    one = np.loadtxt(run_one_path, skiprows=1, delimiter=",", usecols=[1,2])
+    two = np.loadtxt(run_two_path, skiprows=1, delimiter=",", usecols=[1,2])
 
-    uncond_loss_train =   pd.read_csv("./input_tensorflow_results/run_uncond_train-tag-critic_loss.csv"   , header=0, comment='#', delimiter=',')
-    uncond_loss_valid = pd.read_csv("./input_tensorflow_results/run_uncond_validation-tag-critic_loss.csv"  , header=0, comment='#', delimiter=',')
-
-    cond_train = pd.concat([cond_loss_train, cond_loss_valid], axis=1)
-
-    ### WIP - NOT WORKING
+    # Truncating at the selected iteration
+    one = one[one[:, 0] <= 36000]
+    two = two[two[:, 0] <= 36000]
 
 
+    fig = plt.figure()
 
+
+    ax_one = plt.plot(one[:, 0], one[:, 1], color=colors[0])
+    ax_two = plt.plot(two[:, 0], two[:, 1], color=colors[1])
+    # Plotting delimiters
+    plt.plot(one[-1, 0], one[-1, 1], label=run_one_name, color=colors[0], marker='o')
+    plt.plot(two[-1, 0], two[-1, 1], label=run_two_name, color=colors[1], marker='o')
+
+    #plt.ylim(-10, plt.ylim()[-1])
+    fig.get_axes()[-1].set_xlabel(xlabel)
+    plt.legend()
+    plt.grid()
+    plt.title(graph_title)
+    fig.tight_layout()
+
+    plt.show()
+
+def make_graphs_from_tensorboard_csv(path):
+    """
+    This functions gets all the csv downloaded from tensorboard and generates the corresponding graphs.
+    The folder must have this structure:
+    <path>/<graph_name>/<csv_files>.csv
+
+    Only 2 <csv_files> can be placed in each folder, they are selected by checking the strings "uncond" for sample evaluation metrics and "train" for the losses.
+    :param path: a root folder
+    :return: None
+    """
+    for metric in glob.glob(path + "*"):
+        graph_name = os.path.basename(metric)
+        csv_names = [os.path.basename(p) for p in glob.glob(metric + "/*")]
+        if "Critic Loss" in graph_name:
+            train = [metric + '/' + path for path in csv_names if 'train' in path][0]
+            valid = [metric + '/' + path for path in csv_names if not 'train' in path][0]
+
+            plot_tensorboard_from_csv(run_one_name="Training",
+                                      run_two_name="Validation",
+                                      run_one_path=train,
+                                      run_two_path=valid,
+                                      graph_title=graph_name)
+        else:
+            uncond = [metric + '/' + path for path in csv_names if 'uncond' in path][0]
+            cond = [metric + '/' + path for path in csv_names if not 'uncond' in path][0]
+            plot_tensorboard_from_csv(run_one_name="Unconditional",
+                                      run_two_name="Conditional",
+                                      run_one_path=uncond,
+                                      run_two_path=cond,
+                                      graph_title=graph_name)
+
+def generate_samples_images_latex(cond=False):
+    starting_folder = '/home/edoardo/Projects/DoomPCGML/Thesis/figures/results/samples/cond/'
+    pattern = 'sample*_map_*_generated.png' if not cond else 'sample*_map_*_*.png'
+    files = sorted(map(os.path.basename, glob.glob(starting_folder+pattern)))
+    ltx = ""
+    if not cond:
+        for row in grouper(files, 4):
+            ltx += "\\begin{center}\n"
+            for img in row:
+                ltx += "\includegraphics[width=2cm]{{figures/results/samples/uncond/{}}}\n".format(img)
+
+            ltx += "\\end{center}\n\n"
+    else:
+        for row in grouper(files, 6):
+            true_col = ""
+            gen_col = ""
+            ltx += "\\begin{center}\n"
+
+            for img in row:
+                if img is not None:
+                    if "_true" in img:
+                        true_col += "\includegraphics[width=2cm]{{figures/results/samples/cond/{}}}\n".format(img)
+                    else:
+                        gen_col += "\includegraphics[width=2cm]{{figures/results/samples/cond/{}}}\n".format(img)
+
+            ltx += true_col + "\hfill \n" + gen_col
+            ltx += "\\end{center}\n\n"
+    print(ltx)
 if __name__ == '__main__':
-    plot_all(cumulative=False)
-    generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS', merge_tables=True)
-    generate_latex_figures()
+    #plot_all(cumulative=False)
+    #generate_latex_table(0.05, uncond_columns=['uncond'], correction_method='bonferroni', stat='KS', merge_tables=True)
+    #generate_latex_figures()
     #plot_tensorboard_from_csv()
+    #generate_samples_images_latex(True)
+    pass
