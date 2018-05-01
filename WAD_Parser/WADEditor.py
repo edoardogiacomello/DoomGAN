@@ -285,7 +285,6 @@ class WADWriter(object):
         return tuple(int(a * scale_factor) for a in v)
 
     def from_images_v2(self, floormap, heightmap, wallmap, thingsmap):
-        # TODO: Finalize this
         from skimage.io import imshow
         if isinstance(floormap, str):
             floormap = io.imread(floormap).astype(dtype=np.bool)
@@ -302,6 +301,7 @@ class WADWriter(object):
         walkable = morphology.remove_small_holes(walkable)
 
         roommap, graph, metrics = topological_features(walkable, prepare_for_doom=True)
+        graph = self.decorate_graph(graph, roommap, heightmap, thingsmap)
 
         self.from_graph(graph)
 
@@ -316,7 +316,64 @@ class WADWriter(object):
                 self.set_start(x,y)
                 break
 
+    def decorate_graph(self, G, roommap, heightmap, thingsmap):
+        """
+        Adds information about the heightmap and the thingsmap in the region adjacency graph.
+        :param roommap:
+        :param heightmap:
+        :param thingsmap:
+        :return: updated G
+        """
+        # Selecting candidates for starting and exiting nodes:
+        # leaves of the spanning tree are the most suitable
+        # Connected components (floors)
 
+        H = G.copy()
+        H.remove_node(0)
+        floors = sorted(nx.connected_components(H), key=len, reverse=True)
+        level_entry = None
+        level_exit = None
+        level_solution = list()
+        for id, floor_rooms in enumerate(floors):
+            F = H.subgraph(floor_rooms)
+            T = nx.minimum_spanning_tree(F)
+            degree = T.degree()
+            floor_entry = min(degree, key=degree.get)
+            # Finding all the paths in the level to determine the best exit
+            paths = list()
+            for n in T.nodes():
+                paths += nx.all_simple_paths(T, floor_entry, n)
+            floor_solution = max(paths, key=len)
+            level_solution.append(floor_solution)
+            floor_exit = floor_solution[-1]
+
+            if level_entry is None:
+                level_entry = floor_entry
+                #TODO: Place the level start
+                pass
+            else:
+                #TODO: place a teleport source here
+                pass
+            if id == len(floors)-1:
+                #TODO: This is the last floor to visit, place the level exit
+                pass
+            else:
+                #TODO: There's another unvisited floor, place a teleporter
+                pass
+
+
+        #TODO: Correcting the height such that all the height changes become walkable
+        corrected_height = None
+        avg_height = dict()
+        for n in G.nodes():
+            if n == 0:
+                continue
+            height = np.where(roommap==n, heightmap, np.nan)
+            avg_height[n] = np.nanmedian(height)
+            print("")
+
+        nx.set_node_attributes(G, "height", avg_height)
+        return G
 
     def from_graph(self, graph):
         """
@@ -330,8 +387,9 @@ class WADWriter(object):
         for n in graph.nodes():
             if n == 0:
                 continue
+            heights = nx.get_node_attributes(graph, "height")
             # Create a sector
-            node_attr_sectors[n] = self.lumps['SECTORS'].add_sector(floor_height=0, ceiling_height=128, floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=255,
+            node_attr_sectors[n] = self.lumps['SECTORS'].add_sector(floor_height=int(heights[n]), ceiling_height=128+int(heights[n]), floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=255,
                                                          special_sector=0, tag=int(n))
         nx.set_node_attributes(graph, 'sector_id', node_attr_sectors)
 
@@ -346,8 +404,8 @@ class WADWriter(object):
                     end = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][1]))
                     # - Right sidedef is j
                     right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
-                                                                      upper_texture='-',
-                                                                      lower_texture='-',
+                                                                      upper_texture='BRONZE1',
+                                                                      lower_texture='BRONZE1',
                                                                       middle_texture='BRONZE1',
                                                                       sector=graph.node[j]["sector_id"])
                     # - Make a linedef
@@ -367,14 +425,14 @@ class WADWriter(object):
                     end = self.lumps['VERTEXES'].add_vertex(self._rescale_coords(wall_piece[0][1]))
                     # - Right sidedef is i
                     right_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
-                                                                      upper_texture='-',
-                                                                      lower_texture='-',
+                                                                      upper_texture='BRONZE1',
+                                                                      lower_texture='BRONZE1',
                                                                       middle_texture='-',
                                                                       sector=graph.node[i]["sector_id"])
                     # - Left sidedef is j (in j list there's the reversed linedef)
                     left_sidedef = self.lumps['SIDEDEFS'].add_sidedef(x_offset=0, y_offset=0,
-                                                                      upper_texture='-',
-                                                                      lower_texture='-',
+                                                                      upper_texture='BRONZE1',
+                                                                      lower_texture='BRONZE1',
                                                                       middle_texture='-',
                                                                       sector=graph.node[j]["sector_id"])
                     # - Make a linedef
@@ -388,7 +446,6 @@ class WADWriter(object):
                     edge_attr_sidedef[(i, j)].append(left_sidedef)
             # Actually update edge attribnutes
             nx.set_edge_attributes(graph, 'sidedef', edge_attr_sidedef)
-
 
 
 
