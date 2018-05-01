@@ -1,5 +1,5 @@
 import matplotlib
-#matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker TODO: Enable this again
+#matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker
 import os
 import DoomLevelsGAN.network_architecture as architecture
 import tensorflow.contrib as contrib
@@ -720,7 +720,7 @@ class DoomGAN(object):
                     return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch,
                                                             feature_vector=y)
                 else:
-                    return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch, feature_vector=y, folder=folder)
+                    return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch, feature_vector=y if self.use_features else None, folder=folder)
             elif save == 'WAD':
                 return DataTransform.build_levels(result, self.maps, self.config.batch_size)
         return result
@@ -1016,9 +1016,9 @@ with tf.Session() as s:
             print("Starting training process...")
             gan.train(FLAGS)
         else:
-            feat_factors = [-1 for f in features]
+            #feat_factors = [-1 for f in features]
             if FLAGS.generate:
                 factors = np.random.normal(0.5, 0.1, size=(FLAGS.batch_size, len(features)))
                 gan.initialize_and_restore()
-                gan.sample(mode='dataset', y_factors=factors, postprocess=True, save='PNG', seed=FLAGS.seed, folder=FLAGS.generated_folder)
+                gan.sample(mode='dataset', sample_from_dataset='validation', y_factors=factors, postprocess=True, save='PNG', seed=FLAGS.seed, folder=FLAGS.generated_folder)
 

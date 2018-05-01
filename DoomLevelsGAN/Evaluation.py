@@ -200,9 +200,10 @@ def distribution_visualization_1vN(n, markers=['+','o', 's', 'd', '.'], colors=[
             #axt = sb.rugplot([np.mean(values)], height=1, ls="-", linewidth=0.75, marker=colors[p])
             axt = sb.rugplot(true_value, height=1, ls="--", linewidth=0.75, label="True_{}".format(pname), color=colors[p], marker=markers[p])
             sb.kdeplot(values, ax=axt, ls="-", label="Generated_{}".format(pname), color=colors[p], marker=markers[p])
-            axt.set_xlabel("{}".format(fname), fontsize=16)
+            plt.setp(axt.get_legend().get_texts(), fontsize=30)
+            axt.set_xlabel("{}".format(fname), fontsize=45)
 
-        plt.title("{} generated samples distribution from every quartile of feature \"{}\"".format(n, fname))
+        #plt.title("{} generated samples distribution from every quartile of feature \"{}\"".format(n, fname))
         fig.canvas.set_window_title("{}".format("{}".format(fname)))
         fig.tight_layout()
         fig.savefig(output_graph_folder + '1v{}_{}.png'.format(n, fname))
@@ -211,6 +212,6 @@ def distribution_visualization_1vN(n, markers=['+','o', 's', 'd', '.'], colors=[
 
 if __name__ == '__main__':
     pass
-    generate_results_and_save(1, False)
+    #generate_results_and_save(1, False)
     # generate_results_and_save(1000)
-    #distribution_visualization_1vN(1000)
+    distribution_visualization_1vN(1000)
