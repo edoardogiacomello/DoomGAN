@@ -1,6 +1,7 @@
 from DoomDataset import DoomDataset
 from WAD_Parser.WADEditor import WADWriter
 from WAD_Parser.WADEditor import WADReader
+import os
 
 class WADTweaker():
     def __init__(self):
@@ -22,6 +23,8 @@ class WADTweaker():
             heightmap = pattern.format(index, "heightmap")
             wallmap = pattern.format(index, "wallmap")
             thingsmap = pattern.format(index, "thingsmap")
+            if not os.path.exists(floormap):
+                continue
             writer.add_level(name='MAP{i:02d}'.format(i=index+1))
             writer.from_images_v2(floormap, heightmap, wallmap, thingsmap)
         writer.save('./../artifacts/DOOMPCGML.wad')

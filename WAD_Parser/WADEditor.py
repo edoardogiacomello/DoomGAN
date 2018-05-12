@@ -306,7 +306,7 @@ class WADWriter(object):
         self.from_graph(graph)
 
         # Set the start somewhere in room 1
-        # TODO: Enhance this
+        # TODO: Implement data from graph
         for n in graph.nodes():
             if n == 0:
                 continue
@@ -331,48 +331,49 @@ class WADWriter(object):
         H = G.copy()
         H.remove_node(0)
         floors = sorted(nx.connected_components(H), key=len, reverse=True)
-        level_entry = None
-        level_exit = None
         level_solution = list()
+        corrected_heights = dict()
+
         for id, floor_rooms in enumerate(floors):
+            # Creating a spanning tree for each floor
             F = H.subgraph(floor_rooms)
             T = nx.minimum_spanning_tree(F)
             degree = T.degree()
+            # Entry point has minimum node degree
             floor_entry = min(degree, key=degree.get)
-            # Finding all the paths in the level to determine the best exit
+            # Finding all paths in the level to determine the best exit (longest path)
             paths = list()
             for n in T.nodes():
                 paths += nx.all_simple_paths(T, floor_entry, n)
             floor_solution = max(paths, key=len)
             level_solution.append(floor_solution)
-            floor_exit = floor_solution[-1]
 
-            if level_entry is None:
-                level_entry = floor_entry
-                #TODO: Place the level start
-                pass
+            # Fixing the heights along all paths so every path becomes walkable
+            for path in paths:
+                for rid, room in enumerate(path):
+                    if room not in corrected_heights:
+                        height = np.nanmedian(np.where(roommap == room, heightmap, np.nan))
+                        if rid > 0:
+                            # Alter this room height to be walkable
+                            if height > path[rid-1] + 24:
+                                height = path[rid-1] + 24
+                        corrected_heights[room] = int(height)
+        nx.set_node_attributes(G, "height", corrected_heights)
+
+        for id, floor_path in enumerate(level_solution):
+            if id == 0:
+                # Place the level start
+                nx.set_node_attributes(G, "level_start", {floor_path[0]: True})
             else:
-                #TODO: place a teleport source here
-                pass
-            if id == len(floors)-1:
-                #TODO: This is the last floor to visit, place the level exit
-                pass
+                # place a teleport dest
+                nx.set_node_attributes(G, "floor_start", {floor_path[0]: True})
+            if id == len(level_solution)-1:
+                # This is the last floor to visit, place the level exit
+                nx.set_node_attributes(G, "level_exit", {floor_path[-1]: True})
             else:
-                #TODO: There's another unvisited floor, place a teleporter
-                pass
+                # There's another unvisited floor, place a teleporter to the next floor
+                nx.set_node_attributes(G, "floor_exit", {floor_path[-1]: level_solution[id+1][0]})
 
-
-        #TODO: Correcting the height such that all the height changes become walkable
-        corrected_height = None
-        avg_height = dict()
-        for n in G.nodes():
-            if n == 0:
-                continue
-            height = np.where(roommap==n, heightmap, np.nan)
-            avg_height[n] = np.nanmedian(height)
-            print("")
-
-        nx.set_node_attributes(G, "height", avg_height)
         return G
 
     def from_graph(self, graph):
