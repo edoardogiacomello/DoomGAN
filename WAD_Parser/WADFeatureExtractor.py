@@ -239,6 +239,15 @@ class WADFeatureExtractor(object):
 
 
     def extract_features_from_maps(self, floormap, wallmap, thingsmap, feature_names=None):
+        """
+        Extracts features given images of each sample. If feature_names is None then a dictionary containing all the possible features is returned.
+        Otherwise, an array is returned
+        :param floormap: The floormap of the level
+        :param wallmap: The Wallmap of the level
+        :param thingsmap: The thingsmap of the level
+        :param feature_names: [None] List of feature names to select. If not none, the returned result is an array.
+        :return: A dictionary containing feature values, or an array with values corresponding to feature_names.
+        """
         features = dict()
         if wallmap is None:
             wallmap = np.zeros_like(floormap)

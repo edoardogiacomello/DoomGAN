@@ -929,7 +929,6 @@ class DoomGAN(object):
         walls_corner_error = np.zeros(shape=(self.config.batch_size, 1))
 
         for s in range(self.config.batch_size):
-            # TODO: Add topological features here if makes any sense
             metrics_true = quality_metrics(s_true[s,:,:,:], self.maps)
             metrics_gen = quality_metrics(s_gen[s,:,:,:], self.maps)
 
