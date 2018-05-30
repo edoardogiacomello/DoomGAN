@@ -254,7 +254,7 @@ class WAD(dict):
 
 
 class WADWriter(object):
-    def __init__(self):
+    def __init__(self, scale_factor=64):
         """
         Class for writing a WAD file.
         Start by defining a new level with add_level(), then place new sectors and "things". Changes are submitted only
@@ -267,6 +267,7 @@ class WADWriter(object):
         self.wad = WAD('W')
         self.current_level = None
         self.lumps = {'THINGS':Lumps.Things(), 'LINEDEFS':Lumps.Linedefs(), 'VERTEXES':Lumps.Vertexes(),'SIDEDEFS': Lumps.Sidedefs(), 'SECTORS':Lumps.Sectors()}  # Temporary lumps for this level
+        self.scale_factor = scale_factor
 
     def _sector_orientation(self, vertices):
         """
@@ -281,11 +282,13 @@ class WADWriter(object):
         x, y = xy[0], xy[1]
         return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0, vertices
 
-    def _rescale_coords(self, v, scale_factor=64):
-        return tuple(int(a * scale_factor) for a in v)
+    def _rescale_coords(self, v):
+        return tuple(int(a * self.scale_factor) for a in v)
 
-    def from_images_v2(self, floormap, heightmap, wallmap, thingsmap):
-        from skimage.io import imshow
+    def _get_random_enemy(self):
+        return np.random.choice([3004, 9, 3001, 3002], 1, p=[0.3, 0.1, 0.4, 0.2]).item()
+
+    def from_images(self, floormap, heightmap, wallmap, thingsmap, place_enemies=True):
         if isinstance(floormap, str):
             floormap = io.imread(floormap).astype(dtype=np.bool)
         if isinstance(heightmap, str):
@@ -296,25 +299,15 @@ class WADWriter(object):
             thingsmap = io.imread(thingsmap).astype(np.uint8)
 
         walkable = np.logical_and(floormap, np.logical_not(wallmap)) if wallmap is not None else floormap
-
         walkable = morphology.remove_small_objects(walkable)
         walkable = morphology.remove_small_holes(walkable)
 
         roommap, graph, metrics = topological_features(walkable, prepare_for_doom=True)
         graph = self.decorate_graph(graph, roommap, heightmap, thingsmap)
 
-        self.from_graph(graph)
+        self.from_graph(graph, place_enemies=place_enemies)
 
-        # Set the start somewhere in room 1
-        # TODO: Implement data from graph
-        for n in graph.nodes():
-            if n == 0:
-                continue
-            spot = tuple(np.floor(graph.node[n]["centroid"]).astype(np.int))
-            if roommap[spot] != 0:
-                x,y = self._rescale_coords(spot)
-                self.set_start(x,y)
-                break
+
 
     def decorate_graph(self, G, roommap, heightmap, thingsmap):
         """
@@ -344,7 +337,13 @@ class WADWriter(object):
             # Finding all paths in the level to determine the best exit (longest path)
             paths = list()
             for n in T.nodes():
-                paths += nx.all_simple_paths(T, floor_entry, n)
+                p = list(nx.all_simple_paths(T, floor_entry, n))
+                if len(p) > 0:
+                    paths += p
+                else:
+                    # If a floor has a single room then there are no path from n to n and a max cannot be calculated
+                    paths += [[n]]
+
             floor_solution = max(paths, key=len)
             level_solution.append(floor_solution)
 
@@ -374,9 +373,35 @@ class WADWriter(object):
                 # There's another unvisited floor, place a teleporter to the next floor
                 nx.set_node_attributes(G, "floor_exit", {floor_path[-1]: level_solution[id+1][0]})
 
+        level_objects = {}
+        # Scanning the room for objects
+        for room in H.nodes():
+            things_in_room = (roommap == room)*thingsmap
+            things_pixels_indices = np.delete(np.unique(things_in_room), 0)
+            # Converting thing pixels to doom types
+            things_types = [get_type_id_from_index(i) for i in things_pixels_indices]
+            categories = [get_category_from_type_id(t) for t in things_types]
+
+            things_dict = {}
+
+            for thing_id, thing_type, thing_cat in zip(things_pixels_indices, things_types, categories):
+                # skipping generated player starts teleports and keys since they are placed statically
+                if thing_cat is not None and thing_cat not in ["other", "start", "keys"]:
+                    if thing_cat not in things_dict:
+                        things_dict[thing_cat] = {}
+                    if thing_type not in things_dict[thing_cat]:
+                        things_dict[thing_cat][thing_type] = []
+
+                    x_list, y_list = np.where(things_in_room==thing_id)
+                    for x, y in zip(x_list, y_list):
+                        things_dict[thing_cat][thing_type].append((x, y))
+            level_objects[room] = things_dict
+
+        nx.set_node_attributes(G, "things", level_objects)
+
         return G
 
-    def from_graph(self, graph):
+    def from_graph(self, graph, place_enemies=True):
         """
         Builds a level exploiting information stored in the room adjacency graph. Treat each room as a different sector.
         :param graph:
@@ -384,11 +409,11 @@ class WADWriter(object):
         """
         edge_attr_sidedef = dict()  # Dictionary for updating edge attributes
         node_attr_sectors = dict()  # Dictionary for updating edge attributes
+        heights = nx.get_node_attributes(graph, "height")
         # Creating a sector for each room
         for n in graph.nodes():
             if n == 0:
                 continue
-            heights = nx.get_node_attributes(graph, "height")
             # Create a sector
             node_attr_sectors[n] = self.lumps['SECTORS'].add_sector(floor_height=int(heights[n]), ceiling_height=128+int(heights[n]), floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=255,
                                                          special_sector=0, tag=int(n))
@@ -448,174 +473,24 @@ class WADWriter(object):
             # Actually update edge attribnutes
             nx.set_edge_attributes(graph, 'sidedef', edge_attr_sidedef)
 
+        if place_enemies:
+            # THINGS PLACEMENT
+            level_things = nx.get_node_attributes(graph, "things")
+            for n, catlist in level_things.items():
+                for cat, thinglist in catlist.items():
+                    for thingtype, coordlist in thinglist.items():
+                        for coord in coordlist:
+                            # THIS IS A FIX FOR AVOIDING TOO MANY BOSSES IN THE LEVEL
+                            if cat == "monsters":
+                                thingtype = self._get_random_enemy()
 
+                            x, y = self._rescale_coords(coord)
+                            self.add_thing(x, y, thingtype)
 
-    def from_images(self, heightmap, floormap, wallmap, thingsmap=None, level_coord_scale = 64, debug = False, save_debug = './generated_levels_debug/', generate_teleporters=True, flat_levels=False):
-        assert heightmap is not None or floormap is not None, "heightmap and floormap cannot be both None"
-
-        if isinstance(floormap, str):
-            floormap = io.imread(floormap).astype(dtype=np.bool)
-        if isinstance(heightmap, str):
-            heightmap = io.imread(heightmap).astype(np.uint8)
-        if isinstance(wallmap, str):
-            wallmap = io.imread(wallmap).astype(dtype=np.bool)
-        if isinstance(thingsmap, str):
-            thingsmap = io.imread(thingsmap).astype(np.uint8)
-
-        if thingsmap is not None:
-            # Pad with a frame
-            thingsmap = np.pad(thingsmap, pad_width=(1, 1), mode='constant')
-
-        if floormap is None:
-            floormap = heightmap > 0
-        if heightmap is None:
-            heightmap = np.ones_like(floormap) * 128
-
-        # Pad with a frame for getting boundaries
-        floormap = np.pad(floormap, pad_width=(1, 1), mode='constant').astype(np.uint8)
-        wallmap = np.pad(wallmap, pad_width=(1, 1), mode='constant').astype(np.uint8)
-        heightmap = np.pad(heightmap, pad_width=(1, 1), mode='constant').astype(np.uint8)
-
-        floormap = morphology.binary_dilation(floormap)
-
-        # Apply some morphology transformation to the maps for combining them and removing artifacts
-        denoised = morphology.remove_small_holes(floormap, min_size=16)
-        denoised = morphology.remove_small_objects(denoised, min_size=16)
-        denoised_walls = np.logical_and(denoised, np.logical_not(wallmap))
-        cleaned_walls = morphology.remove_small_holes(denoised_walls, min_size=4)
-        cleaned_walls = morphology.remove_small_objects(cleaned_walls, min_size=16)
-
-        # HEIGHTMAP
-        from skimage import data, util, filters, color
-        from skimage.morphology import watershed
-        from skimage.segmentation import slic, slic_superpixels
-        from scipy.ndimage import median
-        edges = filters.sobel(heightmap)
-        grid = util.regular_grid(heightmap.shape, n_points=300)
-        seeds = np.zeros(heightmap.shape, dtype=int)
-        seeds[grid] = np.arange(seeds[grid].size).reshape(seeds[grid].shape) + 1
-        segmented_heightmap = watershed(edges, seeds)
-
-        label_medians = median(heightmap, segmented_heightmap, index=range(1, segmented_heightmap.max() + 1))
-
-        for l in range(1, segmented_heightmap.max() + 1):
-            segmented_heightmap = np.where(segmented_heightmap == l, label_medians[l - 1], segmented_heightmap)
-
-
-        if debug:
-            # Display the image and plot all contours found
-            fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(8, 5), sharex=True,
-                                   sharey=True, subplot_kw={'adjustable': 'box-forced'})
-        if save_debug:
-            fig_show_levels = plt.subplot()
-
-        # Placing sectors, one floor at a time
-
-        from scipy.ndimage.measurements import label
-        segmented, total_floors = label(cleaned_walls, structure=np.ones((3, 3)))
-        floors = [np.equal(segmented, f) for f in range(1, total_floors)]
-        teleport_graph = np.roll(range(len(floors)), -1).tolist()
-        for floor_id, floor in enumerate(floors):
-            contours_walls = find_contours(floor, 0.5, positive_orientation='low')
-            for i, floor_contour in enumerate(contours_walls):
-                if debug:
-                    ax[4].plot(floor_contour[:, 1], floor_contour[:, 0], linewidth=1)
-                if save_debug:
-                    fig_show_levels.plot(floor_contour[:, 1], floor_contour[:, 0], linewidth=1)
-                vertices = (floor_contour * level_coord_scale).astype(np.int).tolist()
-                clockwise, vertices = self._sector_orientation(vertices)
-                if clockwise:
-                    # The contour defines the floor boundaries
-                    sector_id = self.add_sector(vertices, ceiling_height=128, tag=floor_id)
-                else:
-                    if i ==0:
-                        sector_id = self.add_sector(list(reversed(vertices)), ceiling_height=128, tag=floor_id)
-
-                    #if i == 0:
-                    #    # The first sector has been defined as counter-clockwise, need a bounding sector
-                    #    level_height = floormap.shape[0]*level_coord_scale
-                    #    level_width = floormap.shape[1]*level_coord_scale
-                    #    sector_id = self.add_sector([(0,0),(0,level_height),(level_width,level_height),(level_width, 0)], floor_height=-255*level_coord_scale, ceiling_height=255*level_coord_scale, tag=floor_id)
-                    #    print("Added a bounding box because the first sector has been specified as counter-clockwise")
-                    # The contour defines a hole in the level: Surrounding sector must be defined explicitly
-                    self.add_sector(vertices, ceiling_height=128, tag=floor_id, surrounding_sector_id=sector_id, hollow=True)
-                    # sector_id is not changed because we don't want to place anything inside a hole, hopefully.
-            if not flat_levels:
-                # Placing inner sectors (heightmap)
-                floor_heightmap = segmented_heightmap*floor
-                for sector_height in np.unique(floor_heightmap):
-                    if sector_height == 0:
-                        continue
-                    same_height_map = (floor_heightmap == sector_height)*1
-                    sector_contours = find_contours(same_height_map, 0.5, positive_orientation='low')
-                    for ch_number, sector_contours in enumerate(sector_contours):
-                        vertices = (sector_contours * level_coord_scale).astype(np.int).tolist()
-                        clockwise, vertices = self._sector_orientation(vertices)
-                        if not clockwise:
-                            vertices = list(reversed(vertices))
-                        # Drawing the sector with invisible walls
-                        self.add_sector(vertices, floor_height=int(sector_height*level_coord_scale), ceiling_height=int(sector_height*level_coord_scale)+256,
-                                        kw_sidedef={'upper_texture':'BRONZE1', 'lower_texture':'BRONZE1', 'middle_texture':'-'},
-                                        surrounding_sector_id=sector_id,
-                                        kw_linedef={'type': 0, 'trigger': 0, 'flags': 4})
-
-            # Placing teleporters
-            if total_floors > 1 and generate_teleporters:
-                # Teleporters are needed. Place a landing somewhere in the sector
-                possible_coords = np.transpose(np.nonzero(floor))
-                rand_indices = tuple(np.random.choice(range(len(possible_coords)), size=2, replace=False).tolist())
-                dest_coord = possible_coords[rand_indices[0]] * level_coord_scale
-                src_coord = possible_coords[rand_indices[1]] * level_coord_scale
-                # Creating a single loop visiting each floor exactly once (Eulerian cycle) in a random order
-                dest_sector = teleport_graph[floor_id]
-                # Add a destination in this sector
-                self.add_teleporter_destination(dest_coord[0], dest_coord[1])
-                # Add a source for another sector
-                self.add_teleporter_source(src_coord[0], src_coord[1], dest_sector, inside=sector_id)
-
-
-
-            # Finding and placing new player start
-            possible_pos = np.where(np.logical_and(np.equal(thingsmap, 1), cleaned_walls))
-            if (len(possible_pos[0]) == 0):
-                possible_pos = np.where(cleaned_walls)
-            rand_i = np.random.choice(range(len(possible_pos[0])))
-            start_pos = (
-            int(possible_pos[0][rand_i]) * level_coord_scale, int(possible_pos[1][rand_i]) * level_coord_scale)
-            self.set_start(start_pos[0], start_pos[1])
-
-            # Placing "Things"
-            if thingsmap is not None:
-                floor_things = floor * thingsmap
-                for x,y in np.transpose(np.nonzero(floor_things)):
-                    # FIXME: When things are put, player cannot move
-                    # FIXME: When adding triggers, check for the sector tag cause currently is the floor tag
-
-                    # Pixels are in range (0,255) but things type are in range (0,122). Moreover, 0 means "no thing"
-                    pixel = int(floor_things[x, y])
-                    # feat_scaling = lambda x, min, max, a, b: np.around(a + ((x-min)*(b-a))/(max-min))
-                    # type_index = feat_scaling(pixel, 1, 255, 0,122)
-                    type = get_type_id_from_index(pixel)
-                    too_close_to_start = abs(x - start_pos[0]) < 64 * level_coord_scale or abs(y - start_pos[1]) < 64 * level_coord_scale
-                    if type is not None and get_category_from_type_id(type) != 'start' and not too_close_to_start:
-                        self.add_thing(level_coord_scale*x,level_coord_scale*y, type)
-
-        if debug:
-            ax[0].imshow(floormap, cmap=plt.cm.gray)
-            ax[1].imshow(wallmap, cmap=plt.cm.gray)
-            ax[2].imshow(denoised, cmap=plt.cm.gray)
-            ax[3].imshow(denoised_walls, cmap=plt.cm.gray)
-            ax[4].imshow(cleaned_walls, cmap=plt.cm.gray)
-            ax[4].imshow(segmented, cmap=plt.cm.gray)
-        if debug:
-            plt.show()
-        if save_debug:
-            plt.axis('off')
-            fig_show_levels.imshow(segmented, cmap=plt.cm.gray)
-            os.makedirs(save_debug, exist_ok=True)
-            plt.savefig(save_debug+'lv_{}.png'.format(self.current_level), bbox_inches='tight')
-        plt.clf()
-
+        # START AND TELEPORTERS
+        for n in nx.get_node_attributes(graph, "level_start"):
+            start_x, start_y = self._rescale_coords(graph.node[n]["centroid"])
+            self.set_start(start_x, start_y)
 
 
     def add_teleporter_destination(self, x, y):
@@ -632,6 +507,7 @@ class WADWriter(object):
 
 
     def set_start(self, x, y):
+        print("placing start at {},{}".format(x, y))
         self.lumps['THINGS'].add_thing(int(x), int(y), angle=0, type=1, options=0)
 
     def add_thing(self, x,y, thing_type, options=7, angle=0):
