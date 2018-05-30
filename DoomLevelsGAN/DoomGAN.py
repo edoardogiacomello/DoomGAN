@@ -1,5 +1,5 @@
 import matplotlib
-#matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker
+matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker
 import os
 import DoomLevelsGAN.network_architecture as architecture
 import tensorflow.contrib as contrib
