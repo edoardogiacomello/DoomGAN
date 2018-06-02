@@ -11,7 +11,8 @@ class DoomGANToWAD:
             """
             # Create a new WAD
             writer = WADWriter()
-
+            # Setting a scale factor of 96 (Workaround for too tight passages)
+            writer.scale_factor = 96
             for index in range(max):
                 print("Building level {}".format(index))
                 pattern = "./../artifacts/generated_samples/sample{}_map_{}_generated.png"
@@ -58,4 +59,4 @@ class DoomGANToWAD:
 
 if __name__ == '__main__':
     builder = DoomGANToWAD()
-    builder.build_levels()
+    builder.build_levels(10)

@@ -8,6 +8,7 @@ from scipy import ndimage as ndi
 from skimage.morphology import watershed
 from skimage.measure import label
 from skimage.measure import find_contours
+from skimage.transform import resize
 import networkx as nx
 import numpy as np
 from doomutils import vertices_to_segment_list
@@ -66,11 +67,11 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
     :param floormap: Binary image representing the level floor
     :param return_dist: If true, also returns the distance map of each point to the closest wall.
     :param room_coordinates: If true, each graph node will contain the room vertices and information about the walls
-    :return: (Roommap, Graph) if return_dist is False, else (Roommap, Graph, dist)
+    :return: (Roommap, Graph) if return_dist is False, (Roommap, Graph, dist) otherwise
     """
     # Ensuring that floormap is always a boolean array
     floormap = floormap.astype(np.bool)
-
+    #floormap = rescale(floormap, 2)
     dist = ndi.distance_transform_edt(floormap)
     threshold = int(dist.max())
     optimal_threshold = 0
@@ -94,8 +95,10 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
         floors = label(floormap)
         for floor_id in range(max(1, floors.min()), floors.max() + 1):  # Skipping label 0 (background)
             # Building the wall list for floor boundaries
-            walls_vertices = [tuple(v) for v in
-                              find_contours((floors == floor_id) * 1, 0.5, positive_orientation='low')[0]]
+            # Here the map is upsampled by a factor 2 before finding the contours, then coordinates are divided by two.
+            # This is for avoiding "X" shaped connections between rooms due to how find_contours work
+            floor_contour = find_contours(resize(floors == floor_id, (floors.shape[0]*2, floors.shape[1]*2), order=0), 0.5, positive_orientation='low')[0] / 2
+            walls_vertices = [tuple(v) for v in floor_contour]
             floor_boundaries = tuple(vertices_to_segment_list(walls_vertices))
             # Map of rooms belonging to current floor
             rooms = roommap * (floors == floor_id)
@@ -103,8 +106,10 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
                 if room_id not in rooms:
                     # Some room id may be in another floor, if they are enumerated horizontally
                     continue
-                rooms_vertices = [tuple(v) for v in
-                                  find_contours((rooms == room_id) * 1, 0.5, positive_orientation='low')[0]]
+                # Here the map is upsampled by a factor 2 before finding the contours, then coordinates are divided by two.
+                # This is for avoiding "X" shaped connections between rooms due to how find_contours work
+                room_contour = find_contours(resize(rooms == room_id, (rooms.shape[0]*2, rooms.shape[1]*2), order=0), 0.5, fully_connected='high', positive_orientation='low')[0] / 2
+                rooms_vertices = [tuple(v) for v in room_contour]
                 room_boundaries = tuple(vertices_to_segment_list(rooms_vertices))
 
 
@@ -143,9 +148,6 @@ def create_graph(floormap, return_dist=False, room_coordinates=False):
                         i_neighbour = room_RAG_boundaries.node[neigh]['walls'].index(rev_cs)
                         room_RAG_boundaries.node[room_id]['walls'][i_current] = (cs[0], neigh)
                         room_RAG_boundaries.node[neigh]['walls'][i_neighbour] = (rev_cs[0], room_id)
-        #_plot_boundary_map(rooms, room_RAG_boundaries)
-
-
 
     if return_dist:
         return roommap, room_RAG_boundaries, dist

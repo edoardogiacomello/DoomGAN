@@ -308,7 +308,6 @@ class WADWriter(object):
         self.from_graph(graph, place_enemies=place_enemies)
 
 
-
     def decorate_graph(self, G, roommap, heightmap, thingsmap):
         """
         Adds information about the heightmap and the thingsmap in the region adjacency graph.
@@ -362,16 +361,28 @@ class WADWriter(object):
         for id, floor_path in enumerate(level_solution):
             if id == 0:
                 # Place the level start
-                nx.set_node_attributes(G, "level_start", {floor_path[0]: True})
+                start_x, start_y = G.node[floor_path[0]]["centroid"]
+                nx.set_node_attributes(G, "level_start", {floor_path[0]: {"location": (start_x, start_y)}})
             else:
-                # place a teleport dest
-                nx.set_node_attributes(G, "floor_start", {floor_path[0]: True})
+                # place a teleport source
+                possible_places = np.stack(np.where(roommap==floor_path[0]), axis=1)
+                random_pixel_index = np.random.choice(possible_places.shape[0])
+                x, y = possible_places[random_pixel_index]
+
+                nx.set_node_attributes(G, "floor_start", {floor_path[0]: {"location": (x, y)}})
             if id == len(level_solution)-1:
                 # This is the last floor to visit, place the level exit
-                nx.set_node_attributes(G, "level_exit", {floor_path[-1]: True})
+                possible_places = np.stack(np.where(roommap == floor_path[0]), axis=1)
+                random_pixel_index = np.random.choice(possible_places.shape[0])
+                x, y = possible_places[random_pixel_index]
+                nx.set_node_attributes(G, "level_exit", {floor_path[-1]: {"location": (x, y)}})
             else:
                 # There's another unvisited floor, place a teleporter to the next floor
-                nx.set_node_attributes(G, "floor_exit", {floor_path[-1]: level_solution[id+1][0]})
+                possible_places = np.stack(np.where(roommap==floor_path[-1]), axis=1)
+                random_pixel_index = np.random.choice(possible_places.shape[0])
+                x, y = possible_places[random_pixel_index]
+
+                nx.set_node_attributes(G, "floor_exit", {floor_path[-1]: {"destination":level_solution[id+1][0], "location": (x, y)}})
 
         level_objects = {}
         # Scanning the room for objects
@@ -488,15 +499,35 @@ class WADWriter(object):
                             self.add_thing(x, y, thingtype)
 
         # START AND TELEPORTERS
-        for n in nx.get_node_attributes(graph, "level_start"):
-            start_x, start_y = self._rescale_coords(graph.node[n]["centroid"])
-            self.set_start(start_x, start_y)
-
+        for n, l_start in nx.get_node_attributes(graph, "level_start").items():
+            x,y = self._rescale_coords(l_start["location"])
+            self.set_start(x, y)
+            print("Setting Start at {},{}".format(x,y))
+        for n, f_start in nx.get_node_attributes(graph, "floor_start").items():
+            x, y = self._rescale_coords(f_start["location"])
+            self.add_teleporter_destination(x, y)
+            print("Setting teleport dest at {},{}".format(x, y))
+        for n, f_exit in nx.get_node_attributes(graph, "floor_exit").items():
+            x, y = self._rescale_coords(f_exit["location"])
+            self.add_teleporter_source(x, y, to_sector=f_exit["destination"], inside=int(n))
+            print("Setting teleport source at {},{}".format(x, y))
+        for n, l_exit in nx.get_node_attributes(graph, "level_exit").items():
+            x, y = self._rescale_coords(l_exit["location"])
+            self.add_level_exit(x, y, inside=int(n), floor_height=int(graph.node[n]["height"])-16, ceiling_height=128+int(graph.node[n]["height"])-16)
 
     def add_teleporter_destination(self, x, y):
         self.add_thing(x, y, thing_type=14)
 
     def add_teleporter_source(self, x, y, to_sector, inside, size=32):
+        """
+        Place a teleporter cell to a sector
+        :param x: x coordinate of the beacon
+        :param y: y coordinate of the beacon
+        :param to_sector: destination sector
+        :param inside: Sector number in which this teleporter is placed
+        :param size: size of the teleporter
+        :return: None
+        """""
         x=int(x)
         y=int(y)
         to_sector=int(to_sector)
@@ -507,7 +538,6 @@ class WADWriter(object):
 
 
     def set_start(self, x, y):
-        print("placing start at {},{}".format(x, y))
         self.lumps['THINGS'].add_thing(int(x), int(y), angle=0, type=1, options=0)
 
     def add_thing(self, x,y, thing_type, options=7, angle=0):
@@ -527,6 +557,25 @@ class WADWriter(object):
         type = 1 if not remote else 0
         tag = len(self.lumps['SECTORS']) if tag is None else tag
         return self.add_sector(vertices_coords, ceiling_height=height, kw_sidedef={'upper_texture':texture, 'lower_texture':texture, 'middle_texture':'-'}, kw_linedef={'type':type, 'flags':4, 'trigger':0}, tag=tag, surrounding_sector_id=parent_sector, hollow=False)
+
+    def add_level_exit(self, x, y, inside, floor_height, ceiling_height, size=32):
+        """
+        Place the level exit
+        :param x: x coordinate of the beacon
+        :param y: y coordinate of the beacon
+        :param inside: Sector number in which this teleporter is placed
+        :param ceiling_height: Ceiling height for the "EXIT" sign
+        :param size: size of the teleporter
+        :return: None
+        """""
+        x=int(x)
+        y=int(y)
+        halfsize=size//2
+        vertices = list(reversed([(x-halfsize, y+halfsize),(x+halfsize, y+halfsize),(x+halfsize, y-halfsize),(x-halfsize, y-halfsize)]))
+        self.add_sector(vertices, floor_flat='GATE1', kw_sidedef={'upper_texture':'EXITSIGN', 'lower_texture':'-', 'middle_texture':'-'}, kw_linedef={'flags':4, 'type':52, 'trigger': 0}, surrounding_sector_id=inside, floor_height=floor_height,
+                        ceiling_height=ceiling_height)
+
+
 
     def add_trigger(self, vertices_coords, parent_sector, trigger_type, trigger_tag, texture='SW1CMT'):
         return self.add_sector(vertices_coords,
