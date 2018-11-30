@@ -91,54 +91,9 @@ def postprocess_output(g, maps, folder = './artifacts/generated_samples/', true_
             np.savetxt(folder + "sample{}_y_features.txt".format(s_id), feature_vector[s_id])
     return processed_output
 
-def build_levels(rescaled_g, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = True, level_images_path='./generated_samples/'):
-    """
-    Post-processes a rescaled network output and saves the corresponding wad file.
-    :param rescaled_g: Rescaled network output, in the same scale of the dataset
-    :param batch_size:
-    :param tmp_folder: temp folder where to store the wad file
-    :return: The path of the newly created wad file
-    """
-    # Create a new WAD
-    writer = WADWriter()
-    heightmap = None
-    wallmap = None
-    thingsmap = None
-    floormap = None
-    rescaled_g = postprocess_output(rescaled_g, maps, folder=None)
-    for index in range(batch_size):
-        for m, map in enumerate(maps):
-            heightmap = rescaled_g[index,:,:,m] if map == 'heightmap' else heightmap
-            wallmap = rescaled_g[index,:,:,m] if map == 'wallmap' else wallmap
-            thingsmap = rescaled_g[index,:,:,m] if map == 'thingsmap' else thingsmap
-            floormap = rescaled_g[index,:,:,m] if map == 'floormap' else floormap
-        writer.add_level(name='MAP{i:02d}'.format(i=index + 1))
-        writer.from_images(heightmap, floormap=floormap, wallmap=wallmap, thingsmap=thingsmap, save_debug=level_images_path, level_coord_scale=32)
-    os.makedirs(tmp_folder, exist_ok=True)
-    wad_path = tmp_folder+'generated_wad.wad'
-    writer.save(wad_path, call_node_builder=call_node_builder)
-    return wad_path
 
-def extract_features_from_net_output(rescaled_g, features, maps, batch_size, tmp_folder = '/tmp/doomgan/', call_node_builder = False):
-    """
-    This function creates a .WAD from the net output (still not playable unless "call_node_builder" is set to true) and returns a vector
-    containing the features extracted from the newly created WAD file.
-    :param rescaled_g:
-    :param features:
-    :param maps:
-    :param batch_size:
-    :param tmp_folder:
-    :param call_node_builder:
-    :return:
-    """
-    extracted_features = np.zeros(shape=(batch_size, len(features)))
-    reader = WADReader()
-    wad_path = build_levels(rescaled_g, maps, batch_size, tmp_folder, call_node_builder)
-    wad = reader.extract(wad_path)
-    for l, level in enumerate(wad['levels']):
-        for f, feature in enumerate(features):
-            extracted_features[l,f] = level['features'][feature]
-    return extracted_features
+
+
 
 def slerp(val, low, high):
     """Spherical interpolation. val has a range of 0 to 1.

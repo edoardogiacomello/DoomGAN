@@ -1,7 +1,6 @@
-import matplotlib
 #matplotlib.use('Agg') # This is for avoiding crashes for missing tkinter in Docker
 import os
-import DoomLevelsGAN.network_architecture as architecture
+import artifacts.network_architecture as architecture
 import tensorflow.contrib as contrib
 import DoomLevelsGAN.DataTransform as DataTransform
 from DoomDataset import DoomDataset
@@ -644,7 +643,7 @@ class DoomGAN(object):
                     - False: Levels are returned as numpy array and not saved anywhere
                     - 'PNG': Network output is saved to the generated_samples directory
                     - 'WAD': Levels are converted to .WAD and saved in the generated_samples directory along with a descriptive image of the level
-        :param folder: Where to folder generated samples
+        :param folder: Where to save generated samples
         """
         x_true_batch = None # This is set only if Y is picked in 'dataset' mode and it's saved along with the generated samples
         # Y Sampling
@@ -661,7 +660,10 @@ class DoomGAN(object):
                 batch = self.session.run(next_batch)
                 x_true_batch = np.stack([batch[m] for m in self.maps], axis=-1)
                 y = np.stack([batch[f] for f in self.features], axis=-1)
-
+                if folder is not None:
+                    with open(folder+'/true_levels_names.txt', 'w') as truelist:
+                        for wadpath in list(batch['path']):
+                            truelist.write(wadpath.decode('utf-8')+'\n')
 
             elif mode =='factors' or mode == 'nearest':
                 assert y_factors is not None, "y_factors cannot be 'None' if mode is 'factor'"
@@ -714,15 +716,21 @@ class DoomGAN(object):
         if postprocess:
             if save is False:
                 return DataTransform.postprocess_output(result, self.maps, folder=None)
-            elif save == 'PNG':
+            elif save in ['PNG', 'WAD']:
                 if folder is None:
                     # Use default folder
-                    return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch,
+                    gen_batch = DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch,
                                                             feature_vector=y)
                 else:
-                    return DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch, feature_vector=y if self.use_features else None, folder=folder)
-            elif save == 'WAD':
-                return DataTransform.build_levels(result, self.maps, self.config.batch_size)
+                    gen_batch = DataTransform.postprocess_output(result, self.maps, true_samples=x_true_batch, feature_vector=y if self.use_features else None, folder=folder)
+                if save == 'WAD':
+                    from WAD_Parser.DoomGANToWAD import DoomGANToWAD
+                    builder = DoomGANToWAD()
+                    if folder is None:
+                        builder.build_levels(max=max(32, self.config.batch_size))
+                    else:
+                        builder.build_levels(max=max(32, self.config.batch_size), generated_folder=folder, wad_save_folder=folder)
+            return gen_batch
         return result
 
     def evaluate_samples_distribution(self, input_subset=None, z_override=None, n=1, sample_from_dataset='train', postprocess=True):

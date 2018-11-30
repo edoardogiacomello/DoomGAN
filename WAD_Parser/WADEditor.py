@@ -426,7 +426,7 @@ class WADWriter(object):
             if n == 0:
                 continue
             # Create a sector
-            node_attr_sectors[n] = self.lumps['SECTORS'].add_sector(floor_height=int(heights[n]), ceiling_height=128+int(heights[n]), floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=255,
+            node_attr_sectors[n] = self.lumps['SECTORS'].add_sector(floor_height=int(heights[n]), ceiling_height=128+int(max(heights.values())), floor_flat='FLOOR0_1', ceiling_flat='FLOOR4_1', lightlevel=255,
                                                          special_sector=0, tag=int(n))
         nx.set_node_attributes(graph, 'sector_id', node_attr_sectors)
 

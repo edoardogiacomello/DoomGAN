@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
-import DoomLevelsGAN.network_architecture as arch
+import artifacts.network_architecture as arch
 from WAD_Parser.Dictionaries import Features as all_features
-from scipy.stats import wilcoxon, ttest_ind, mannwhitneyu
 import os
 import json
 
@@ -62,7 +61,6 @@ def generate_results_and_save(samples_per_map, reuse_z=False):
 
 
 def load_results_from_files(load_folder = "../artifacts/"):
-    import DoomLevelsGAN.DoomGAN as nn
     """Loads previously saved results from the artifacts folder"""
     names = np.load(load_folder + 'results_names.npy')
     true_features = np.load(load_folder + 'results_true.npy').astype(np.float32)

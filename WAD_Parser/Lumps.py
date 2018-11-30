@@ -306,6 +306,7 @@ class Sectors(list):
         :param tag:
         :return:
         """
+        assert floor_height < ceiling_height, "Floor height must be less than ceiling height!"
         self.append({'floor_height':floor_height, 'ceiling_height':ceiling_height, 'floor_flat':floor_flat, 'ceiling_flat':ceiling_flat, 'lightlevel':lightlevel, 'special_sector':special_sector, 'tag':tag})
         return len(self)-1
     def to_bytes(self):

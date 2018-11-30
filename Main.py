@@ -1,5 +1,5 @@
 import numpy as np
-
+import os
 
 class DoomSampler():
 
@@ -45,6 +45,12 @@ class DoomSampler():
                 out_features[feature].append(feat_samp[feature])
         return out_features
 
+    def generate_random_levels(self, output_folder='./artifacts/generated_samples/'):
+        os.makedirs(output_folder, exist_ok=True)
+        if len(self.gan.features) > 0:
+            self.gan.initialize_and_restore()
+            self.gan.sample(mode='dataset', sample_from_dataset='validation', postprocess=True,
+                            save='WAD', folder=output_folder)
 
 def example():
     """
@@ -68,3 +74,7 @@ def example():
     # Printing feature values
     for f_name, f_list in out_features.items():
         print("Feature: {} \n {}".format(f_name, f_list))
+
+def generate_some_levels():
+    sampler = DoomSampler()
+    sampler.generate_random_levels()
