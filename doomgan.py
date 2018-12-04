@@ -78,5 +78,3 @@ def example():
 def generate_some_levels():
     sampler = DoomSampler()
     sampler.generate_random_levels()
-
-example()
