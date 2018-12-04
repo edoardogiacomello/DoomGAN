@@ -961,7 +961,7 @@ class DoomGAN(object):
         return metrics
 
 
-def define_flags():
+def define_flags(current_dir='.'):
     flags = tf.app.flags
     flags.DEFINE_integer("epoch", 10000, "Epoch to train [10000]")
     # HYPERPARAMETERS
@@ -979,7 +979,7 @@ def define_flags():
     flags.DEFINE_float("lr_wgangp", 5e-5, "Learning rate of for WGAN RMSProp [5e-5]")
 
     flags.DEFINE_float("beta1_wgan", 0, "Momentum term of adam [0.5]")
-    flags.DEFINE_string("dataset_path", "./dataset/128-one-floor.meta", "Path to the .meta file of the corresponding .TFRecord datasets")
+    flags.DEFINE_string("dataset_path", "{}/dataset/128-one-floor.meta".format(current_dir), "Path to the .meta file of the corresponding .TFRecord datasets")
     flags.DEFINE_integer("height", 128, "Target sample height")
     flags.DEFINE_integer("width", 128, "Target sample width")
     flags.DEFINE_integer("z_dim", 100, "Dimension for the noise vector in input to G [100]")
@@ -993,39 +993,44 @@ def define_flags():
                          "If true, uses sigmoid activations for G outputs, if false uses Tanh. Data will be normalized accordingly")
     flags.DEFINE_boolean("use_wgan", True, "Whether to use the Wesserstein GAN model or the standard GAN")
     flags.DEFINE_boolean("use_gradient_penalty", True, "Whether to use the gradient penalty from WGAN_GP architecture or the WGAN weight clipping")
-    flags.DEFINE_string("checkpoint_dir", "./artifacts/checkpoint/", "Directory name to save the checkpoints [./artifacts/checkpoint/]")
-    flags.DEFINE_string("summary_folder", "./artifacts/tensorboard_results/",
+    flags.DEFINE_string("checkpoint_dir", "{}/artifacts/checkpoint/".format(current_dir), "Directory name to save the checkpoints [./artifacts/checkpoint/]")
+    flags.DEFINE_string("summary_folder", "{}/artifacts/tensorboard_results/".format(current_dir),
                         "Directory name to save the temporary files for visualization [./artifacts/tensorboard_results/]")
-    flags.DEFINE_string("generated_folder", "./artifacts/generated_samples/",
+    flags.DEFINE_string("generated_folder", "{}/artifacts/generated_samples/".format(current_dir),
                         "Directory name to save the generated samples [./artifacts/generated_samples/]")
-    flags.DEFINE_string("ref_sample_folder", "./artifacts/",
+    flags.DEFINE_string("ref_sample_folder", "{}/artifacts/".format(current_dir),
                         "Directory name to save the generated samples [./artifacts/]")
     return flags.FLAGS
 
 
+def init(current_dir='.', flags=None):
+    """ Initialize DoomGAN. All the paths will be built upon 'current_dir'"""
+    FLAGS = define_flags(current_dir) if flags is None else FLAGS
+    with tf.Session() as s:
+        # Layers and inputs are defined in network_architecture.py
+        features = architecture.features
+        maps = architecture.maps
+        g_layers = architecture.g_layers
+        d_layers = architecture.d_layers
+        print("Building the network...")
+        gan = DoomGAN(session=s,
+                      config=FLAGS, features=features, maps=maps,
+                      g_layers=g_layers, d_layers=d_layers
+                      )
+        show_all_variables()
+        return gan
 
-FLAGS = define_flags()
-with tf.Session() as s:
-    # Layers and inputs are defined in network_architecture.py
-    features = architecture.features
-    maps = architecture.maps
-    g_layers = architecture.g_layers
-    d_layers = architecture.d_layers
-    print("Building the network...")
-    gan = DoomGAN(session=s,
-                  config=FLAGS, features=features, maps=maps,
-                  g_layers = g_layers, d_layers = d_layers
-                  )
-    show_all_variables()
 
-    if __name__ == '__main__':
+if __name__ == '__main__':
+        FLAGS = define_flags()
+        gan = init(flags=FLAGS)
         if FLAGS.train:
             print("Starting training process...")
             gan.train(FLAGS)
         else:
             #feat_factors = [-1 for f in features]
             if FLAGS.generate:
-                factors = np.random.normal(0.5, 0.1, size=(FLAGS.batch_size, len(features)))
+                factors = np.random.normal(0.5, 0.1, size=(FLAGS.batch_size, len(architecture.features)))
                 gan.initialize_and_restore()
                 gan.sample(mode='dataset', sample_from_dataset='validation', y_factors=factors, postprocess=True, save='PNG', seed=FLAGS.seed, folder=FLAGS.generated_folder)
 

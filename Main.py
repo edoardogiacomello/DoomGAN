@@ -3,11 +3,11 @@ import os
 
 class DoomSampler():
 
-    def __init__(self):
+    def __init__(self, current_dir='.'):
         import DoomLevelsGAN.DoomGAN as Gan
         import WAD_Parser.WADFeatureExtractor as fe
 
-        self.gan = Gan.gan
+        self.gan = Gan.init(current_dir=current_dir)
         self.extractor = fe.WADFeatureExtractor()
         self.last_generated_samples = None
 
@@ -78,3 +78,5 @@ def example():
 def generate_some_levels():
     sampler = DoomSampler()
     sampler.generate_random_levels()
+
+example()
