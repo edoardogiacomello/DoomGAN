@@ -56,7 +56,7 @@ class DoomDataset():
 
     def read_from_TFRecords(self, tfrecords_path, target_size):
         """Returns a tensorflow dataset from the .tfrecord file specified in path"""
-        dataset = tf.contrib.data.TFRecordDataset(tfrecords_path)
+        dataset = tf.data.TFRecordDataset(tfrecords_path)
         dataset = dataset.map(lambda l: self._TFRecord_to_sample(l, target_size), num_threads=9)
         return dataset
 
