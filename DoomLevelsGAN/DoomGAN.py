@@ -1006,19 +1006,19 @@ def define_flags(current_dir='.'):
 def init(current_dir='.', flags=None):
     """ Initialize DoomGAN. All the paths will be built upon 'current_dir'"""
     FLAGS = define_flags(current_dir) if flags is None else FLAGS
-    with tf.Session() as s:
-        # Layers and inputs are defined in network_architecture.py
-        features = architecture.features
-        maps = architecture.maps
-        g_layers = architecture.g_layers
-        d_layers = architecture.d_layers
-        print("Building the network...")
-        gan = DoomGAN(session=s,
-                      config=FLAGS, features=features, maps=maps,
-                      g_layers=g_layers, d_layers=d_layers
-                      )
-        show_all_variables()
-        return gan
+    session = tf.Session()
+    # Layers and inputs are defined in network_architecture.py
+    features = architecture.features
+    maps = architecture.maps
+    g_layers = architecture.g_layers
+    d_layers = architecture.d_layers
+    print("Building the network...")
+    gan = DoomGAN(session=session,
+                  config=FLAGS, features=features, maps=maps,
+                  g_layers=g_layers, d_layers=d_layers
+                  )
+    show_all_variables()
+    return gan
 
 
 if __name__ == '__main__':

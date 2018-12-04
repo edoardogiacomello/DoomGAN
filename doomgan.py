@@ -8,8 +8,12 @@ class DoomSampler():
         import WAD_Parser.WADFeatureExtractor as fe
 
         self.gan = Gan.init(current_dir=current_dir)
+        self.session = self.gan.session
         self.extractor = fe.WADFeatureExtractor()
         self.last_generated_samples = None
+
+    def __del__(self):
+        self.gan.session.close()
 
     def get_features_of(self, input_noise, input_features):
         """
