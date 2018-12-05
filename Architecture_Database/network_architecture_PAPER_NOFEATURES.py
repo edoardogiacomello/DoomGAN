@@ -1,23 +1,19 @@
-# THIS FILE CONTAINS THE ARCHITECTURES THAT HAVE BEEN TESTED DURING THE TRAINING PROCESS
-# 28/12/2017
-features = ['height', 'width',
-           'number_of_sectors',
-           'sector_area_avg',
-           'sector_aspect_ratio_avg',
-           'lines_per_sector_avg',
-           'walkable_percentage',
-           'level_extent',
-           'level_solidity',
-           'artifacts_per_walkable_area',
-           'powerups_per_walkable_area',
-           'weapons_per_walkable_area',
-           'ammunitions_per_walkable_area',
-           'keys_per_walkable_area',
-           'monsters_per_walkable_area',
-           'obstacles_per_walkable_area',
-           'decorations_per_walkable_area']
+# This file defines the the network layers and the input features.
+# Define here which features to use (you can find a list in /WAD_Parser/Dictionaries/Features.py )
+# features = ['level_equivalent_diameter',
+#             'level_major_axis_length',
+#             'level_minor_axis_length',
+#             'level_solidity',
+#             'nodes',
+#             'distmap-skew',
+#             'distmap-kurt']
+features = []
+
+# SEED OF THE NETWORK
+seed = 123456789
+
 # Define here which maps to use (you can find a list in /WAD_Parser/Dictionaries/Features.py )
-maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap', 'triggermap']
+maps = ['floormap', 'heightmap', 'wallmap', 'thingsmap']
 
 # Generator network layers
 g_layers = [
@@ -33,5 +29,3 @@ d_layers = [
     {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 8, 'remove_artifacts': False},
     {'stride': (2, 2), 'kernel_size': (4, 4), 'n_filters': 64 * 16, 'remove_artifacts': False},
 ]
-
-###

@@ -1,3 +1,2 @@
-cd dataset
-unzip 128x128-one-floor.zip
-cd ..
+unzip dataset/128x128-one-floor.zip -d dataset/
+

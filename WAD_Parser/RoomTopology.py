@@ -180,7 +180,7 @@ def topological_features(floormap, prepare_for_doom=False):
         if i==0 or j == 0:
             continue
         centroid_distance[(i,j)] = np.linalg.norm(np.asarray(room_graph.node[i]["centroid"])-np.asarray(room_graph.node[j]["centroid"])).item()
-    nx.set_edge_attributes(room_graph, 'centroid_distance', centroid_distance)
+    nx.set_edge_attributes(room_graph, name='centroid_distance', values=centroid_distance)
 
 
     # To compute correct metrics we need to remove node 0, which is the background
