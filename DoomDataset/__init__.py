@@ -1,7 +1,7 @@
 import json
 import os
 import csv
-
+import multiprocessing
 import WAD_Parser.Dictionaries.Features as Features
 import numpy as np
 import skimage.io as io
@@ -57,7 +57,7 @@ class DoomDataset():
     def read_from_TFRecords(self, tfrecords_path, target_size):
         """Returns a tensorflow dataset from the .tfrecord file specified in path"""
         dataset = tf.data.TFRecordDataset(tfrecords_path)
-        dataset = dataset.map(lambda l: self._TFRecord_to_sample(l, target_size), num_threads=9)
+        dataset = dataset.map(lambda l: self._TFRecord_to_sample(l, target_size), num_parallel_calls=multiprocessing.cpu_count())
         return dataset
 
     def get_path_of(self, feature_field):

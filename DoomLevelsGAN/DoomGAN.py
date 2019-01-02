@@ -1003,10 +1003,10 @@ def define_flags(current_dir='.'):
     return flags.FLAGS
 
 
-def init(current_dir='.', flags=None):
+def init(current_dir='.', flags=None, configproto=None):
     """ Initialize DoomGAN. All the paths will be built upon 'current_dir'"""
     FLAGS = define_flags(current_dir) if flags is None else FLAGS
-    session = tf.Session()
+    session = tf.Session(config=configproto)
     # Layers and inputs are defined in network_architecture.py
     features = architecture.features
     maps = architecture.maps
