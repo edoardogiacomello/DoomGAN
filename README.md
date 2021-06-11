@@ -1,6 +1,19 @@
 # DoomPCGML
 Main Repository for my MSc thesis about Procedural content generation via machine learning applied to videogames levels (Doom I/II)
 
+Citation:
+Giacomello, E., Lanzi, P. L., & Loiacono, D. (2018, August). DOOM level generation using generative adversarial networks. In 2018 IEEE Games, Entertainment, Media Conference (GEM) (pp. 316-323). IEEE.
+
+```
+@inproceedings{giacomello2018doom,
+  title={DOOM level generation using generative adversarial networks},
+  author={Giacomello, Edoardo and Lanzi, Pier Luca and Loiacono, Daniele},
+  booktitle={2018 IEEE Games, Entertainment, Media Conference (GEM)},
+  pages={316--323},
+  year={2018},
+  organization={IEEE}
+}
+```
 
 ### Requirements
 #### Using docker
