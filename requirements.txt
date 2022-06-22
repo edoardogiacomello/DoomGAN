@@ -31,7 +31,7 @@ networkx == 1.11
 # WAD_Parser/RoomTopology.py: 12
 # WAD_Parser/WADEditor.py: 11
 # _deprecated/dataset_utils.py: 6
-numpy == 1.13.3
+numpy == 1.22.0
 
 # DoomDataset/__init__.py: 170,461
 pandas == 0.21.0
