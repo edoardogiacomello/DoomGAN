@@ -38,7 +38,7 @@ pandas == 0.21.0
 
 # DoomWorldScraper/DoomWorldWadScraper.py: 1
 # GAN-Tests/DCGAN-slerp-interpolation/download.py: 18
-requests == 2.18.4
+requests == 2.31.0
 
 # DoomDataset/__init__.py: 6
 # DoomLevelsGAN/DataTransform.py: 4
